@@ -1,7 +1,7 @@
 package io.pg
 
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.generic.extras.Configuration
+import io.pg.CirceConfig._
 
 object Endpoints {
   import sttp.tapir._
@@ -13,13 +13,5 @@ object Endpoints {
 
 }
 
-import CirceConfig._
-
 @ConfiguredJsonCodec
 final case class Hello(message: String)
-
-object CirceConfig {
-
-  implicit val config: Configuration = Configuration.default
-
-}

@@ -1,6 +1,7 @@
 package io.pg
 
 import cats.implicits._
+import io.circe.generic.extras.Configuration
 
 final case class AppConfig(http: HttpConfig, meta: MetaConfig)
 
@@ -32,3 +33,9 @@ object AppConfig {
 final case class HttpConfig(port: Int)
 
 final case class MetaConfig(banner: String, version: String, scalaVersion: String)
+
+object CirceConfig {
+
+  implicit val config: Configuration = Configuration.default
+
+}
