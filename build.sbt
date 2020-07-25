@@ -44,7 +44,7 @@ val commonSettings = List(
   scalacOptions += "-Yimports:scala,scala.Predef,java.lang,cats",
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-effect" % "2.1.4",
-    "org.scalatest" %% "scalatest" % "3.1.0" % Test //todo: munit
+    "org.scalatest" %% "scalatest" % "3.1.2" % Test //todo: munit
   ) ++ compilerPlugins
 )
 
