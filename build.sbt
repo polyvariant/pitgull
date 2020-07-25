@@ -36,7 +36,9 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   name := "pitgull",
   updateOptions := updateOptions.value.withGigahorse(false),
+  scalacOptions += "-Yimports:scala,scala.Predef,java.lang,cats",
   libraryDependencies ++= List(
+    "org.typelevel" %% "cats-effect" % "2.1.4",
     "org.scalatest" %% "scalatest" % "3.1.0" % Test
   ) ++ compilerPlugins
 )

@@ -7,6 +7,8 @@ import cats.effect.IO
 import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext
 import io.odin.formatter.Formatter
+import io.pg.Prelude._
+import cats.implicits._
 
 object Main extends IOApp {
 
@@ -15,21 +17,22 @@ object Main extends IOApp {
   val logger = consoleLogger[IO](formatter = Formatter.colorful)
 
   def run(args: List[String]): IO[ExitCode] =
-    AppResources
+    Application
       .resource[IO]
       .flatMap { resources =>
-        BlazeServerBuilder[IO](ExecutionContext.global)
+        val server = BlazeServerBuilder[IO](ExecutionContext.global)
           .withHttpApp(resources.routes)
           .bindHttp(port = resources.config.http.port, host = "0.0.0.0")
           .withBanner(resources.config.meta.banner.linesIterator.toList)
           .resource
-          .evalTap(_ =>
-            logger
-              .info(
-                "Started application",
-                Map("version" -> resources.config.meta.version, "scalaVersion" -> resources.config.meta.scalaVersion)
-              )
+
+        val logStarted = logger
+          .info(
+            "Started application",
+            Map("version" -> resources.config.meta.version, "scalaVersion" -> resources.config.meta.scalaVersion)
           )
+
+        server *> logStarted.resource_
       }
       .use(_ => IO.never)
 
