@@ -61,6 +61,11 @@ val pitgull =
         "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.3",
         "org.http4s" %% "http4s-blaze-server" % "0.21.6",
         "is.cir" %% "ciris" % "1.1.1",
+        "io.circe" %% "circe-generic-extras" % "0.13.0",
+        "io.estatico" %% "newtype" % "0.4.4",
+        "io.scalaland" %% "chimney" % "0.5.2",
+        "io.chrisdavenport" %% "cats-time" % "0.3.0",
+        "com.github.valskalla" %% "odin-core" % "0.7.0",
         "ch.qos.logback" % "logback-classic" % "1.2.3"
       )
     )
