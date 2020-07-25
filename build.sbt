@@ -32,11 +32,12 @@ val compilerPlugins = List(
 val Scala213 = "2.13.3"
 
 val commonSettings = List(
+  name := "pitgull",
   scalaVersion := Scala213,
   scalacOptions --= List("-Xfatal-warnings"),
-  name := "pitgull",
-  updateOptions := updateOptions.value.withGigahorse(false),
+  scalacOptions += "-Ymacro-annotations",
   scalacOptions += "-Yimports:scala,scala.Predef,java.lang,cats",
+  updateOptions := updateOptions.value.withGigahorse(false),
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-effect" % "2.1.4",
     "org.scalatest" %% "scalatest" % "3.1.0" % Test
@@ -66,6 +67,7 @@ val pitgull =
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.5.2",
+        "org.typelevel" %% "cats-tagless-macros" % "0.11",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.7.0",
         "ch.qos.logback" % "logback-classic" % "1.2.3"
