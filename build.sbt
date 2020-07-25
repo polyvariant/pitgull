@@ -37,10 +37,9 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   scalacOptions += "-Ymacro-annotations",
   scalacOptions += "-Yimports:scala,scala.Predef,java.lang,cats",
-  updateOptions := updateOptions.value.withGigahorse(false),
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-effect" % "2.1.4",
-    "org.scalatest" %% "scalatest" % "3.1.0" % Test
+    "org.scalatest" %% "scalatest" % "3.1.0" % Test //todo: munit
   ) ++ compilerPlugins
 )
 
