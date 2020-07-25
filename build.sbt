@@ -20,6 +20,11 @@ ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
 ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
+ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
+
+missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "ch.qos.logback", name = "logback-classic")
+missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "ch.qos.logback", name = "logback-core")
+
 def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
