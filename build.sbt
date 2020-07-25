@@ -46,11 +46,22 @@ val core = project.settings(commonSettings).settings(name += "-core")
 val pitgull =
   project
     .in(file("."))
+    .enablePlugins(BuildInfoPlugin)
     .settings(commonSettings)
     .settings(
       skip in publish := true,
+      buildInfoPackage := "io.pg",
+      buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "org.http4s" %% "http4s-blaze-server" % "0.21.6"
+        "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.7",
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.7",
+        "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.16.7",
+        "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.7",
+        "com.softwaremill.sttp.client" %% "circe" % "2.2.3",
+        "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.3",
+        "org.http4s" %% "http4s-blaze-server" % "0.21.6",
+        "is.cir" %% "ciris" % "1.1.1",
+        "ch.qos.logback" % "logback-classic" % "1.2.3"
       )
     )
     .dependsOn(core)
