@@ -18,7 +18,7 @@ val GraalVM11 = "graalvm11@20.1.0"
 
 ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
-ThisBuild / githubWorkflowPublishBranchPatterns := Nil
+ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
 
@@ -44,4 +44,14 @@ val commonSettings = List(
 val core = project.settings(commonSettings).settings(name += "-core")
 
 val pitgull =
-  project.in(file(".")).settings(commonSettings).settings(skip in publish := true).dependsOn(core).aggregate(core)
+  project
+    .in(file("."))
+    .settings(commonSettings)
+    .settings(
+      skip in publish := true,
+      libraryDependencies ++= List(
+        "org.http4s" %% "http4s-blaze-server" % "0.21.6"
+      )
+    )
+    .dependsOn(core)
+    .aggregate(core)
