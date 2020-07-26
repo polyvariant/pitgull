@@ -70,7 +70,7 @@ val pitgull =
         "is.cir" %% "ciris" % "1.1.1",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
-        "io.scalaland" %% "chimney" % "0.5.2",
+        "io.scalaland" %% "chimney" % "0.5.3",
         "org.typelevel" %% "cats-tagless-macros" % "0.11",
         "org.typelevel" %% "cats-mtl-core" % "0.7.1",
         "com.olegpy" %% "meow-mtl-effects" % "0.4.0",
