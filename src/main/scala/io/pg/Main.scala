@@ -13,6 +13,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import cats.effect.Blocker
 import sttp.model.Uri
 import sttp.client.http4s.Http4sBackend
+import io.pg.gitlab.Gitlab
 
 object Main extends IOApp {
 
@@ -38,30 +39,10 @@ object Main extends IOApp {
       // server *> logStarted.resource_
       Blocker[IO].flatMap(Http4sBackend.usingDefaultClientBuilder[IO](_)).evalTap(_ => IO(println("built app"))).evalMap {
         implicit backend =>
-          import sttp.client._
-          val endpoint = uri"${resources.config.git.apiUrl}"
+          import sttp.client.UriContext
+          val gitlab = Gitlab.sttpInstance[IO](uri"${resources.config.git.apiUrl}", resources.config.git.apiToken)
 
-          import io.pg.gitlab.client._
-
-          val query = Query.projects(search = "demo".some, membership = true.some)(
-            ProjectConnection.nodes(
-              Project.nameWithNamespace ~
-                Project.mergeRequests()(
-                  MergeRequestConnection.nodes(
-                    MergeRequest.targetBranchExists
-                  )
-                )
-            )
-          )
-
-          logger.info("sending request") *>
-            query
-              .toRequest(endpoint)
-              .header("Private-Token", resources.config.git.apiToken.value)
-              .send[IO]()
-              .flatMap(_.body.liftTo[IO])
-              .map(_.toString)
-              .flatMap(logger.info(_))
+          gitlab.acceptMergeRequest(20190338, 1)
       }
 
     }

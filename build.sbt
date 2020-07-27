@@ -55,7 +55,17 @@ val gitlabGraphql = project
     libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
   )
 
-val gitlab = project.settings(commonSettings)
+val gitlab = project
+  .settings(
+    commonSettings,
+    libraryDependencies ++= List(
+      "is.cir" %% "ciris" % "1.1.1",
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
+    )
+  )
+  .dependsOn(gitlabGraphql)
 
 val core = project.settings(commonSettings).settings(name += "-core")
 
