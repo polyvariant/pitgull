@@ -55,6 +55,8 @@ val gitlabGraphql = project
     libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
   )
 
+val gitlab = project.settings(commonSettings)
+
 val core = project.settings(commonSettings).settings(name += "-core")
 
 val pitgull =
@@ -89,5 +91,5 @@ val pitgull =
         "ch.qos.logback" % "logback-classic" % "1.2.3"
       )
     )
-    .dependsOn(core, gitlabGraphql)
+    .dependsOn(core, gitlab)
     .aggregate(core, gitlabGraphql)
