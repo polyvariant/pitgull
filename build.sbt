@@ -48,11 +48,12 @@ val commonSettings = List(
   ) ++ compilerPlugins
 )
 
-val gitlabClient = project.settings(
-  name := "gitlab-client",
-  scalaVersion := Scala213,
-  libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
-)
+val gitlabClient = project
+  .in(file("gitlab-client"))
+  .settings(
+    scalaVersion := Scala213,
+    libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
+  )
 
 val core = project.settings(commonSettings).settings(name += "-core")
 
@@ -74,6 +75,7 @@ val pitgull =
         "com.softwaremill.sttp.client" %% "circe" % "2.2.4",
         "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.4",
         "org.http4s" %% "http4s-blaze-server" % "0.21.7",
+        "org.http4s" %% "http4s-blaze-client" % "0.21.7",
         "is.cir" %% "ciris" % "1.1.2",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
