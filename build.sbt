@@ -48,8 +48,8 @@ val commonSettings = List(
   ) ++ compilerPlugins
 )
 
-val gitlabClient = project
-  .in(file("gitlab-client"))
+val gitlabGraphql = project
+  .in(file("gitlab-graphql"))
   .settings(
     scalaVersion := Scala213,
     libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
@@ -89,5 +89,5 @@ val pitgull =
         "ch.qos.logback" % "logback-classic" % "1.2.3"
       )
     )
-    .dependsOn(core, gitlabClient)
-    .aggregate(core, gitlabClient)
+    .dependsOn(core, gitlabGraphql)
+    .aggregate(core, gitlabGraphql)

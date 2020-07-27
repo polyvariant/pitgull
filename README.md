@@ -7,4 +7,4 @@
 
 ## Generate gitlab schema
 
-`sbt calibanGenClient https://gitlab.com/api/graphql gitlab-client/src/main/scala/io/pg/gitlab/client.scala --packageName io.pg.gitla`
+`sbt calibanGenClient https://gitlab.com/api/graphql gitlab-graphql/src/main/scala/io/pg/gitlab/graphql.scala --packageName io.pg.gitlab`
