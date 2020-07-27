@@ -53,7 +53,7 @@ val core = project.settings(commonSettings).settings(name += "-core")
 val pitgull =
   project
     .in(file("."))
-    .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging)
+    .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging, CodegenPlugin)
     .settings(commonSettings)
     .settings(
       dockerBaseImage := "oracle/graalvm-ce:20.1.0-java11",
@@ -78,7 +78,8 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.7.0",
-        "ch.qos.logback" % "logback-classic" % "1.2.3"
+        "ch.qos.logback" % "logback-classic" % "1.2.3",
+        "com.github.ghostdogpr" %% "caliban-client" % "0.9.0"
       )
     )
     .dependsOn(core)
