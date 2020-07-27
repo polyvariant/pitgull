@@ -48,6 +48,12 @@ val commonSettings = List(
   ) ++ compilerPlugins
 )
 
+val gitlabClient = project.settings(
+  name := "gitlab-client",
+  scalaVersion := Scala213,
+  libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
+)
+
 val core = project.settings(commonSettings).settings(name += "-core")
 
 val pitgull =
@@ -78,9 +84,8 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.7.0",
-        "ch.qos.logback" % "logback-classic" % "1.2.3",
-        "com.github.ghostdogpr" %% "caliban-client" % "0.9.0"
+        "ch.qos.logback" % "logback-classic" % "1.2.3"
       )
     )
-    .dependsOn(core)
-    .aggregate(core)
+    .dependsOn(core, gitlabClient)
+    .aggregate(core, gitlabClient)

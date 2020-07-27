@@ -7,7 +7,7 @@ import caliban.client._
 import caliban.client.Operations._
 import caliban.client.Value._
 
-object gitlab {
+object client {
 
   type ID = String
 
@@ -15435,3 +15435,4 @@ object gitlab {
   }
 
 }
+
