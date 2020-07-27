@@ -19,20 +19,25 @@ object Gitlab {
     accessToken: Secret[String]
   )(
     implicit backend: SttpBackend[F, Nothing, NothingT]
-  ): Gitlab[F] =
+  ): Gitlab[F] = {
+
+    def runRequest[O](request: Request[O, Nothing]): F[O] =
+      //todo multiple possible header names...
+      request.header("Private-Token", accessToken.value).send[F]().map(_.body)
+
+    import sttp.tapir.client.sttp._
+
+    def runEndpoint[I, E, O](endpoint: Endpoint[I, E, O, Nothing]): I => F[Either[E, O]] =
+      i => runRequest(endpoint.toSttpRequestUnsafe(baseUri).apply(i))
+
+    def runInfallibleEndpoint[I, O](endpoint: Endpoint[I, Nothing, O, Nothing]): I => F[O] =
+      runEndpoint[I, Nothing, O](endpoint).nested.map(_.merge).value
+
     new Gitlab[F] {
-      import sttp.tapir.client.sttp._
-
-      private def runRequest[O](request: Request[O, Nothing]): F[O] =
-        //todo multiple possible header names...
-        request.header("Private-Token", accessToken.value).send[F]().map(_.body)
-
-      private def runInfallibleEndpoint[I, O](endpoint: Endpoint[I, Nothing, O, Nothing]): I => F[O] =
-        i => runRequest(new RichEndpoint[I, Nothing, O, Nothing](endpoint).toSttpRequestUnsafe(baseUri).apply(i)).map(_.merge)
-
       def acceptMergeRequest(projectId: Int, mergeRequestIid: Int): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void
     }
+  }
 
 }
 
