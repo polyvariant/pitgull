@@ -74,8 +74,8 @@ val pitgull =
         "io.scalaland" %% "chimney" % "0.5.3",
         "org.typelevel" %% "cats-tagless-macros" % "0.11",
         "org.typelevel" %% "cats-mtl-core" % "0.7.1",
-        "com.olegpy" %% "meow-mtl-effects" % "0.4.0",
-        "com.olegpy" %% "meow-mtl-core" % "0.4.0",
+        "com.olegpy" %% "meow-mtl-effects" % "0.4.1",
+        "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.7.0",
         "ch.qos.logback" % "logback-classic" % "1.2.3"
