@@ -67,7 +67,7 @@ val pitgull =
         "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.11",
         "com.softwaremill.sttp.client" %% "circe" % "2.2.4",
         "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.4",
-        "org.http4s" %% "http4s-blaze-server" % "0.21.6",
+        "org.http4s" %% "http4s-blaze-server" % "0.21.7",
         "is.cir" %% "ciris" % "1.1.1",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
