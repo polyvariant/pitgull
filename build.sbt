@@ -48,24 +48,17 @@ val commonSettings = List(
   ) ++ compilerPlugins
 )
 
-val gitlabGraphql = project
-  .in(file("gitlab-graphql"))
-  .settings(
-    scalaVersion := Scala213,
-    libraryDependencies ++= List("com.github.ghostdogpr" %% "caliban-client" % "0.9.0")
-  )
-
 val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "1.1.1",
+      "com.kubukoz" %% "caliban-gitlab" % "0.0.1+3-c1a6a793-SNAPSHOT",
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
     )
   )
-  .dependsOn(gitlabGraphql)
 
 val core = project.settings(commonSettings).settings(name += "-core")
 
@@ -102,4 +95,4 @@ val pitgull =
       )
     )
     .dependsOn(core, gitlab)
-    .aggregate(core, gitlabGraphql)
+    .aggregate(core)
