@@ -53,7 +53,7 @@ val gitlab = project
     commonSettings,
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "1.1.1",
-      "com.kubukoz" %% "caliban-gitlab" % "0.0.1",
+      "com.kubukoz" %% "caliban-gitlab" % "0.0.2",
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
