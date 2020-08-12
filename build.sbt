@@ -65,7 +65,7 @@ val core = project.settings(commonSettings).settings(name += "-core")
 val pitgull =
   project
     .in(file("."))
-    .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging, CodegenPlugin)
+    .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging)
     .settings(commonSettings)
     .settings(
       dockerBaseImage := "oracle/graalvm-ce:20.1.0-java11",
