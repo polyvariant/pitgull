@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext
 import io.odin.formatter.Formatter
 import io.pg.Prelude._
 import cats.implicits._
+import org.http4s.server.middleware
 
 object Main extends IOApp {
 
@@ -21,7 +22,9 @@ object Main extends IOApp {
       .resource[IO](config)
       .flatMap { resources =>
         val server = BlazeServerBuilder[IO](ExecutionContext.global)
-          .withHttpApp(resources.routes)
+          .withHttpApp(
+            middleware.Logger.httpApp(logHeaders = true, logBody = true, logAction = (logger.debug(_: String)).some)(resources.routes)
+          )
           .bindHttp(port = config.http.port, host = "0.0.0.0")
           .withBanner(config.meta.banner.linesIterator.toList)
           .resource

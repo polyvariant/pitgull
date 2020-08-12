@@ -1,7 +1,7 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n %exception</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %magenta(%-5level) %green(%logger{36}) - %msg%n %exception</pattern>
         </encoder>
     </appender>
 

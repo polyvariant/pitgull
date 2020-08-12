@@ -6,8 +6,7 @@ import org.http4s.HttpApp
 import cats.effect.Resource
 import cats.effect.Concurrent
 import cats.effect.ContextShift
-import io.pg.hello.HelloService
-import io.pg.hello.HelloRouter
+import io.pg.webhook._
 import cats.data.NonEmptyList
 import sttp.tapir.server.ServerEndpoint
 
@@ -16,9 +15,7 @@ final class Application[F[_]](val routes: HttpApp[F])
 object Application {
 
   def resource[F[_]: Concurrent: ContextShift](config: AppConfig): Resource[F, Application[F]] = {
-    implicit val helloService: HelloService[F] = HelloService.instance
-
-    val routes: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] = NonEmptyList.of(HelloRouter.routes[F]).flatten
+    val routes: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] = NonEmptyList.of(WebhookRouter.routes[F]).flatten
 
     import sttp.tapir.server.http4s._
 
