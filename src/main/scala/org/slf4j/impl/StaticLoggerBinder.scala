@@ -30,7 +30,7 @@ object StaticLoggerBinder extends StaticLoggerBinder {
 
   val baseLogger = io.odin.consoleLogger[IO](formatter = Formatter.colorful)
 
-  var REQUESTED_API_VERSION: String = "1.7"
+  val REQUESTED_API_VERSION: String = "1.7"
 
   def getSingleton: StaticLoggerBinder = this
 
