@@ -6,16 +6,14 @@ import cats.effect.IO
 
 import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext
-import io.odin.formatter.Formatter
 import io.pg.Prelude._
 import cats.implicits._
 import org.http4s.server.middleware
+import org.slf4j.impl.StaticLoggerBinder
 
 object Main extends IOApp {
 
-  import io.odin._
-
-  val logger = consoleLogger[IO](formatter = Formatter.colorful)
+  val logger = StaticLoggerBinder.baseLogger
 
   def serve(config: AppConfig) =
     Application

@@ -22,9 +22,6 @@ ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
 
-missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "ch.qos.logback", name = "logback-classic")
-missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "ch.qos.logback", name = "logback-core")
-
 def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
@@ -91,7 +88,7 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.7.0",
-        "ch.qos.logback" % "logback-classic" % "1.2.3"
+        "com.github.valskalla" %% "odin-slf4j" % "0.7.0"
       )
     )
     .dependsOn(core, gitlab)
