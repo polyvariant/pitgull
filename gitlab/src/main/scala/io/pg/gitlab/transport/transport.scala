@@ -10,11 +10,11 @@ object CirceConfiguration {
     Configuration.default.withSnakeCaseMemberNames.withSnakeCaseConstructorNames
 }
 
+import CirceConfiguration._
+
 final case class WebhookEvent(project: Project, objectKind: WebhookEvent.ObjectKind)
 
 object WebhookEvent {
-
-  import CirceConfiguration._
 
   sealed trait ObjectKind extends Product with Serializable
 
@@ -37,6 +37,5 @@ final case class Project(
 )
 
 object Project {
-  import CirceConfiguration._
   implicit val codec: Codec[Project] = deriveConfiguredCodec
 }
