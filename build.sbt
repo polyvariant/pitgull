@@ -49,8 +49,9 @@ val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "1.1.1",
+      "is.cir" %% "ciris" % "1.1.2",
       "com.kubukoz" %% "caliban-gitlab" % "0.0.2",
+      "io.circe" %% "circe-generic-extras" % "0.13.0",
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
@@ -79,7 +80,6 @@ val pitgull =
         "org.http4s" %% "http4s-blaze-server" % "0.21.7",
         "org.http4s" %% "http4s-blaze-client" % "0.21.7",
         "is.cir" %% "ciris" % "1.1.2",
-        "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.5.3",
         "org.typelevel" %% "cats-tagless-macros" % "0.11",
