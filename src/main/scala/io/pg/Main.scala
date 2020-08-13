@@ -15,7 +15,7 @@ import io.pg.config.ProjectConfigReader
 
 object Main extends IOApp {
 
-  val logger = StaticLoggerBinder.baseLogger
+  implicit val logger = StaticLoggerBinder.baseLogger
 
   def serve(config: AppConfig) =
     Application
@@ -35,7 +35,9 @@ object Main extends IOApp {
             Map("version" -> config.meta.version, "scalaVersion" -> config.meta.scalaVersion)
           )
 
-        server *> logStarted.resource_
+        server *>
+          resources.background.parTraverse_(_.run).resource_ *>
+          logStarted.resource_
       }
 
   def run(args: List[String]): IO[ExitCode] =

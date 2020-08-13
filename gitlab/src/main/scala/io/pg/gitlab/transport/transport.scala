@@ -25,7 +25,6 @@ object WebhookEvent {
 
     implicit val codec: Codec[ObjectKind] = deriveEnumerationCodec
   }
-
 }
 
 @ConfiguredJsonCodec
