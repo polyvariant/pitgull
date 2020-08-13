@@ -1,7 +1,6 @@
 package io.pg
 
 import cats.implicits._
-import io.circe.generic.extras.Configuration
 import ciris.Secret
 
 final case class AppConfig(http: HttpConfig, meta: MetaConfig, git: Git)
@@ -45,8 +44,4 @@ object Git {
     case object Gitlab extends Host
   }
 
-}
-
-object CirceConfig {
-  implicit val config: Configuration = Configuration.default
 }
