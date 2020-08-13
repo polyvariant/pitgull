@@ -22,6 +22,20 @@ ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
 
+//Increment this every time you want to drop the caches
+val cacheOffset = 1
+
+ThisBuild / githubWorkflowGeneratedCacheSteps ~= { steps =>
+  steps.map {
+    case u @ WorkflowStep.Use("actions", "cache", _, params, _, _, _, _) =>
+      u.copy(params = params.map {
+        case (k @ "key", cacheKey) => (k, s"$cacheKey-v$cacheOffset")
+        case (k, v)                => (k, v)
+      })
+    case x                                                               => x
+  }
+}
+
 Test / fork := true
 
 missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "org.slf4j", name = "slf4j-api")
