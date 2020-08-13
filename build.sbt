@@ -22,6 +22,8 @@ ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
 
+Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
+
 missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "org.slf4j", name = "slf4j-api")
 
 def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
