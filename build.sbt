@@ -44,6 +44,7 @@ val commonSettings = List(
   scalacOptions += "-Ymacro-annotations",
   scalacOptions += "-Yimports:scala,scala.Predef,java.lang,cats",
   libraryDependencies ++= List(
+    "com.kubukoz" %% "debug-utils" % "1.0.0",
     "org.typelevel" %% "cats-effect" % "2.1.4",
     "org.scalatest" %% "scalatest" % "3.2.1" % Test //todo: munit
   ) ++ compilerPlugins

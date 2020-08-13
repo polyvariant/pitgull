@@ -11,6 +11,7 @@ import cats.implicits._
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
 import scala.util.Try
+import io.pg.gitlab.transport.WebhookEvent
 
 object Main extends IOApp {
 
@@ -19,6 +20,9 @@ object Main extends IOApp {
   Try(println(getClass().getClassLoader().getParent()))
   Try(println(getClass().getClassLoader().getDefinedPackages()))
   val logger = StaticLoggerBinder.baseLogger
+
+  //loading eagerly
+  println(WebhookEvent.codec)
 
   def serve(config: AppConfig) =
     Application
