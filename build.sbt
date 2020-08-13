@@ -22,7 +22,7 @@ ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
 
-Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
+Test / fork := true
 
 missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "org.slf4j", name = "slf4j-api")
 
