@@ -27,7 +27,7 @@ object WebhookProcessor {
 
   def instance[F[_]: Logger]: Processor[F, WebhookEvent] =
     Processor.simple { ev =>
-      Logger[F].info(s"Received event: $ev")
+      Logger[F].info("Received event", Map("event" -> ev.toString()))
     }
 
 }
