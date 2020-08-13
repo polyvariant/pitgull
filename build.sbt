@@ -35,7 +35,7 @@ val compilerPlugins = List(
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
-val Scala213 = "2.13.1"
+val Scala213 = "2.13.3"
 
 val commonSettings = List(
   name := "pitgull",
