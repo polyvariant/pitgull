@@ -14,7 +14,7 @@ inThisBuild(
   )
 )
 
-val GraalVM11 = "graalvm11@20.1.0"
+val GraalVM11 = "graalvm-ce-java11@20.1.0"
 
 ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
@@ -22,8 +22,9 @@ ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
 
-missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "ch.qos.logback", name = "logback-classic")
-missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "ch.qos.logback", name = "logback-core")
+Test / fork := true
+
+missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "org.slf4j", name = "slf4j-api")
 
 def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
 
@@ -48,6 +49,19 @@ val commonSettings = List(
   ) ++ compilerPlugins
 )
 
+val gitlab = project
+  .settings(
+    commonSettings,
+    libraryDependencies ++= List(
+      "is.cir" %% "ciris" % "1.1.2",
+      "com.kubukoz" %% "caliban-gitlab" % "0.0.2",
+      "io.circe" %% "circe-generic-extras" % "0.13.0",
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
+    )
+  )
+
 val core = project.settings(commonSettings).settings(name += "-core")
 
 val pitgull =
@@ -68,6 +82,7 @@ val pitgull =
         "com.softwaremill.sttp.client" %% "circe" % "2.2.4",
         "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.4",
         "org.http4s" %% "http4s-blaze-server" % "0.21.7",
+        "org.http4s" %% "http4s-blaze-client" % "0.21.7",
         "is.cir" %% "ciris" % "1.1.2",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
@@ -78,8 +93,8 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.7.0",
-        "ch.qos.logback" % "logback-classic" % "1.2.3"
+        "com.github.valskalla" %% "odin-slf4j" % "0.7.0"
       )
     )
-    .dependsOn(core)
+    .dependsOn(core, gitlab)
     .aggregate(core)

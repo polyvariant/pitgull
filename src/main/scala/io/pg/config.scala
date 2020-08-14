@@ -1,9 +1,9 @@
 package io.pg
 
 import cats.implicits._
-import io.circe.generic.extras.Configuration
+import ciris.Secret
 
-final case class AppConfig(http: HttpConfig, meta: MetaConfig)
+final case class AppConfig(http: HttpConfig, meta: MetaConfig, git: Git)
 
 object AppConfig {
 
@@ -26,16 +26,22 @@ object AppConfig {
   private val metaConfig: ConfigValue[MetaConfig] =
     (default(bannerString), default(BuildInfo.version), default(BuildInfo.scalaVersion)).parMapN(MetaConfig)
 
-  val appConfig: ConfigValue[AppConfig] = (httpConfig, metaConfig).parMapN(apply)
+  private val gitConfig: ConfigValue[Git] = (default(Git.Host.Gitlab), env("GIT_API_URL"), env("GIT_API_TOKEN").secret).mapN(Git.apply)
+
+  val appConfig: ConfigValue[AppConfig] = (httpConfig, metaConfig, gitConfig).parMapN(apply)
 
 }
 
 final case class HttpConfig(port: Int)
-
 final case class MetaConfig(banner: String, version: String, scalaVersion: String)
 
-object CirceConfig {
+final case class Git(host: Git.Host, apiUrl: String, apiToken: Secret[String])
 
-  implicit val config: Configuration = Configuration.default
+object Git {
+  sealed trait Host extends Product with Serializable
+
+  object Host {
+    case object Gitlab extends Host
+  }
 
 }

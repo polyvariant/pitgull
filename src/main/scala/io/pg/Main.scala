@@ -6,36 +6,41 @@ import cats.effect.IO
 
 import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext
-import io.odin.formatter.Formatter
 import io.pg.Prelude._
 import cats.implicits._
+import org.http4s.server.middleware
+import org.slf4j.impl.StaticLoggerBinder
 
 object Main extends IOApp {
 
-  import io.odin._
+  val logger = StaticLoggerBinder.baseLogger
 
-  val logger = consoleLogger[IO](formatter = Formatter.colorful)
+  def serve(config: AppConfig) =
+    Application
+      .resource[IO](config)
+      .flatMap { resources =>
+        val server = BlazeServerBuilder[IO](ExecutionContext.global)
+          .withHttpApp(
+            middleware.Logger.httpApp(logHeaders = true, logBody = true, logAction = (logger.debug(_: String)).some)(resources.routes)
+          )
+          .bindHttp(port = config.http.port, host = "0.0.0.0")
+          .withBanner(config.meta.banner.linesIterator.toList)
+          .resource
 
-  val serve = Application
-    .resource[IO]
-    .flatMap { resources =>
-      val server = BlazeServerBuilder[IO](ExecutionContext.global)
-        .withHttpApp(resources.routes)
-        .bindHttp(port = resources.config.http.port, host = "0.0.0.0")
-        .withBanner(resources.config.meta.banner.linesIterator.toList)
-        .resource
+        val logStarted = logger
+          .info(
+            "Started application",
+            Map("version" -> config.meta.version, "scalaVersion" -> config.meta.scalaVersion)
+          )
 
-      val logStarted = logger
-        .info(
-          "Started application",
-          Map("version" -> resources.config.meta.version, "scalaVersion" -> resources.config.meta.scalaVersion)
-        )
-
-      server *> logStarted.resource_
-    }
+        server *> logStarted.resource_
+      }
 
   def run(args: List[String]): IO[ExitCode] =
-    serve
+    AppConfig
+      .appConfig
+      .resource[IO]
+      .flatMap(serve)
       .use(_ => IO.never)
 
 }
