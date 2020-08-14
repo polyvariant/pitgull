@@ -4,6 +4,7 @@ import org.scalatest.wordspec.AsyncWordSpec
 import cats.effect.IO
 import cats.implicits._
 import ciris.Secret
+import io.pg.gitlab.transport.WebhookEvent
 
 class MainTest extends AsyncWordSpec {
   println(WebhookEvent.codec)
