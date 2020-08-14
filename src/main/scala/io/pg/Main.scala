@@ -14,11 +14,8 @@ import scala.util.Try
 import io.pg.gitlab.transport.WebhookEvent
 
 object Main extends IOApp {
-
-  Try(println(getClass().getClassLoader()))
-  Try(println(getClass().getClassLoader().getName()))
-  Try(println(getClass().getClassLoader().getParent()))
-  Try(println(getClass().getClassLoader().getDefinedPackages()))
+  println(System.getProperty("java.vendor"))
+  println(System.getProperty("java.version"))
   val logger = StaticLoggerBinder.baseLogger
 
   //loading eagerly
