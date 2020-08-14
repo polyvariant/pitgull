@@ -35,9 +35,11 @@ object ProjectConfigReader extends IOApp {
 
       val readConfig: F[ProjectConfig] =
         Process[F]("dhall-to-json")
+          .`with`("TOKEN" -> "demo-token")
           .fromStream(input, flushChunks = true)
           .toFoldMonoid(fs2.text.utf8Decode[F])
           .run(blocker)
+          .ensure(new Throwable("Invalid exit code of dhall-to-json"))(_.exitCode == ExitCode.Success)
           .map(_.output) //todo error handling
           .flatMap(io.circe.parser.decode[ProjectConfig](_).liftTo[F])
 
