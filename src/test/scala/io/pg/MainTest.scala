@@ -6,6 +6,7 @@ import cats.implicits._
 import ciris.Secret
 
 class MainTest extends AsyncWordSpec {
+  println(WebhookEvent.codec)
   "Application" should {
     "start" in {
       val testConfig = AppConfig(
