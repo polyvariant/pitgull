@@ -1,8 +1,8 @@
 package io.pg.gitlab.transport
 
-import io.circe.generic.extras._
-import io.circe.generic.extras.semiauto._
-import io.circe.Codec
+import _root_.io.circe.generic.extras._
+import _root_.io.circe.generic.extras.semiauto._
+import _root_.io.circe.Codec
 
 object CirceConfiguration {
 
@@ -12,6 +12,7 @@ object CirceConfiguration {
 
 import CirceConfiguration._
 
+@ConfiguredJsonCodec
 final case class WebhookEvent(project: Project, objectKind: WebhookEvent.ObjectKind)
 
 object WebhookEvent {
@@ -25,9 +26,9 @@ object WebhookEvent {
     implicit val codec: Codec[ObjectKind] = deriveEnumerationCodec
   }
 
-  implicit val codec: Codec[WebhookEvent] = deriveConfiguredCodec
 }
 
+@ConfiguredJsonCodec
 final case class Project(
   id: Int /* todo: apparently tapir has a conflict in schemas for Long */,
   name: String,
@@ -35,7 +36,3 @@ final case class Project(
   defaultBranch: String,
   url: String
 )
-
-object Project {
-  implicit val codec: Codec[Project] = deriveConfiguredCodec
-}
