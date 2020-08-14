@@ -8,7 +8,7 @@ import com.kubukoz.DebugUtils
 object CirceConfiguration {
 
   implicit val config: Configuration =
-    DebugUtils.withDesugar(Configuration.default.withSnakeCaseMemberNames.withSnakeCaseConstructorNames)
+    Configuration.default.withSnakeCaseMemberNames.withSnakeCaseConstructorNames
 }
 
 import CirceConfiguration._
