@@ -110,4 +110,4 @@ val pitgull =
       )
     )
     .dependsOn(core, gitlab)
-    .aggregate(core)
+    .aggregate(core, gitlab)
