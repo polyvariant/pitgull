@@ -36,18 +36,18 @@ object Main extends IOApp {
           )
 
         server *>
-          resources.background.parTraverse_(_.run).resource_ *>
-          logStarted.resource_
+          logStarted.resource_.as(resources.background)
       }
 
   def run(args: List[String]): IO[ExitCode] =
-    Blocker[IO].use { b =>
-      ProjectConfigReader.dhallJsonStringConfig[IO](b).flatMap(_.readConfig).flatMap(a => logger.info(a.toString()))
-    } *>
-      AppConfig
-        .appConfig
-        .resource[IO]
-        .flatMap(serve)
-        .use(_ => IO.never)
+    Blocker[IO]
+      .flatMap { b =>
+        ProjectConfigReader.dhallJsonStringConfig[IO](b).flatTap(_.readConfig.flatMap(a => logger.info(a.toString))).resource *>
+          AppConfig
+            .appConfig
+            .resource[IO]
+            .flatMap(serve)
+      }
+      .use(background => background.parTraverse_(_.run) *> IO.never)
 
 }
