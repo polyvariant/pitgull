@@ -10,7 +10,6 @@ import io.pg.Prelude._
 import cats.implicits._
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
-import cats.effect.Blocker
 
 object Main extends IOApp {
 
