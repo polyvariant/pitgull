@@ -1,6 +1,6 @@
 package io.pg.gitlab.transport
 
-import io.circe.generic.extras.Configuration
+import io.circe.generic.extras._
 import io.circe.generic.extras.semiauto._
 import io.circe.Codec
 
