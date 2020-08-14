@@ -3,7 +3,6 @@ package io.pg.gitlab.transport
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.Codec
-import com.kubukoz.DebugUtils
 
 object CirceConfiguration {
 
@@ -23,10 +22,10 @@ object WebhookEvent {
     case object Push extends ObjectKind
     case object MergeRequest extends ObjectKind
 
-    implicit val codec: Codec[ObjectKind] = DebugUtils.withDesugar(deriveEnumerationCodec)
+    implicit val codec: Codec[ObjectKind] = deriveEnumerationCodec
   }
 
-  implicit val codec: Codec[WebhookEvent] = DebugUtils.withDesugar(deriveConfiguredCodec)
+  implicit val codec: Codec[WebhookEvent] = deriveConfiguredCodec
 }
 
 final case class Project(
@@ -38,5 +37,5 @@ final case class Project(
 )
 
 object Project {
-  implicit val codec: Codec[Project] = DebugUtils.withDesugar(deriveConfiguredCodec)
+  implicit val codec: Codec[Project] = deriveConfiguredCodec
 }
