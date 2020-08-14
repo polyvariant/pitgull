@@ -92,8 +92,8 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-effects" % "0.4.1",
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
-        "com.github.valskalla" %% "odin-core" % "0.7.0",
-        "com.github.valskalla" %% "odin-slf4j" % "0.7.0"
+        "com.github.valskalla" %% "odin-core" % "0.8.1",
+        "com.github.valskalla" %% "odin-slf4j" % "0.8.1"
       )
     )
     .dependsOn(core, gitlab)

@@ -1,7 +1,5 @@
 package org.slf4j.impl
 
-import cats.effect.ConcurrentEffect
-import cats.effect.ContextShift
 import cats.effect.IO
 import scala.concurrent.ExecutionContext
 import cats.effect.Timer
@@ -9,13 +7,12 @@ import io.odin.Logger
 import io.odin.formatter.Formatter
 import io.odin.slf4j.OdinLoggerBinder
 import io.odin.Level
+import cats.effect.Clock
+import cats.effect.Effect
 
 class StaticLoggerBinder extends OdinLoggerBinder[IO] {
-  val ec: ExecutionContext = ExecutionContext.global
-
-  implicit val timer: Timer[IO] = IO.timer(ec)
-  implicit val cs: ContextShift[IO] = IO.contextShift(ec)
-  implicit val F: ConcurrentEffect[IO] = IO.ioConcurrentEffect
+  implicit val F: Effect[IO] = IO.ioEffect
+  implicit val clock: Clock[IO] = Clock.create[IO]
 
   import StaticLoggerBinder.baseLogger
 
@@ -28,6 +25,8 @@ class StaticLoggerBinder extends OdinLoggerBinder[IO] {
 
 object StaticLoggerBinder extends StaticLoggerBinder {
 
+  //EC isn't used - only Clock is required
+  implicit val timer: Timer[IO] = IO.timer(ExecutionContext.parasitic)
   val baseLogger = io.odin.consoleLogger[IO](formatter = Formatter.colorful)
 
   val REQUESTED_API_VERSION: String = "1.7"
