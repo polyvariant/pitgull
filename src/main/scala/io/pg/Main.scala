@@ -10,14 +10,9 @@ import io.pg.Prelude._
 import cats.implicits._
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
-import scala.util.Try
 
 object Main extends IOApp {
 
-  Try(println(getClass().getClassLoader()))
-  Try(println(getClass().getClassLoader().getName()))
-  Try(println(getClass().getClassLoader().getParent()))
-  Try(println(getClass().getClassLoader().getDefinedPackages()))
   val logger = StaticLoggerBinder.baseLogger
 
   def serve(config: AppConfig) =
