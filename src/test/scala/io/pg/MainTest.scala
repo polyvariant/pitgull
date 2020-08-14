@@ -7,8 +7,8 @@ import scala.util.Try
 class MainTest extends AsyncWordSpec {
   def tp(s: => Any) = Try(println(s))
   tp(getClass.getClassLoader().loadClass("io.circe.Decoder"))
-  tp(getClass.getClassLoader().loadClass("io.circe.generic.extras.semiauto"))
   tp(getClass.getClassLoader().loadClass("io.circe.generic.extras.Configuration"))
+  tp(getClass.getClassLoader().loadClass("io.circe.generic.extras.semiauto"))
   println(WebhookEvent.codec)
 
 }
