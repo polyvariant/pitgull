@@ -1,9 +1,8 @@
 package io.pg.config
 
-import cats.implicits._
 import io.circe.generic.JsonCodec
 import io.circe.Decoder
-import cats.data.NonEmptyList
+import io.pg.utils.CirceUtils._
 
 import io.circe.generic.semiauto._
 
@@ -13,12 +12,10 @@ object TextMatcher {
   final case class Equals(value: String) extends TextMatcher
   final case class Matches(regex: String) extends TextMatcher
 
-  implicit val decoder: Decoder[TextMatcher] = NonEmptyList
-    .of[Decoder[TextMatcher]](
-      deriveDecoder[Equals].widen,
-      deriveDecoder[Matches].widen
-    )
-    .reduceK
+  implicit val decoder: Decoder[TextMatcher] = decodeFirstMatch(
+    deriveDecoder[Equals],
+    deriveDecoder[Matches]
+  )
 
 }
 
@@ -29,10 +26,7 @@ object Match {
   final case class Description(text: TextMatcher) extends Match
   final case class PipelineStatus(status: String) extends Match
 
-  private def firstMatching[A](a: Decoder[_ <: A], more: Decoder[_ <: A]*): Decoder[A] =
-    NonEmptyList(a.widen[A], more.map(_.widen[A]).toList).reduceK
-
-  implicit val decoder: Decoder[Match] = firstMatching(
+  implicit val decoder: Decoder[Match] = decodeFirstMatch(
     deriveDecoder[Author],
     deriveDecoder[Description],
     deriveDecoder[PipelineStatus]
