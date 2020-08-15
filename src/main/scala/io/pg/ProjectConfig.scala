@@ -29,7 +29,6 @@ object ProjectConfigReader extends IOApp {
       .as(ExitCode.Success)
 
   def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](blocker: Blocker): F[ProjectConfigReader[F]] = {
-
     val dhallCommand = "dhall-to-json"
     val filePath = "./example.dhall"
 
@@ -49,13 +48,14 @@ object ProjectConfigReader extends IOApp {
           .toFoldMonoid(fs2.text.utf8Decode[F])
           .run(blocker)
           .pipe(checkExitCode)
-          .map(_.output) //todo error handling
+          .map(_.output)
           .flatMap(io.circe.parser.decode[ProjectConfig](_).liftTo[F])
       }
     }
 
     val ensureCommandExists =
-      Process[F]("command", "-v" :: dhallCommand :: Nil).drainOutput(_.drain).run(blocker).pipe(checkExitCode).adaptError {
+      //todo: "command -v" was supposed to be portable
+      Process[F](dhallCommand, "--version" :: Nil).drainOutput(_.drain).run(blocker).pipe(checkExitCode).adaptError {
         case e => new Throwable(s"Command $dhallCommand not found", e)
       }
 
