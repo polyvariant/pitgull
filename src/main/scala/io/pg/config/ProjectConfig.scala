@@ -1,14 +1,11 @@
-package io.pg
+package io.pg.config
 
 import cats.effect.Blocker
 import cats.effect.ExitCode
 import cats.effect.Concurrent
 import cats.effect.ContextShift
 import cats.implicits._
-import io.circe.generic.JsonCodec
 import java.nio.file.Paths
-import io.circe.Decoder
-import cats.data.NonEmptyList
 import io.github.vigoo.prox._
 import scala.util.chaining._
 
@@ -20,6 +17,7 @@ object ProjectConfigReader {
 
   def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](blocker: Blocker): F[ProjectConfigReader[F]] = {
     val dhallCommand = "dhall-to-json"
+    //todo: not reading a local file
     val filePath = "./example.dhall"
 
     def checkExitCode[O, E]: F[ProcessResult[O, E]] => F[ProcessResult[O, E]] =
@@ -52,44 +50,3 @@ object ProjectConfigReader {
   }
 
 }
-
-import io.circe.generic.semiauto._
-
-//foo
-sealed trait TextMatcher extends Product with Serializable
-
-object TextMatcher {
-  final case class Equals(value: String) extends TextMatcher
-  final case class Matches(regex: String) extends TextMatcher
-
-  implicit val decoder: Decoder[TextMatcher] = NonEmptyList
-    .of[Decoder[TextMatcher]](
-      deriveDecoder[Equals].widen,
-      deriveDecoder[Matches].widen
-    )
-    .reduceK
-
-}
-
-sealed trait Match extends Product with Serializable
-
-object Match {
-  final case class Author(email: TextMatcher) extends Match
-  final case class Description(text: TextMatcher) extends Match
-  final case class PipelineStatus(status: String) extends Match
-
-  implicit val decoder: Decoder[Match] = NonEmptyList
-    .of[Decoder[Match]](
-      deriveDecoder[Author].widen,
-      deriveDecoder[Description].widen,
-      deriveDecoder[PipelineStatus].widen
-    )
-    .reduceK
-
-}
-
-@JsonCodec(decodeOnly = true)
-final case class Rule(name: String, matches: List[Match])
-
-@JsonCodec(decodeOnly = true)
-final case class ProjectConfig(rules: List[Rule])

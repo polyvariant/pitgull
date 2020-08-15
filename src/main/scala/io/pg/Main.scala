@@ -10,7 +10,6 @@ import io.pg.Prelude._
 import cats.implicits._
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
-import cats.effect.Blocker
 
 object Main extends IOApp {
 
@@ -34,13 +33,7 @@ object Main extends IOApp {
             Map("version" -> config.meta.version, "scalaVersion" -> config.meta.scalaVersion)
           )
 
-        Blocker[IO]
-          .use { blocker =>
-            ProjectConfigReader.dhallJsonStringConfig[IO](blocker).flatMap(_.readConfig)
-          }
-          .flatMap(pc => IO(println(pc)))
-          .resource_ *>
-          server *> logStarted.resource_
+        server *> logStarted.resource_
       }
 
   def run(args: List[String]): IO[ExitCode] =
