@@ -1,6 +1,7 @@
 package io.pg
 
 import cats.effect.Blocker
+import cats.effect.ExitCode
 import cats.effect.Concurrent
 import cats.effect.ContextShift
 import cats.implicits._
@@ -8,9 +9,6 @@ import io.circe.generic.JsonCodec
 import java.nio.file.Paths
 import io.circe.Decoder
 import cats.data.NonEmptyList
-import cats.effect.IOApp
-import cats.effect.ExitCode
-import cats.effect.IO
 import io.github.vigoo.prox._
 import scala.util.chaining._
 
@@ -18,15 +16,7 @@ trait ProjectConfigReader[F[_]] {
   def readConfig: F[ProjectConfig]
 }
 
-object ProjectConfigReader extends IOApp {
-
-  def run(args: List[String]): IO[ExitCode] =
-    Blocker[IO]
-      .use { blocker =>
-        dhallJsonStringConfig[IO](blocker).flatMap(_.readConfig)
-      }
-      .flatMap(pc => IO(println(pc)))
-      .as(ExitCode.Success)
+object ProjectConfigReader {
 
   def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](blocker: Blocker): F[ProjectConfigReader[F]] = {
     val dhallCommand = "dhall-to-json"
@@ -54,8 +44,7 @@ object ProjectConfigReader extends IOApp {
     }
 
     val ensureCommandExists =
-      //todo: "command -v" was supposed to be portable
-      Process[F](dhallCommand, "--version" :: Nil).drainOutput(_.drain).run(blocker).pipe(checkExitCode).adaptError {
+      Process[F]("bash", "-c" :: s"command -v $dhallCommand" :: Nil).drainOutput(_.drain).run(blocker).pipe(checkExitCode).adaptError {
         case e => new Throwable(s"Command $dhallCommand not found", e)
       }
 
