@@ -1,14 +1,24 @@
-let pg =
-      ./pitgull.dhall sha256:0bb532fcb24bfdd8577cd96a908acbd5a9413b2c9685c7d510cee34ceb376c9a
+let pg = ./pitgull.dhall
 
 let scalaSteward
     : pg.Rule
     = { name = "Scala Steward"
-      , matches =
-        [ pg.authorEmail "scala.steward@ocado.com"
-        , pg.descriptionRegex "*labels:.*semver-patch.*"
-        , pg.Match.PipelineStatus { status = "success" }
-        ]
+      , matcher =
+          pg.Matcher
+            ( pg.Many
+                [ pg.Author
+                    { email =
+                        pg.TextMatcher.Equals
+                          { value = "scala.steward@ocado.com" }
+                    }
+                , pg.Description
+                    { text =
+                        pg.TextMatcher.Matches
+                          { regex = "*labels:.*semver-patch.*" }
+                    }
+                , pg.PipelineStatus "success"
+                ]
+            )
       }
 
 in  { scalaSteward }

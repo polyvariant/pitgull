@@ -19,14 +19,14 @@ object TextMatcher {
 
 }
 
-sealed trait Match extends Product with Serializable
+sealed trait MatcherRaw extends Product with Serializable
 
-object Match {
-  final case class Author(email: TextMatcher) extends Match
-  final case class Description(text: TextMatcher) extends Match
-  final case class PipelineStatus(status: String) extends Match
+object MatcherRaw {
+  final case class Author(email: TextMatcher) extends MatcherRaw
+  final case class Description(text: TextMatcher) extends MatcherRaw
+  final case class PipelineStatus(status: String) extends MatcherRaw
 
-  implicit val decoder: Decoder[Match] = decodeFirstMatch(
+  implicit val decoder: Decoder[MatcherRaw] = decodeFirstMatch(
     deriveDecoder[Author],
     deriveDecoder[Description],
     deriveDecoder[PipelineStatus]
@@ -35,7 +35,7 @@ object Match {
 }
 
 @JsonCodec(decodeOnly = true)
-final case class Rule(name: String, matches: List[Match])
+final case class Rule(name: String, matcher: List[MatcherRaw])
 
 @JsonCodec(decodeOnly = true)
 final case class ProjectConfig(rules: List[Rule])
