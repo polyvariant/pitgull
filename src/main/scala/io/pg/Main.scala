@@ -48,6 +48,6 @@ object Main extends IOApp {
             .resource[IO]
             .flatMap(serve)
       }
-      .use(background => background.parTraverse_(_.run) *> IO.never)
+      .use(_.parTraverse_(_.run) *> IO.never)
 
 }
