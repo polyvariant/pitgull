@@ -1,3 +1,6 @@
+import com.typesafe.sbt.packager.docker.ExecCmd
+import com.typesafe.sbt.packager.docker.Cmd
+
 inThisBuild(
   List(
     organization := "io.pg",
@@ -38,7 +41,6 @@ val compilerPlugins = List(
 val Scala213 = "2.13.3"
 
 val commonSettings = List(
-  name := "pitgull",
   scalaVersion := Scala213,
   scalacOptions --= List("-Xfatal-warnings"),
   scalacOptions += "-Ymacro-annotations",
@@ -64,13 +66,29 @@ val gitlab = project
 
 val core = project.settings(commonSettings).settings(name += "-core")
 
+//temporary workaround for docker not accepting sbt-dynver's insanely specific versions as tags
+ThisBuild / version := "0.0.0"
+
+val installDhallJson = List(
+  ExecCmd(
+    "RUN",
+    "sh",
+    "-c",
+    "curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.34.0/dhall-json-1.7.1-x86_64-linux.tar.bz2 | tar -vxj -C /"
+  )
+)
+
 val pitgull =
   project
     .in(file("."))
     .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging)
     .settings(commonSettings)
     .settings(
-      dockerBaseImage := "oracle/graalvm-ce:20.1.0-java11",
+      name := "pitgull",
+      dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
+      dockerCommands ++=
+        Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson,
+      mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
@@ -93,7 +111,8 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.0",
         "com.github.valskalla" %% "odin-core" % "0.8.1",
-        "com.github.valskalla" %% "odin-slf4j" % "0.8.1"
+        "com.github.valskalla" %% "odin-slf4j" % "0.8.1",
+        "io.github.vigoo" %% "prox" % "0.5.2"
       )
     )
     .dependsOn(core, gitlab)

@@ -10,6 +10,8 @@ import io.pg.Prelude._
 import cats.implicits._
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
+import cats.effect.Blocker
+import io.pg.config.ProjectConfigReader
 
 object Main extends IOApp {
 
@@ -37,10 +39,13 @@ object Main extends IOApp {
       }
 
   def run(args: List[String]): IO[ExitCode] =
-    AppConfig
-      .appConfig
-      .resource[IO]
-      .flatMap(serve)
-      .use(_ => IO.never)
+    Blocker[IO].use { b =>
+      ProjectConfigReader.dhallJsonStringConfig[IO](b).flatMap(_.readConfig).flatMap(a => logger.info(a.toString()))
+    } *>
+      AppConfig
+        .appConfig
+        .resource[IO]
+        .flatMap(serve)
+        .use(_ => IO.never)
 
 }
