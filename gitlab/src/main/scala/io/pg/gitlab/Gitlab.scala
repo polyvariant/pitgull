@@ -8,9 +8,11 @@ import sttp.client.SttpBackend
 import sttp.client.NothingT
 import sttp.tapir.Endpoint
 import cats.MonadError
+import cats.tagless.finalAlg
 
+@finalAlg
 trait Gitlab[F[_]] {
-  def acceptMergeRequest(projectId: Int, mergeRequestIid: Int): F[Unit]
+  def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
 object Gitlab {
@@ -35,7 +37,7 @@ object Gitlab {
       runEndpoint[I, Nothing, O](endpoint).nested.map(_.merge).value
 
     new Gitlab[F] {
-      def acceptMergeRequest(projectId: Int, mergeRequestIid: Int): F[Unit] =
+      def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void
     }
   }
@@ -44,15 +46,13 @@ object Gitlab {
 
 object GitlabEndpoints {
   import sttp.tapir._
-  import sttp.tapir.json.circe._
 
   private val baseEndpoint = infallibleEndpoint.in("api" / "v4")
 
-  val acceptMergeRequest: Endpoint[(Int, Int), Nothing, Unit, Nothing] =
+  val acceptMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Nothing] =
     baseEndpoint
       //hehe putin
       .put
-      .in("projects" / path[Int]("id") / "merge_requests" / path[Int]("merge_request_iid") / "merge")
-      .out(jsonBody[Unit])
+      .in("projects" / path[Long]("id") / "merge_requests" / path[Long]("merge_request_iid") / "merge")
 
 }

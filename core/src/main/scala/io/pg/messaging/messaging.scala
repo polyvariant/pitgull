@@ -3,6 +3,9 @@ package io.pg.messaging
 import fs2.concurrent.Queue
 import scala.reflect.ClassTag
 import cats.tagless.autoInvariant
+import cats.implicits._
+import cats.ApplicativeError
+import io.odin.Logger
 
 trait Publisher[F[_], -A] {
   def publish(a: A): F[Unit]
@@ -12,8 +15,15 @@ final case class Processor[F[_], -A](process: fs2.Pipe[F, A, Unit])
 
 object Processor {
 
-  def simple[F[_], A](f: A => F[Unit]): Processor[F, A] =
-    Processor[F, A](_.evalMap(f))
+  def simple[F[_]: ApplicativeError[*[_], Throwable]: Logger, A](f: A => F[Unit]): Processor[F, A] =
+    Processor[F, A] {
+      _.evalMap { msg =>
+        f(msg).handleErrorWith(logError[F, A](msg))
+      }
+    }
+
+  def logError[F[_]: Logger, A](msg: A): Throwable => F[Unit] =
+    e => Logger[F].error("Encountered error while processing message", Map("message" -> msg.toString()), e)
 
 }
 

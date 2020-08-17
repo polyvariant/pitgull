@@ -9,7 +9,9 @@ import java.nio.file.Paths
 import io.github.vigoo.prox._
 import scala.util.chaining._
 import cats.Applicative
+import cats.tagless.finalAlg
 
+@finalAlg
 trait ProjectConfigReader[F[_]] {
   def readConfig: F[ProjectConfig]
 }

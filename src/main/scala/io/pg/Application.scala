@@ -4,7 +4,6 @@ import cats.implicits._
 import org.http4s.implicits._
 import org.http4s.HttpApp
 import cats.effect.Resource
-import cats.effect.Concurrent
 import cats.effect.ContextShift
 import io.pg.webhook._
 import cats.data.NonEmptyList
@@ -15,6 +14,13 @@ import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging._
 import io.pg.background.BackgroundProcess
 import io.odin.Logger
+import io.pg.config.ProjectConfigReader
+import io.pg.gitlab.Gitlab
+import cats.effect.Blocker
+import sttp.client.http4s.Http4sBackend
+import cats.effect.ConcurrentEffect
+import org.http4s.client.blaze.BlazeClientBuilder
+import scala.concurrent.ExecutionContext
 
 sealed trait Event extends Product with Serializable
 
@@ -26,25 +32,39 @@ final class Application[F[_]](val routes: HttpApp[F], val background: NonEmptyLi
 
 object Application {
 
-  def resource[F[_]: Concurrent: ContextShift: Logger](config: AppConfig): Resource[F, Application[F]] = {
+  def resource[F[_]: ConcurrentEffect: ContextShift: Logger](config: AppConfig): Resource[F, Application[F]] = {
+    implicit val projectConfigReader = ProjectConfigReader.test[F]
 
-    import sttp.tapir.server.http4s._
+    Blocker[F].flatMap { blocker =>
+      Queue
+        .bounded[F, Event](config.queues.maxSize)
+        .map(Channel.fromQueue)
+        .resource
+        .flatMap { eventChannel =>
+          val webhookChannel = eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
 
-    Queue
-      .bounded[F, Event](config.queues.maxSize)
-      .resource
-      .map(Channel.fromQueue)
-      .map { eventChannel =>
-        val webhookChannel = eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
+          val routes: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+            NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
 
-        val routes: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
-          NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
+          BlazeClientBuilder[F](ExecutionContext.global)
+            .resource
+            .map(org.http4s.client.middleware.Logger(logHeaders = true, logBody = true))
+            .map(Http4sBackend.usingClient[F](_, blocker))
+            .map { implicit backend =>
+              implicit val gitlab: Gitlab[F] = Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
+              implicit val projectActions: ProjectActions[F] = ProjectActions.instance[F]
 
-        new Application[F](
-          routes = routes.toList.toRoutes.orNotFound,
-          background = NonEmptyList.one(BackgroundProcess.fromProcessor(webhookChannel)(WebhookProcessor.instance[F]))
-        )
-      }
+              val webhookProcess = BackgroundProcess.fromProcessor(webhookChannel)(WebhookProcessor.instance[F])
+
+              import sttp.tapir.server.http4s._
+
+              new Application[F](
+                routes = routes.toList.toRoutes.orNotFound,
+                background = NonEmptyList.one(webhookProcess)
+              )
+            }
+        }
+    }
   }
 
 }
