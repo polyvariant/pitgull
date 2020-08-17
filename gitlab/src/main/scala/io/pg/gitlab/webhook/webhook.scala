@@ -1,4 +1,4 @@
-package io.pg.gitlab.transport
+package io.pg.gitlab.webhook
 
 import io.circe.generic.extras._
 

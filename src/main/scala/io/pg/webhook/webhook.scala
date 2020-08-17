@@ -2,7 +2,7 @@ package io.pg.webhook
 
 import cats.data.NonEmptyList
 import sttp.tapir.server.ServerEndpoint
-import io.pg.gitlab.transport.WebhookEvent
+import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging.Publisher
 import io.pg.messaging.Processor
 import io.odin.Logger

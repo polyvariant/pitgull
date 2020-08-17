@@ -60,6 +60,8 @@ val gitlab = project
       "is.cir" %% "ciris" % "1.2.1",
       "com.kubukoz" %% "caliban-gitlab" % "0.0.2",
       "io.circe" %% "circe-generic-extras" % "0.13.0",
+      "io.circe" %% "circe-parser" % "0.13.0" % Test,
+      "io.circe" %% "circe-literal" % "0.13.0" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
