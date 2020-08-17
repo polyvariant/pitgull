@@ -46,6 +46,9 @@ val commonSettings = List(
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-effect" % "2.1.4",
+    "org.typelevel" %% "cats-tagless-macros" % "0.11",
+    "co.fs2" %% "fs2-core" % "2.4.2",
+    "io.circe" %% "circe-core" % "0.13.0",
     "org.scalatest" %% "scalatest" % "3.2.1" % Test //todo: munit
   ) ++ compilerPlugins
 )
@@ -104,7 +107,6 @@ val pitgull =
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.5.3",
-        "org.typelevel" %% "cats-tagless-macros" % "0.11",
         "org.typelevel" %% "cats-mtl-core" % "0.7.1",
         "com.olegpy" %% "meow-mtl-effects" % "0.4.1",
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
