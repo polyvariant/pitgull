@@ -9,9 +9,10 @@ class MainTest extends AsyncWordSpec {
   "Application" should {
     "start" in {
       val testConfig = AppConfig(
-        HttpConfig(8080),
-        MetaConfig("-", BuildInfo.version, BuildInfo.scalaVersion),
-        Git(Git.Host.Gitlab, "http://localhost", Secret("token"))
+        http = HttpConfig(8080),
+        meta = MetaConfig("-", BuildInfo.version, BuildInfo.scalaVersion),
+        git = Git(Git.Host.Gitlab, "http://localhost", Secret("token")),
+        queues = Queues(10)
       )
 
       Main.serve(testConfig).use(IO.pure).as(succeed).unsafeToFuture()

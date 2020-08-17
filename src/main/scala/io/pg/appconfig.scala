@@ -3,7 +3,7 @@ package io.pg
 import cats.implicits._
 import ciris.Secret
 
-final case class AppConfig(http: HttpConfig, meta: MetaConfig, git: Git)
+final case class AppConfig(http: HttpConfig, meta: MetaConfig, git: Git, queues: Queues)
 
 object AppConfig {
 
@@ -28,7 +28,9 @@ object AppConfig {
 
   private val gitConfig: ConfigValue[Git] = (default(Git.Host.Gitlab), env("GIT_API_URL"), env("GIT_API_TOKEN").secret).mapN(Git.apply)
 
-  val appConfig: ConfigValue[AppConfig] = (httpConfig, metaConfig, gitConfig).parMapN(apply)
+  private val queuesConfig: ConfigValue[Queues] = default(100).map(Queues)
+
+  val appConfig: ConfigValue[AppConfig] = (httpConfig, metaConfig, gitConfig, queuesConfig).parMapN(apply)
 
 }
 
@@ -45,3 +47,5 @@ object Git {
   }
 
 }
+
+final case class Queues(maxSize: Int)

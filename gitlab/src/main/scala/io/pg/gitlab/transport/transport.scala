@@ -1,36 +1,29 @@
 package io.pg.gitlab.transport
 
 import io.circe.generic.extras._
-import io.circe.generic.extras.semiauto._
-import io.circe.Codec
 
 object CirceConfiguration {
 
   implicit val config: Configuration =
-    Configuration.default.withSnakeCaseMemberNames.withSnakeCaseConstructorNames
+    Configuration.default.withSnakeCaseMemberNames.withSnakeCaseConstructorNames.withDiscriminator("object_kind")
 }
 
 import CirceConfiguration._
 
 @ConfiguredJsonCodec
-final case class WebhookEvent(project: Project, objectKind: WebhookEvent.ObjectKind)
+sealed trait WebhookEvent
 
 object WebhookEvent {
-
-  sealed trait ObjectKind extends Product with Serializable
-
-  object ObjectKind {
-    case object Push extends ObjectKind
-    case object MergeRequest extends ObjectKind
-
-    implicit val codec: Codec[ObjectKind] = deriveEnumerationCodec
-  }
-
+  //wth is going on with the longs!!
+  final case class Build(ref: String, buildId: Long, buildName: String, buildStage: String) extends WebhookEvent
+  final case class Pipeline() extends WebhookEvent
+  final case class Push(project: Project) extends WebhookEvent
+  final case class MergeRequest(project: Project) extends WebhookEvent
 }
 
 @ConfiguredJsonCodec
 final case class Project(
-  id: Int /* todo: apparently tapir has a conflict in schemas for Long */,
+  id: Long,
   name: String,
   pathWithNamespace: String,
   defaultBranch: String,
