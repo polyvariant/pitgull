@@ -15,7 +15,7 @@ sealed trait WebhookEvent
 
 object WebhookEvent {
   //wth is going on with the longs!!
-  final case class Build(ref: String, buildId: Int, buildName: String, buildStage: String) extends WebhookEvent
+  final case class Build(ref: String, buildId: Long, buildName: String, buildStage: String) extends WebhookEvent
   final case class Pipeline() extends WebhookEvent
   final case class Push(project: Project) extends WebhookEvent
   final case class MergeRequest(project: Project) extends WebhookEvent
@@ -23,7 +23,7 @@ object WebhookEvent {
 
 @ConfiguredJsonCodec
 final case class Project(
-  id: Int /* todo: apparently tapir has a conflict in schemas for Long */,
+  id: Long,
   name: String,
   pathWithNamespace: String,
   defaultBranch: String,

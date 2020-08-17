@@ -2,6 +2,7 @@ package io.pg
 
 import cats.effect.Resource
 import cats.syntax.functor._
+import cats.Applicative
 
 object Prelude {
 

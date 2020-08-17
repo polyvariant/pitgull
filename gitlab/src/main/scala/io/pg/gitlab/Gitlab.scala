@@ -7,6 +7,7 @@ import sttp.client.Request
 import sttp.client.SttpBackend
 import sttp.client.NothingT
 import sttp.tapir.Endpoint
+import cats.MonadError
 
 trait Gitlab[F[_]] {
   def acceptMergeRequest(projectId: Int, mergeRequestIid: Int): F[Unit]

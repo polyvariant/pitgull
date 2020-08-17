@@ -6,6 +6,7 @@ import io.pg.gitlab.transport.WebhookEvent
 import io.pg.messaging.Publisher
 import io.pg.messaging.Processor
 import io.odin.Logger
+import cats.Applicative
 
 object WebhookRouter {
 
