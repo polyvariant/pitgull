@@ -47,7 +47,7 @@ val commonSettings = List(
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-effect" % "2.1.4",
     "org.typelevel" %% "cats-tagless-macros" % "0.11",
-    "co.fs2" %% "fs2-core" % "2.4.2",
+    "co.fs2" %% "fs2-core" % "2.4.3",
     "io.circe" %% "circe-core" % "0.13.0",
     "org.scalatest" %% "scalatest" % "3.2.1" % Test //todo: munit
   ) ++ compilerPlugins
