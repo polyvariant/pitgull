@@ -76,7 +76,8 @@ object WebhookProcessor {
 
       logReceived *>
         ProjectConfigReader[F].readConfig.map(ProjectActions.compile).flatMap { actionsForState =>
-          actionsForState(state).traverse_(ProjectActions[F].execute)
+          actionsForState(state).traverse_(action => Logger[F].info("About to execute action", Map("action" -> action.toString())))
+        // actionsForState(state).traverse_(ProjectActions[F].execute)
         }
     }
 
