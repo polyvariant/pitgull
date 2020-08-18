@@ -1,41 +1,35 @@
 package io.pg.config
 
-import io.circe.generic.JsonCodec
-import io.circe.Decoder
-import io.pg.utils.CirceUtils._
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.ConfiguredJsonCodec
 
-import io.circe.generic.semiauto._
+private object circe {
+  implicit val circeConfig: Configuration = Configuration.default.withDiscriminator("kind")
+}
 
+import circe.circeConfig
+
+@ConfiguredJsonCodec()
 sealed trait TextMatcher extends Product with Serializable
 
 object TextMatcher {
   final case class Equals(value: String) extends TextMatcher
   final case class Matches(regex: String) extends TextMatcher
 
-  implicit val decoder: Decoder[TextMatcher] = decodeFirstMatch(
-    deriveDecoder[Equals],
-    deriveDecoder[Matches]
-  )
-
 }
 
-sealed trait MatcherRaw extends Product with Serializable
+@ConfiguredJsonCodec()
+sealed trait Matcher extends Product with Serializable
 
-object MatcherRaw {
-  final case class Author(email: TextMatcher) extends MatcherRaw
-  final case class Description(text: TextMatcher) extends MatcherRaw
-  final case class PipelineStatus(status: String) extends MatcherRaw
-
-  implicit val decoder: Decoder[MatcherRaw] = decodeFirstMatch(
-    deriveDecoder[Author],
-    deriveDecoder[Description],
-    deriveDecoder[PipelineStatus]
-  )
-
+object Matcher {
+  final case class Author(email: TextMatcher) extends Matcher
+  final case class Description(text: TextMatcher) extends Matcher
+  final case class PipelineStatus(status: String) extends Matcher
+  final case class Many(values: List[Matcher]) extends Matcher
 }
 
-@JsonCodec(decodeOnly = true)
-final case class Rule(name: String, matcher: List[MatcherRaw])
+@ConfiguredJsonCodec()
+final case class Rule(name: String, matcher: Matcher)
 
-@JsonCodec(decodeOnly = true)
+@ConfiguredJsonCodec()
 final case class ProjectConfig(rules: List[Rule])

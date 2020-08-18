@@ -1,5 +1,5 @@
-let pg = ./pitgull.dhall
+let pg = ./dhall/pitgull.dhall
 
 let wms = ./wms.dhall
 
-in  { rules = [ wms.scalaSteward ] } : pg.ProjectConfig
+in  pg.projectToJson { rules = [ wms.scalaSteward ] }
