@@ -23,13 +23,15 @@ object ProjectConfigReader {
 
       val steward = Rule(
         "scala-steward",
-        List(
-          MatcherRaw.Author(TextMatcher.Equals("scala-steward@ocado.com")),
-          MatcherRaw.Description(TextMatcher.Matches("*labels:.*semver-patch.*"))
+        Matcher.Many(
+          List(
+            Matcher.Author(TextMatcher.Equals("scala-steward@ocado.com")),
+            Matcher.Description(TextMatcher.Matches("*labels:.*semver-patch.*"))
+          )
         )
       )
 
-      val mergeAnything = Rule("anything", Nil)
+      val mergeAnything = Rule("anything", Matcher.Many(Nil))
 
       val config: ProjectConfig = ProjectConfig(
         List(
