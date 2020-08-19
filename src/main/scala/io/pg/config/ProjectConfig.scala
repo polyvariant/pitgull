@@ -28,10 +28,11 @@ object ProjectConfigReader {
             Matcher.Author(TextMatcher.Equals("scala-steward@ocado.com")),
             Matcher.Description(TextMatcher.Matches("*labels:.*semver-patch.*"))
           )
-        )
+        ),
+        Action.Merge
       )
 
-      val mergeAnything = Rule("anything", Matcher.Many(Nil))
+      val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
 
       val config: ProjectConfig = ProjectConfig(
         List(

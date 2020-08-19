@@ -14,6 +14,9 @@ import io.pg.gitlab.Gitlab
 import io.pg.webhook.ProjectAction.Merge
 import cats.implicits._
 import cats.MonadError
+import cats.tagless.autoContravariant
+import io.pg.config.Action
+import io.pg.config.Matcher
 
 object WebhookRouter {
 
@@ -45,11 +48,23 @@ object ProjectActions {
     case Merge(projectId, mergeRequestIid) => Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
   }
 
-  def compile(config: ProjectConfig): MergeRequestState => List[ProjectAction] =
-    s => {
-      //todo: matching logic :))
-      //let the knife do the work
-      List(ProjectAction.Merge(s.projectId, s.mergeRequestIid))
+  @autoContravariant
+  trait MatcherFunction[-In] {
+    def matches(in: In): Boolean //todo eithernel with reason for not matching
+  }
+
+  //todo: matching logic :))
+  //let the knife do the work
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => _ => true //todo
+
+  def compile(state: MergeRequestState)(project: ProjectConfig): List[ProjectAction] =
+    project.rules.flatMap { rule =>
+      val ruleActions = rule.action match {
+        case Action.Merge => List(ProjectAction.Merge(state.projectId, state.mergeRequestIid))
+      }
+
+      if (compileMatcher(rule.matcher).matches(state)) ruleActions
+      else Nil
     }
 
 }
@@ -75,10 +90,15 @@ object WebhookProcessor {
       }
 
       logReceived *>
-        ProjectConfigReader[F].readConfig.map(ProjectActions.compile).flatMap { actionsForState =>
-          actionsForState(state).traverse_(action => Logger[F].info("About to execute action", Map("action" -> action.toString())))
-        // actionsForState(state).traverse_(ProjectActions[F].execute)
-        }
+        ProjectConfigReader[F]
+          .readConfig
+          .map(ProjectActions.compile(state))
+          .flatMap { actions =>
+            Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
+            actions.traverse_ { action =>
+              Logger[F].info("About to execute action", Map("action" -> action.toString))
+            }
+          }
     }
 
 }

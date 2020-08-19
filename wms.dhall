@@ -12,6 +12,7 @@ let scalaSteward
                 }
             , pg.match.PipelineStatus "success"
             ]
+      , action = pg.action.Merge
       }
 
 in  { scalaSteward }
