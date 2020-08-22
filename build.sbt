@@ -49,7 +49,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-tagless-macros" % "0.11",
     "co.fs2" %% "fs2-core" % "2.4.3",
     "io.circe" %% "circe-core" % "0.13.0",
-    "org.scalatest" %% "scalatest" % "3.2.1" % Test //todo: munit
+    "org.scalatest" %% "scalatest" % "3.2.2" % Test //todo: munit
   ) ++ compilerPlugins
 )
 
