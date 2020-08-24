@@ -93,6 +93,7 @@ val pitgull =
       dockerCommands ++=
         Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
+      Docker / mappings += ((file("./example.dhall"), "/opt/docker/example.dhall")),
       mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
       buildInfoPackage := "io.pg",
