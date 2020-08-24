@@ -90,6 +90,7 @@ val pitgull =
       dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
       dockerCommands ++=
         Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson,
+      Docker / packageName := "kubukoz/pitgull",
       mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
       buildInfoPackage := "io.pg",
