@@ -74,14 +74,13 @@ val core = project.settings(commonSettings).settings(name += "-core")
 //temporary workaround for docker not accepting sbt-dynver's insanely specific versions as tags
 ThisBuild / version := "0.0.0"
 
-val installDhallJson = List(
+val installDhallJson =
   ExecCmd(
     "RUN",
     "sh",
     "-c",
     "curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.34.0/dhall-json-1.7.1-x86_64-linux.tar.bz2 | tar -vxj -C /"
   )
-)
 
 val pitgull =
   project
@@ -92,7 +91,7 @@ val pitgull =
       name := "pitgull",
       dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
       dockerCommands ++=
-        Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson,
+        Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
       mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
