@@ -35,7 +35,6 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
     "path_with_namespace":"mike/diaspora",
     "default_branch":"master",
     "homepage":"http://example.com/mike/diaspora",
-    "url":"git@example.com:mike/diaspora.git",
     "ssh_url":"git@example.com:mike/diaspora.git",
     "http_url":"http://example.com/mike/diaspora.git"
   },
@@ -85,8 +84,7 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
             id = 15,
             name = "Diaspora",
             pathWithNamespace = "mike/diaspora",
-            defaultBranch = "master",
-            url = "git@example.com:mike/diaspora.git"
+            defaultBranch = "master"
           )
         )
         .asRight
@@ -287,7 +285,12 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
          }
       }
    ]
-}""".as[WebhookEvent] shouldBe WebhookEvent.Pipeline().asRight
+}""".as[WebhookEvent] shouldBe WebhookEvent
+        .Pipeline(
+          MergeRequest(1, MergeRequest.State.Opened).some,
+          Project(id = 1L, name = "Gitlab Test", pathWithNamespace = "gitlab-org/gitlab-test", defaultBranch = "master")
+        )
+        .asRight
     }
   }
 }

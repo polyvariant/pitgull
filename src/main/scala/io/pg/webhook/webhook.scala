@@ -17,6 +17,10 @@ import cats.MonadError
 import cats.tagless.autoContravariant
 import io.pg.config.Action
 import io.pg.config.Matcher
+import cats.data.OptionT
+import io.pg.gitlab.graphql.MergeRequest
+import io.pg.gitlab.graphql.User
+import io.pg.gitlab.Gitlab.GitlabError
 
 object WebhookRouter {
 
@@ -57,7 +61,7 @@ object ProjectActions {
   //let the knife do the work
   val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => _ => true //todo
 
-  def compile(state: MergeRequestState)(project: ProjectConfig): List[ProjectAction] =
+  def compile(state: MergeRequestState, project: ProjectConfig): List[ProjectAction] =
     project.rules.flatMap { rule =>
       val ruleActions = rule.action match {
         case Action.Merge => List(ProjectAction.Merge(state.projectId, state.mergeRequestIid))
@@ -71,7 +75,7 @@ object ProjectActions {
 
 //current MR state - rebuilt on every event.
 //Checked against rules to come up with a decision.
-final case class MergeRequestState(projectId: Long, mergeRequestIid: Long, authorEmail: String, description: String)
+final case class MergeRequestState(projectId: Long, mergeRequestIid: Long, authorEmail: String, description: Option[String])
 
 sealed trait ProjectAction extends Product with Serializable
 
@@ -81,24 +85,40 @@ object ProjectAction {
 
 object WebhookProcessor {
 
-  def instance[F[_]: ProjectConfigReader: ProjectActions: Logger: MonadError[*[_], Throwable]]: Processor[F, WebhookEvent] =
+  //Option - some events don't yield a state to work with and should be ignored.
+  //We should get an ADT for this.
+  def buildStateFromEvent[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]]: WebhookEvent => F[Option[MergeRequestState]] = {
+    case WebhookEvent.Pipeline(Some(mr), project)           =>
+      //todo extract somewhere
+      Gitlab[F]
+        .mergeRequestInfo(projectPath = project.pathWithNamespace, mergeRequestIId = mr.iid.toString)(
+          MergeRequest.author(User.email) ~ MergeRequest.description
+        )
+        .flatMap(_.leftTraverse(_.liftTo[F](GitlabError("MR author missing"))))
+        .map {
+          case (Some(email), description) => MergeRequestState(project.id, mr.iid, email, description).some
+          case _                          => none
+        }
+
+    case p: WebhookEvent.Pipeline if p.mergeRequest.isEmpty => Logger[F].info("Ignoring pipeline event detached from MR").as(none)
+    case e                                                  => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
+  }
+
+  //todo: gitlab shouldn't be used here directly
+  def instance[F[_]: ProjectConfigReader: ProjectActions: Gitlab: Logger: MonadError[*[_], Throwable]]: Processor[F, WebhookEvent] =
     Processor.simple { ev =>
       val logReceived = Logger[F].info("Received event", Map("event" -> ev.toString()))
 
-      val state: MergeRequestState = ev match {
-        case _ => MergeRequestState(20190338L, 4L, "demo@gmail.com", "foo")
-      }
-
-      logReceived *>
-        ProjectConfigReader[F]
-          .readConfig
-          .map(ProjectActions.compile(state))
-          .flatMap { actions =>
-            Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
-            actions.traverse_ { action =>
-              Logger[F].info("About to execute action", Map("action" -> action.toString))
-            }
-          }
+      for {
+        _      <- logReceived
+        config <- ProjectConfigReader[F].readConfig
+        state  <- buildStateFromEvent[F].apply(ev)
+        actions = state.traverse(ProjectActions.compile(_, config)).flattenOption
+        _      <- Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
+        _      <- actions.traverse_ { action =>
+                    Logger[F].info("About to execute action", Map("action" -> action.toString))
+                  }
+      } yield ()
     }
 
 }

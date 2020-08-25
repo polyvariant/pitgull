@@ -9,9 +9,17 @@ import sttp.client.NothingT
 import sttp.tapir.Endpoint
 import cats.MonadError
 import cats.tagless.finalAlg
+import io.pg.gitlab.graphql.Project
+import io.pg.gitlab.graphql.MergeRequest
+import io.pg.gitlab.graphql.User
+import caliban.client.SelectionBuilder
+import caliban.client.Operations.IsOperation
+import io.pg.gitlab.graphql.Query
+import scala.util.chaining._
 
 @finalAlg
 trait Gitlab[F[_]] {
+  def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A]
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
@@ -36,12 +44,27 @@ object Gitlab {
     def runInfallibleEndpoint[I, O](endpoint: Endpoint[I, Nothing, O, Nothing]): I => F[O] =
       runEndpoint[I, Nothing, O](endpoint).nested.map(_.merge).value
 
+    def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
+      runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
+
     new Gitlab[F] {
+      def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A] =
+        Query
+          .project(projectPath)(
+            Project.mergeRequest(mergeRequestIId)(
+              selection
+            )
+          )
+          .pipe(runGraphQLQuery(_))
+          .flatMap(_.liftTo[F](GitlabError("Project not found")))
+          .flatMap(_.liftTo[F](GitlabError("MR not found")))
+
       def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void
     }
   }
 
+  final case class GitlabError(msg: String) extends Throwable
 }
 
 object GitlabEndpoints {
