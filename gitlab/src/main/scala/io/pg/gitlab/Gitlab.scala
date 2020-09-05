@@ -11,15 +11,18 @@ import cats.MonadError
 import cats.tagless.finalAlg
 import io.pg.gitlab.graphql.Project
 import io.pg.gitlab.graphql.MergeRequest
-import io.pg.gitlab.graphql.User
 import caliban.client.SelectionBuilder
 import caliban.client.Operations.IsOperation
 import io.pg.gitlab.graphql.Query
 import scala.util.chaining._
+import cats.data.NonEmptyList
+import io.pg.gitlab.graphql.MergeRequestConnection
+import io.pg.gitlab.graphql.MergeRequestState
 
 @finalAlg
 trait Gitlab[F[_]] {
   def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A]
+  def mergeRequests[A](projectPath: String, sourceBranches: NonEmptyList[String])(selection: SelectionBuilder[MergeRequest, A]): F[A]
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
@@ -58,6 +61,25 @@ object Gitlab {
           .pipe(runGraphQLQuery(_))
           .flatMap(_.liftTo[F](GitlabError("Project not found")))
           .flatMap(_.liftTo[F](GitlabError("MR not found")))
+
+      def mergeRequests[A](
+        projectPath: String,
+        sourceBranches: NonEmptyList[String]
+      )(
+        selection: SelectionBuilder[graphql.MergeRequest, A]
+      ): F[A] =
+        Query
+          .project(projectPath)(
+            Project.mergeRequests(sourceBranches = sourceBranches.toList.some, state = MergeRequestState.opened.some)(
+              MergeRequestConnection.nodes(
+                selection
+              )
+            )
+          )
+          .pipe(runGraphQLQuery(_))
+          .flatMap(_.liftTo[F](GitlabError("Project not found")))
+          .flatMap(_.liftTo[F](GitlabError("Merge requests not found")))
+          .flatMap(_.flatMap(_.headOption).flatten.liftTo[F](GitlabError("Merge requests not found")))
 
       def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void

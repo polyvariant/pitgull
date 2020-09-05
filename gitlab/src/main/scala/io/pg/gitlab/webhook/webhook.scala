@@ -19,7 +19,13 @@ object WebhookEvent {
   private type MR = io.pg.gitlab.webhook.MergeRequest
 
   final case class Build(ref: String, buildId: Long, buildName: String, buildStage: String) extends WebhookEvent
-  final case class Pipeline(mergeRequest: Option[MR], project: Project) extends WebhookEvent
+  final case class Pipeline(mergeRequest: Option[MR], project: Project, objectAttributes: Pipeline.Attributes) extends WebhookEvent
+
+  object Pipeline {
+    @ConfiguredJsonCodec
+    final case class Attributes(id: Long, ref: String)
+  }
+
   final case class Push(project: Project) extends WebhookEvent
   final case class MergeRequest(project: Project) extends WebhookEvent
 }

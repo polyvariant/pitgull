@@ -21,6 +21,8 @@ import cats.data.OptionT
 import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.User
 import io.pg.gitlab.Gitlab.GitlabError
+import io.pg.gitlab.graphql.Pipeline
+import io.pg.Prelude._
 
 object WebhookRouter {
 
@@ -88,20 +90,49 @@ object WebhookProcessor {
   //Option - some events don't yield a state to work with and should be ignored.
   //We should get an ADT for this.
   def buildStateFromEvent[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]]: WebhookEvent => F[Option[MergeRequestState]] = {
-    case WebhookEvent.Pipeline(Some(mr), project)           =>
-      //todo extract somewhere
-      Gitlab[F]
-        .mergeRequestInfo(projectPath = project.pathWithNamespace, mergeRequestIId = mr.iid.toString)(
-          MergeRequest.author(User.email) ~ MergeRequest.description
-        )
-        .flatMap(_.leftTraverse(_.liftTo[F](GitlabError("MR author missing"))))
-        .map {
-          case (Some(email), description) => MergeRequestState(project.id, mr.iid, email, description).some
-          case _                          => none
-        }
+    case p: WebhookEvent.Pipeline =>
+      val project = p.project
 
-    case p: WebhookEvent.Pipeline if p.mergeRequest.isEmpty => Logger[F].info("Ignoring pipeline event detached from MR").as(none)
-    case e                                                  => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
+      val mergeRequestByHeadPipeline = {
+        val PipelineId = p.objectAttributes.id.toString
+
+        val mergeRequestByRef =
+          Logger[F].info(
+            "Looking for merge request",
+            Map("project" -> project.pathWithNamespace, "sourceBranch" -> p.objectAttributes.ref)
+          ) *>
+            Gitlab[F]
+              .mergeRequests(projectPath = project.pathWithNamespace, sourceBranches = NonEmptyList.of(p.objectAttributes.ref))(
+                MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
+              )
+              .flatTap {
+                case (mrIid, headPipeline) =>
+                  Logger[F].info("Found merge request", Map("iid" -> mrIid, "headPipeline" -> headPipeline.getOrElse("None")))
+              }
+
+        OptionT
+          .liftF(mergeRequestByRef)
+          .collect {
+            case (mrIId, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>
+              mrIId.toLongOption.map(io.pg.gitlab.webhook.MergeRequest(_))
+          }
+          .subflatMap(identity)
+      }
+
+      val mergeRequest: OptionT[F, io.pg.gitlab.webhook.MergeRequest] = p.mergeRequest.toOptionT[F].orElse(mergeRequestByHeadPipeline)
+
+      mergeRequest.flatMapF { mr =>
+        Gitlab[F]
+          .mergeRequestInfo(projectPath = project.pathWithNamespace, mergeRequestIId = mr.iid.toString)(
+            MergeRequest.author(User.email) ~ MergeRequest.description
+          )
+          .flatMap(_.leftTraverse(_.liftTo[F](GitlabError("MR author missing"))))
+          .map {
+            case (Some(email), description) => MergeRequestState(project.id, mr.iid, email, description).some
+            case _                          => none
+          }
+      }.value
+    case e                        => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
   }
 
   //todo: gitlab shouldn't be used here directly
