@@ -43,7 +43,7 @@ object Application {
         .flatMap { eventChannel =>
           val webhookChannel = eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
 
-          val routes: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+          val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
             NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
 
           BlazeClientBuilder[F](ExecutionContext.global)
@@ -60,7 +60,7 @@ object Application {
               import sttp.tapir.server.http4s._
 
               new Application[F](
-                routes = routes.toList.toRoutes.orNotFound,
+                routes = endpoints.toList.toRoutes.orNotFound,
                 background = NonEmptyList.one(webhookProcess)
               )
             }
