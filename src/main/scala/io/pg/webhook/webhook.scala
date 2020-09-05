@@ -121,7 +121,7 @@ object WebhookProcessor {
 
       val mergeRequest: OptionT[F, io.pg.gitlab.webhook.MergeRequest] = p.mergeRequest.toOptionT[F].orElse(mergeRequestByHeadPipeline)
 
-      mergeRequest.flatMapF { mr =>
+      val stateF = mergeRequest.flatMapF { mr =>
         Gitlab[F]
           .mergeRequestInfo(projectPath = project.pathWithNamespace, mergeRequestIId = mr.iid.toString)(
             MergeRequest.author(User.email) ~ MergeRequest.description
@@ -132,6 +132,12 @@ object WebhookProcessor {
             case _                          => none
           }
       }.value
+
+      Option
+        .when(
+          p.objectAttributes.status === io.pg.gitlab.webhook.WebhookEvent.Pipeline.Status.Success
+        )(stateF)
+        .flatSequence
     case e                        => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
   }
 
