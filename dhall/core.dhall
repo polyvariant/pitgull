@@ -73,7 +73,15 @@ let match =
         , Many : List Matcher → Matcher
         }
 
-let Rule = { name : Text, matcher : Matcher }
+let ActionFold = λ(M : Type) → { Merge : M }
+
+let Action = ∀(M : Type) → ActionFold M → M
+
+let action =
+        { Merge = λ(M : Type) → λ(AF : ActionFold M) → AF.Merge }
+      : { Merge : Action }
+
+let Rule = { name : Text, matcher : Matcher, action : Action }
 
 let ProjectConfig = { rules : List Rule }
 
@@ -83,6 +91,8 @@ in  { TextMatcherFold
     , MatcherFold
     , Matcher
     , match
+    , Action
+    , action
     , Rule
     , ProjectConfig
     }

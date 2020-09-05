@@ -8,12 +8,41 @@ import cats.implicits._
 import java.nio.file.Paths
 import io.github.vigoo.prox._
 import scala.util.chaining._
+import cats.Applicative
+import cats.tagless.finalAlg
 
+@finalAlg
 trait ProjectConfigReader[F[_]] {
   def readConfig: F[ProjectConfig]
 }
 
 object ProjectConfigReader {
+
+  def test[F[_]: Applicative]: ProjectConfigReader[F] =
+    new ProjectConfigReader[F] {
+
+      val steward = Rule(
+        "scala-steward",
+        Matcher.Many(
+          List(
+            Matcher.Author(TextMatcher.Equals("scala-steward@ocado.com")),
+            Matcher.Description(TextMatcher.Matches("*labels:.*semver-patch.*"))
+          )
+        ),
+        Action.Merge
+      )
+
+      val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
+
+      val config: ProjectConfig = ProjectConfig(
+        List(
+          // steward,
+          mergeAnything
+        )
+      )
+
+      val readConfig: F[ProjectConfig] = config.pure[F]
+    }
 
   def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](blocker: Blocker): F[ProjectConfigReader[F]] = {
     val dhallCommand = "dhall-to-json"

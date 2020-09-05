@@ -23,7 +23,11 @@ object Main extends IOApp {
       .flatMap { resources =>
         val server = BlazeServerBuilder[IO](ExecutionContext.global)
           .withHttpApp(
-            middleware.Logger.httpApp(logHeaders = true, logBody = true, logAction = (logger.debug(_: String)).some)(resources.routes)
+            middleware
+              .Logger
+              .httpApp(logHeaders = true, logBody = true, logAction = (logger.debug(_: String)).some)(
+                resources.routes
+              )
           )
           .bindHttp(port = config.http.port, host = "0.0.0.0")
           .withBanner(config.meta.banner.linesIterator.toList)

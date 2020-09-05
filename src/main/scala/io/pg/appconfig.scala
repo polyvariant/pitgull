@@ -2,6 +2,7 @@ package io.pg
 
 import cats.implicits._
 import ciris.Secret
+import sttp.model.Uri
 
 final case class AppConfig(http: HttpConfig, meta: MetaConfig, git: Git, queues: Queues)
 
@@ -26,7 +27,16 @@ object AppConfig {
   private val metaConfig: ConfigValue[MetaConfig] =
     (default(bannerString), default(BuildInfo.version), default(BuildInfo.scalaVersion)).parMapN(MetaConfig)
 
-  private val gitConfig: ConfigValue[Git] = (default(Git.Host.Gitlab), env("GIT_API_URL"), env("GIT_API_TOKEN").secret).mapN(Git.apply)
+  val decodeUri: String => ConfigValue[Uri] = s =>
+    Uri
+      .parse(s)
+      .fold(
+        e => ConfigValue.failed[Uri](ConfigError(s"Invalid URI, error: $e")),
+        ConfigValue.default(_)
+      )
+
+  private val gitConfig: ConfigValue[Git] =
+    (default(Git.Host.Gitlab), env("GIT_API_URL").flatMap(decodeUri), env("GIT_API_TOKEN").secret).mapN(Git.apply)
 
   private val queuesConfig: ConfigValue[Queues] = default(100).map(Queues)
 
@@ -37,7 +47,7 @@ object AppConfig {
 final case class HttpConfig(port: Int)
 final case class MetaConfig(banner: String, version: String, scalaVersion: String)
 
-final case class Git(host: Git.Host, apiUrl: String, apiToken: Secret[String])
+final case class Git(host: Git.Host, apiUrl: Uri, apiToken: Secret[String])
 
 object Git {
   sealed trait Host extends Product with Serializable

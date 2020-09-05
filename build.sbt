@@ -48,6 +48,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-effect" % "2.1.4",
     "org.typelevel" %% "cats-tagless-macros" % "0.11",
     "co.fs2" %% "fs2-core" % "2.4.4",
+    "com.github.valskalla" %% "odin-core" % "0.8.1",
     "io.circe" %% "circe-core" % "0.13.0",
     "org.scalatest" %% "scalatest" % "3.2.2" % Test //todo: munit
   ) ++ compilerPlugins
@@ -58,8 +59,10 @@ val gitlab = project
     commonSettings,
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "1.2.1",
-      "com.kubukoz" %% "caliban-gitlab" % "0.0.2",
+      "com.kubukoz" %% "caliban-gitlab" % "0.0.4",
       "io.circe" %% "circe-generic-extras" % "0.13.0",
+      "io.circe" %% "circe-parser" % "0.13.0" % Test,
+      "io.circe" %% "circe-literal" % "0.13.0" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
@@ -71,14 +74,13 @@ val core = project.settings(commonSettings).settings(name += "-core")
 //temporary workaround for docker not accepting sbt-dynver's insanely specific versions as tags
 ThisBuild / version := "0.0.0"
 
-val installDhallJson = List(
+val installDhallJson =
   ExecCmd(
     "RUN",
     "sh",
     "-c",
     "curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.34.0/dhall-json-1.7.1-x86_64-linux.tar.bz2 | tar -vxj -C /"
   )
-)
 
 val pitgull =
   project
@@ -89,8 +91,9 @@ val pitgull =
       name := "pitgull",
       dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
       dockerCommands ++=
-        Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson,
+        Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
+      Docker / mappings += ((file("./example.dhall"), "/opt/docker/example.dhall")),
       mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
       buildInfoPackage := "io.pg",

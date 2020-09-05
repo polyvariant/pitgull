@@ -4,9 +4,11 @@ let TextMatcher = core.TextMatcher
 
 let Matcher = core.Matcher
 
-let ProjectConfig = core.ProjectConfig
+let Action = core.Action
 
 let Rule = core.Rule
+
+let ProjectConfig = core.ProjectConfig
 
 let List/map =
       https://prelude.dhall-lang.org/v16.0.0/List/map sha256:dd845ffb4568d40327f2a817eb42d1c6138b929ca758d50bc33112ef3c885680
@@ -74,9 +76,13 @@ let toJsonFolds =
                             }
                         )
                 }
+        , Action =
+            λ(action : Action) →
+              action JSON.Type { Merge = JSON.string "Merge" }
         }
       : { TextMatcher : TextMatcher → JSON.Type
         , Matcher : (TextMatcher → JSON.Type) → Matcher → JSON.Type
+        , Action : Action → JSON.Type
         }
 
 let projectToJson
@@ -91,6 +97,7 @@ let projectToJson
                   ( toMap
                       { name = JSON.string rule.name
                       , matcher = matcherToJson rule.matcher
+                      , action = toJsonFolds.Action rule.action
                       }
                   )
 
