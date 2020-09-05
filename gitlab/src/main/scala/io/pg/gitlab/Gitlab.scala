@@ -22,7 +22,14 @@ import io.pg.gitlab.graphql.MergeRequestState
 @finalAlg
 trait Gitlab[F[_]] {
   def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A]
-  def mergeRequests[A](projectPath: String, sourceBranches: NonEmptyList[String])(selection: SelectionBuilder[MergeRequest, A]): F[A]
+
+  def mergeRequests[A](
+    projectPath: String,
+    sourceBranches: NonEmptyList[String]
+  )(
+    selection: SelectionBuilder[MergeRequest, A]
+  ): F[List[A]]
+
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
@@ -54,32 +61,34 @@ object Gitlab {
       def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A] =
         Query
           .project(projectPath)(
-            Project.mergeRequest(mergeRequestIId)(
-              selection
-            )
+            Project
+              .mergeRequest(mergeRequestIId)(selection)
+              .map(_.liftTo[F](GitlabError("MR not found")))
           )
+          .map(_.liftTo[F](GitlabError("Project not found")))
           .pipe(runGraphQLQuery(_))
-          .flatMap(_.liftTo[F](GitlabError("Project not found")))
-          .flatMap(_.liftTo[F](GitlabError("MR not found")))
+          .flatten
+          .flatten
 
       def mergeRequests[A](
         projectPath: String,
         sourceBranches: NonEmptyList[String]
       )(
         selection: SelectionBuilder[graphql.MergeRequest, A]
-      ): F[A] =
+      ): F[List[A]] =
         Query
           .project(projectPath)(
-            Project.mergeRequests(sourceBranches = sourceBranches.toList.some, state = MergeRequestState.opened.some)(
-              MergeRequestConnection.nodes(
-                selection
+            Project
+              .mergeRequests(sourceBranches = sourceBranches.toList.some, state = MergeRequestState.opened.some)(
+                MergeRequestConnection
+                  .nodes(selection)
+                  .map(_.toList.flatMap(_.toList))
               )
-            )
+              .map(_.toList.flatten.flattenOption)
           )
+          .map(_.liftTo[F](new Throwable("Project not found")))
           .pipe(runGraphQLQuery(_))
-          .flatMap(_.liftTo[F](GitlabError("Project not found")))
-          .flatMap(_.liftTo[F](GitlabError("Merge requests not found")))
-          .flatMap(_.flatMap(_.headOption).flatten.liftTo[F](GitlabError("Merge requests not found")))
+          .flatten
 
       def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void

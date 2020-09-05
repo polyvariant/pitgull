@@ -21,6 +21,7 @@ import sttp.client.http4s.Http4sBackend
 import cats.effect.ConcurrentEffect
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
+import sttp.client.SttpBackend
 
 sealed trait Event extends Product with Serializable
 
@@ -48,9 +49,10 @@ object Application {
 
           BlazeClientBuilder[F](ExecutionContext.global)
             .resource
-            .map(org.http4s.client.middleware.Logger(logHeaders = true, logBody = true))
-            .map(Http4sBackend.usingClient[F](_, blocker))
-            .map { implicit backend =>
+            .map(org.http4s.client.middleware.Logger(logHeaders = true, logBody = false))
+            .map { client =>
+              implicit val backend: SttpBackend[F, Nothing, Nothing] = Http4sBackend.usingClient[F](client, blocker)
+
               implicit val gitlab: Gitlab[F] = Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
               implicit val projectActions: ProjectActions[F] = ProjectActions.instance[F]
               implicit val stateResolver: StateResolver[F] = StateResolver.instance[F]

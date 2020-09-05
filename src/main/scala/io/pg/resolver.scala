@@ -30,21 +30,24 @@ object StateResolver {
         val PipelineId = p.objectAttributes.id.toString
 
         val mergeRequestByRef =
-          Logger[F].info(
-            "Looking for merge request",
-            Map("project" -> project.pathWithNamespace, "sourceBranch" -> p.objectAttributes.ref)
-          ) *>
-            Gitlab[F]
-              .mergeRequests(projectPath = project.pathWithNamespace, sourceBranches = NonEmptyList.of(p.objectAttributes.ref))(
-                MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
-              )
-              .flatTap {
-                case (mrIid, headPipeline) =>
-                  Logger[F].info("Found merge request", Map("iid" -> mrIid, "headPipeline" -> headPipeline.getOrElse("None")))
-              }
+          OptionT.liftF {
+            Logger[F].info(
+              "Looking for merge request",
+              Map("project" -> project.pathWithNamespace, "sourceBranch" -> p.objectAttributes.ref)
+            )
+          } *>
+            OptionT {
+              Gitlab[F]
+                .mergeRequests(projectPath = project.pathWithNamespace, sourceBranches = NonEmptyList.of(p.objectAttributes.ref))(
+                  MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
+                )
+                .map(_.headOption)
+            }.semiflatTap {
+              case (mrIid, headPipeline) =>
+                Logger[F].info("Found merge request", Map("iid" -> mrIid, "headPipeline" -> headPipeline.getOrElse("None")))
+            }
 
-        OptionT
-          .liftF(mergeRequestByRef)
+        mergeRequestByRef
           .collect {
             case (mrIId, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>
               mrIId.toLongOption.map(io.pg.gitlab.webhook.MergeRequest(_))
