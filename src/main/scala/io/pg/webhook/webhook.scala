@@ -153,7 +153,8 @@ object WebhookProcessor {
         actions = state.traverse(ProjectActions.compile(_, config)).flattenOption
         _      <- Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
         _      <- actions.traverse_ { action =>
-                    Logger[F].info("About to execute action", Map("action" -> action.toString))
+                    Logger[F].info("About to execute action", Map("action" -> action.toString)) *>
+                      ProjectActions[F].execute(action)
                   }
       } yield ()
     }

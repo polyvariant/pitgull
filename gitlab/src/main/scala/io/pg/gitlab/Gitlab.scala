@@ -86,7 +86,7 @@ object Gitlab {
     }
   }
 
-  final case class GitlabError(msg: String) extends Throwable
+  final case class GitlabError(msg: String) extends Throwable(s"Gitlab error: $msg")
 }
 
 object GitlabEndpoints {
