@@ -29,7 +29,7 @@ object ProjectActions {
 
   //todo: matching logic :))
   //let the knife do the work
-  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => _ => true //todo
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => state => state.successful //todo
 
   def compile(state: MergeRequestState, project: ProjectConfig): List[ProjectAction] =
     project.rules.flatMap { rule =>

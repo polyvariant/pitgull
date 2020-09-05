@@ -18,6 +18,7 @@ import scala.util.chaining._
 import cats.data.NonEmptyList
 import io.pg.gitlab.graphql.MergeRequestConnection
 import io.pg.gitlab.graphql.MergeRequestState
+import io.odin.Logger
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -35,7 +36,7 @@ trait Gitlab[F[_]] {
 
 object Gitlab {
 
-  def sttpInstance[F[_]: MonadError[*[_], Throwable]](
+  def sttpInstance[F[_]: Logger: MonadError[*[_], Throwable]](
     baseUri: Uri,
     accessToken: Secret[String]
   )(
@@ -76,7 +77,10 @@ object Gitlab {
       )(
         selection: SelectionBuilder[graphql.MergeRequest, A]
       ): F[List[A]] =
-        Query
+        Logger[F].info(
+          "Finding merge requests",
+          Map("projectPath" -> projectPath, "sourceBranches" -> sourceBranches.mkString_(", "))
+        ) *> Query
           .project(projectPath)(
             Project
               .mergeRequests(sourceBranches = sourceBranches.toList.some, state = MergeRequestState.opened.some)(
@@ -89,6 +93,9 @@ object Gitlab {
           .map(_.liftTo[F](new Throwable("Project not found")))
           .pipe(runGraphQLQuery(_))
           .flatten
+          .flatTap { result =>
+            Logger[F].info("Found merge requests", Map("result" -> result.mkString))
+          }
 
       def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void

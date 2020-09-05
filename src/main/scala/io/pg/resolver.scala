@@ -26,39 +26,28 @@ object StateResolver {
   def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]]: StateResolver[F] =
     new StateResolver[F] {
 
-      private def findMergeRequest(pipeline: WebhookEvent.Pipeline): OptionT[F, io.pg.gitlab.webhook.MergeRequest] = {
+      private def decodeMergeRequest(pipeline: WebhookEvent.Pipeline): OptionT[F, io.pg.gitlab.webhook.MergeRequest] = {
         val project = pipeline.project
 
         val mergeRequestByHeadPipeline = {
-          val PipelineId = pipeline.objectAttributes.id.toString
-
-          val logSearching = Logger[F].info(
-            "Looking for merge request",
-            Map("project" -> project.pathWithNamespace, "sourceBranch" -> pipeline.objectAttributes.ref)
-          )
-
-          val search: F[Option[(String, Option[String])]] =
-            Gitlab[F]
-              .mergeRequests(
-                projectPath = project.pathWithNamespace,
-                sourceBranches = NonEmptyList.of(pipeline.objectAttributes.ref)
-              )(
-                MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
-              )
-              .map(_.headOption)
-
-          val mergeRequestByRef =
-            OptionT(logSearching *> search).semiflatTap {
-              case (mrIid, headPipeline) =>
-                Logger[F].info("Found merge request", Map("iid" -> mrIid, "headPipeline" -> headPipeline.getOrElse("None")))
+          val mergeRequestIdString: OptionT[F, String] =
+            OptionT {
+              Gitlab[F]
+                .mergeRequests(
+                  projectPath = project.pathWithNamespace,
+                  sourceBranches = NonEmptyList.of(pipeline.objectAttributes.ref)
+                )(
+                  MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
+                )
+                .map(_.headOption)
+            }.collect {
+              case (mrIid, Some(headPipelineId)) if headPipelineId === pipeline.objectAttributes.id.toString => mrIid
             }
 
-          mergeRequestByRef
-            .collect {
-              case (mrIId, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>
-                mrIId.toLongOption.map(io.pg.gitlab.webhook.MergeRequest(_))
+          mergeRequestIdString
+            .flatMap { mrIId =>
+              mrIId.toLongOption.toOptionT[F].map(io.pg.gitlab.webhook.MergeRequest(_))
             }
-            .subflatMap(identity)
         }
 
         pipeline.mergeRequest.toOptionT[F].orElse(mergeRequestByHeadPipeline)
@@ -81,17 +70,19 @@ object StateResolver {
           case p: WebhookEvent.Pipeline =>
             val project = p.project
 
-            val isSuccessful = p.objectAttributes.status === io.pg.gitlab.webhook.WebhookEvent.Pipeline.Status.Success
-
-            val stateF = findMergeRequest(p).flatMapF { mr =>
-              findMergeRequestInfo(mr.iid, project)
-                .map {
-                  case (email, description) =>
-                    MergeRequestState(project.id, mr.iid, email, description).some
-                }
-            }
-
-            (isSuccessful.guard[Option].toOptionT[F] *> stateF).value
+            decodeMergeRequest(p)
+              .semiflatMap(mr => findMergeRequestInfo(mr.iid, project).tupleRight(mr))
+              .map {
+                case ((email, description), mr) =>
+                  MergeRequestState(
+                    projectId = project.id,
+                    mergeRequestIid = mr.iid,
+                    authorEmail = email,
+                    description = description,
+                    successful = p.objectAttributes.status === WebhookEvent.Pipeline.Status.Success
+                  )
+              }
+              .value
 
           case e                        => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
         }
@@ -102,4 +93,10 @@ object StateResolver {
 
 //current MR state - rebuilt on every event.
 //Checked against rules to come up with a decision.
-final case class MergeRequestState(projectId: Long, mergeRequestIid: Long, authorEmail: String, description: Option[String])
+final case class MergeRequestState(
+  projectId: Long,
+  mergeRequestIid: Long,
+  authorEmail: String,
+  description: Option[String],
+  successful: Boolean
+)
