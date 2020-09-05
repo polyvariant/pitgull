@@ -2,7 +2,6 @@ package io.pg
 
 import org.scalatest.wordspec.AsyncWordSpec
 import cats.effect.IO
-import cats.implicits._
 import ciris.Secret
 import sttp.client._
 

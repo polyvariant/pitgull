@@ -7,7 +7,7 @@ import cats.effect.IO
 import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext
 import io.pg.Prelude._
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
 import cats.effect.Blocker

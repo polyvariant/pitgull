@@ -1,6 +1,6 @@
 package io.pg
 
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.implicits._
 import org.http4s.HttpApp
 import cats.effect.Resource

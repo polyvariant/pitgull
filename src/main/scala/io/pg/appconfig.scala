@@ -1,6 +1,6 @@
 package io.pg
 
-import cats.implicits._
+import cats.syntax.all._
 import ciris.Secret
 import sttp.model.Uri
 

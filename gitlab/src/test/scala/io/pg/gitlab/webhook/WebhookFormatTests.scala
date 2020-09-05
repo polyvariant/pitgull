@@ -2,7 +2,7 @@ package io.pg.gitlab.webhook
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import cats.implicits._
+import cats.syntax.all._
 
 class WebhookFormatTests extends AnyWordSpec with Matchers {
   import io.circe.literal._

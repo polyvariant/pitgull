@@ -45,6 +45,7 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
+    "org.typelevel" %% "cats-core" % "2.2.0",
     "org.typelevel" %% "cats-effect" % "2.1.4",
     "org.typelevel" %% "cats-tagless-macros" % "0.11",
     "co.fs2" %% "fs2-core" % "2.4.4",

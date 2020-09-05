@@ -1,7 +1,7 @@
 package io.pg.gitlab
 
 import ciris.Secret
-import cats.implicits._
+import cats.syntax.all._
 import sttp.model.Uri
 import sttp.client.Request
 import sttp.client.SttpBackend

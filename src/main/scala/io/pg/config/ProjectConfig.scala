@@ -4,7 +4,7 @@ import cats.effect.Blocker
 import cats.effect.ExitCode
 import cats.effect.Concurrent
 import cats.effect.ContextShift
-import cats.implicits._
+import cats.syntax.all._
 import java.nio.file.Paths
 import io.github.vigoo.prox._
 import scala.util.chaining._

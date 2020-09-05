@@ -3,7 +3,7 @@ package io.pg.messaging
 import fs2.concurrent.Queue
 import scala.reflect.ClassTag
 import cats.tagless.autoInvariant
-import cats.implicits._
+import cats.syntax.all._
 import cats.ApplicativeError
 import io.odin.Logger
 

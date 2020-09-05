@@ -12,7 +12,7 @@ import io.pg.config.ProjectConfig
 import cats.tagless.finalAlg
 import io.pg.gitlab.Gitlab
 import io.pg.webhook.ProjectAction.Merge
-import cats.implicits._
+import cats.syntax.all._
 import cats.MonadError
 import cats.tagless.autoContravariant
 import io.pg.config.Action
@@ -22,7 +22,6 @@ import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.User
 import io.pg.gitlab.Gitlab.GitlabError
 import io.pg.gitlab.graphql.Pipeline
-import io.pg.Prelude._
 
 object WebhookRouter {
 
