@@ -53,6 +53,7 @@ object Application {
             .map { implicit backend =>
               implicit val gitlab: Gitlab[F] = Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
               implicit val projectActions: ProjectActions[F] = ProjectActions.instance[F]
+              implicit val stateResolver: StateResolver[F] = StateResolver.instance[F]
 
               val webhookProcess = BackgroundProcess.fromProcessor(webhookChannel)(WebhookProcessor.instance[F])
 
