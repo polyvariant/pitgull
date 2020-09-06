@@ -16,10 +16,10 @@ trait Halt[F[_]] {
   def orCease[A](msg: String)(opt: Option[A]): F[A]
 
   // convenience method for effects - fallback to another if halted
-  def recease[A](fa: F[A])(another: F[A]): F[A] = receaseWith(fa)(_ => another)
+  def recease[A](another: F[A])(fa: F[A]): F[A] = receaseWith(_ => another)(fa)
 
   // convenience method for effects - fallback to another if halted, using message of original halt
-  def receaseWith[A](fa: F[A])(another: String => F[A]): F[A]
+  def receaseWith[A](another: String => F[A])(fa: F[A]): F[A]
 }
 
 object Halt {
@@ -31,11 +31,11 @@ object Halt {
       def cease[A](msg: String): F[A] = Halted(msg).raiseError
 
       def decease[A](handle: String => F[Unit])(fa: F[A]): F[Option[A]] =
-        receaseWith(fa.map(_.some))(handle(_).as(none))
+        receaseWith[Option[A]](handle(_).as(none[A]))(fa.map(_.some))
 
       def orCease[A](msg: String)(opt: Option[A]): F[A] = opt.fold[F[A]](cease(msg))(_.pure[F])
 
-      def receaseWith[A](fa: F[A])(another: String => F[A]): F[A] =
+      def receaseWith[A](another: String => F[A])(fa: F[A]): F[A] =
         fa.handleErrorWith {
           case Halted(msg) => another(msg)
         }
