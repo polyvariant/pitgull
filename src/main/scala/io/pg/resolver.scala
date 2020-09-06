@@ -14,6 +14,7 @@ import io.pg.gitlab.Gitlab.GitlabError
 import io.pg.gitlab.webhook.Project
 import scala.util.chaining._
 import cats.Applicative
+import io.pg.Halt
 
 @finalAlg
 trait StateResolver[F[_]] {
@@ -24,20 +25,10 @@ object StateResolver {
 
   //Option - some events don't yield a state to work with and should be ignored.
   //We should get an ADT for this.
-  def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]]: StateResolver[F] =
+  def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]: Halt]: StateResolver[F] =
     // Implementation note: all effectful methods here can fail with Halt,
     // which should be handled gracefully as a reason for an incomplete state.
     new StateResolver[F] {
-      private case class Halt(msg: String) extends Throwable
-
-      private def halt[A](msg: String): F[A] = Halt(msg).raiseError[F, A]
-
-      private def orHalt[A](msg: String)(opt: Option[A]): F[A] = opt.fold[F[A]](halt(msg))(_.pure[F])
-
-      private def unhalt[A](handle: String => F[Unit]): F[A] => F[Option[A]] =
-        _.map(_.some).recoverWith {
-          case Halt(msg) => handle(msg).as(none)
-        }
 
       private def decodeMergeRequest(pipeline: WebhookEvent.Pipeline): F[io.pg.gitlab.webhook.MergeRequest] = {
         val project = pipeline.project
@@ -54,19 +45,21 @@ object StateResolver {
             )
 
           query
-            .flatMap(_.headOption.pipe(orHalt("No open MRs found for branch")))
+            .flatMap(_.headOption.pipe(Halt[F].orCease("No open MRs found for branch")))
             .flatTap {
               case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) => Applicative[F].unit
-              case (_, None)                                               => halt[Unit]("MR didn't have a head pipeline")
-              case _                                                       => halt[Unit]("Head pipeline didn't match event's pipeline ID")
+              case (_, None)                                               => Halt[F].cease[Unit]("MR didn't have a head pipeline")
+              case _                                                       => Halt[F].cease[Unit]("Head pipeline didn't match event's pipeline ID")
             }
             .map { case (mrIid, _) => mrIid }
-            .flatMap(_.toLongOption.pipe(orHalt("MR id wasn't a Long")))
+            .flatMap(_.toLongOption.pipe(Halt[F].orCease("MR id wasn't a Long")))
             .map(io.pg.gitlab.webhook.MergeRequest(_))
         }
-        pipeline.mergeRequest.pipe(orHalt("Webhook event is missing MR information")).handleErrorWith {
-          case Halt(_) => mergeRequestByHeadPipeline
-        }
+
+        pipeline
+          .mergeRequest
+          .pipe(Halt[F].orCease("Webhook event is missing MR information"))
+          .pipe(Halt[F].recease(mergeRequestByHeadPipeline))
       }
 
       private def findMergeRequestInfo(iid: Long, project: Project): F[(String, Option[String])] =
@@ -98,7 +91,7 @@ object StateResolver {
                     status = p.objectAttributes.status
                   )
               }
-              .pipe(unhalt(reason => Logger[F].debug("Couldn't build MR state", Map("reason" -> reason))))
+              .pipe(Halt[F].decease(reason => Logger[F].debug("Couldn't build MR state", Map("reason" -> reason))))
               .flatTap { state =>
                 Logger[F].info("Resolved MR state", Map("state" -> state.toString))
               }
