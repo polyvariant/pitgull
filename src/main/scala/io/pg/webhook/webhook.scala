@@ -12,6 +12,11 @@ import cats.syntax.all._
 import cats.MonadError
 import io.pg.StateResolver
 import io.pg.ProjectActions
+import io.pg.ProjectAction
+import io.pg.MergeRequestState
+import io.pg.config.ProjectConfig
+import fs2.Pipe
+import io.pg.ProjectActions.Mismatch
 
 object WebhookRouter {
 
@@ -30,20 +35,46 @@ object WebhookRouter {
 }
 
 object WebhookProcessor {
+  import scala.util.chaining._
 
-  def instance[F[_]: ProjectConfigReader: ProjectActions: StateResolver: Logger: MonadError[*[_], Throwable]]: Processor[F, WebhookEvent] =
+  def instance[F[_]: ProjectConfigReader: ProjectActions: StateResolver: Logger: MonadError[*[_], Throwable]](
+    implicit SC: fs2.Stream.Compiler[F, F]
+  ): Processor[F, WebhookEvent] =
     Processor.simple { ev =>
       for {
-        _      <- Logger[F].info("Received event", Map("event" -> ev.toString()))
-        config <- ProjectConfigReader[F].readConfig
-        state  <- StateResolver[F].resolve(ev)
-        actions = state.traverse(ProjectActions.compile(_, config)).flattenOption
-        _      <- Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
-        _      <- actions.traverse_ { action =>
-                    Logger[F].info("About to execute action", Map("action" -> action.toString)) *>
-                      ProjectActions[F].execute(action)
-                  }
+        _       <- Logger[F].info("Received event", Map("event" -> ev.toString()))
+        config  <- ProjectConfigReader[F].readConfig
+        state   <- StateResolver[F].resolve(ev)
+        actions <- state.traverse(validActions[F](_, config)).map(_.sequence.flattenOption)
+        _       <- Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
+        _       <- actions.traverse_ { action =>
+                     Logger[F].info("About to execute action", Map("action" -> action.toString)) *>
+                       ProjectActions[F].execute(action)
+                   }
       } yield ()
     }
+
+  private def validActions[F[_]: Logger: Applicative](
+    state: MergeRequestState,
+    config: ProjectConfig
+  )(
+    implicit SC: fs2.Stream.Compiler[F, F]
+  ): F[List[ProjectAction]] = {
+    def tapLeftAndDrop[L, R](log: L => F[Unit]): Pipe[F, Either[L, R], R] = _.evalTap(_.leftTraverse(log)).map(_.toOption).unNone
+
+    val logMismatches: NonEmptyList[Mismatch] => F[Unit] = e =>
+      Logger[F].debug(
+        "Ignoring action because it didn't match rules",
+        Map("rules" -> e.map(_.toString).mkString_(", "))
+      )
+
+    fs2
+      .Stream
+      .emit(state)
+      .flatMap(ProjectActions.compile(_, config).pipe(fs2.Stream.emits(_)))
+      .through(tapLeftAndDrop(logMismatches))
+      .compile
+      .toList
+  }
 
 }

@@ -7,6 +7,9 @@ import io.pg.config.ProjectConfig
 import io.pg.config.Matcher
 import cats.tagless.autoContravariant
 import io.pg.config.Action
+import cats.data.EitherNel
+import cats.implicits._
+import cats.data.NonEmptyList
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -24,21 +27,31 @@ object ProjectActions {
 
   @autoContravariant
   trait MatcherFunction[-In] {
-    def matches(in: In): Boolean //todo eithernel with reason for not matching
+    def matches(in: In): Matched[Unit]
   }
+
+  object MatcherFunction {
+    def fromPredicate[In](predicate: In => Boolean, orElse: In => Mismatch): MatcherFunction[In] =
+      _.asRight[Mismatch].ensureOr(orElse)(predicate).toEitherNel.void
+  }
+
+  final case class Mismatch(reason: String)
+  type Matched[A] = EitherNel[Mismatch, A]
+
+  val isSuccessful: MatcherFunction[MergeRequestState] =
+    MatcherFunction.fromPredicate(_.successful, _ => Mismatch("not successful"))
 
   //todo: matching logic :))
   //let the knife do the work
-  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => state => state.successful //todo
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => isSuccessful //todo
 
-  def compile(state: MergeRequestState, project: ProjectConfig): List[ProjectAction] =
-    project.rules.flatMap { rule =>
-      val ruleActions = rule.action match {
-        case Action.Merge => List(ProjectAction.Merge(state.projectId, state.mergeRequestIid))
+  def compile(state: MergeRequestState, project: ProjectConfig): List[Either[NonEmptyList[Mismatch], ProjectAction]] =
+    project.rules.map { rule =>
+      val ruleAction: ProjectAction = rule.action match {
+        case Action.Merge => ProjectAction.Merge(state.projectId, state.mergeRequestIid)
       }
 
-      if (compileMatcher(rule.matcher).matches(state)) ruleActions
-      else Nil
+      compileMatcher(rule.matcher).matches(state).as(ruleAction)
     }
 
 }
