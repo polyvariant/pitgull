@@ -41,7 +41,9 @@ object StateResolver {
                 )
                 .map(_.headOption)
             }.collect {
-              case (mrIid, Some(headPipelineId)) if headPipelineId === pipeline.objectAttributes.id.toString => mrIid
+              case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$headPipelineId"))
+                  if headPipelineId === pipeline.objectAttributes.id.toString =>
+                mrIid
             }
 
           mergeRequestIdString
@@ -79,10 +81,11 @@ object StateResolver {
                     mergeRequestIid = mr.iid,
                     authorEmail = email,
                     description = description,
-                    successful = p.objectAttributes.status === WebhookEvent.Pipeline.Status.Success
+                    status = p.objectAttributes.status
                   )
               }
               .value
+              .flatTap(state => Logger[F].info("Resolved MR state", Map("state" -> state.toString)))
 
           case e                        => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
         }
@@ -98,5 +101,5 @@ final case class MergeRequestState(
   mergeRequestIid: Long,
   authorEmail: String,
   description: Option[String],
-  successful: Boolean
+  status: WebhookEvent.Pipeline.Status
 )

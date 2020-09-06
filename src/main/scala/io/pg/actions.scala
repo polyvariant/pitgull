@@ -10,6 +10,7 @@ import io.pg.config.Action
 import cats.data.EitherNel
 import cats.implicits._
 import cats.data.NonEmptyList
+import io.pg.gitlab.webhook.WebhookEvent
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -39,7 +40,12 @@ object ProjectActions {
   type Matched[A] = EitherNel[Mismatch, A]
 
   val isSuccessful: MatcherFunction[MergeRequestState] =
-    MatcherFunction.fromPredicate(_.successful, _ => Mismatch("not successful"))
+    MatcherFunction
+      .fromPredicate[WebhookEvent.Pipeline.Status](
+        _ === WebhookEvent.Pipeline.Status.Success,
+        value => Mismatch(s"not successful, actual status: $value")
+      )
+      .contramap(_.status)
 
   //todo: matching logic :))
   //let the knife do the work
