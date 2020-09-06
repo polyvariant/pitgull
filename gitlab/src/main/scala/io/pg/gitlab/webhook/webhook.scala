@@ -22,7 +22,6 @@ sealed trait WebhookEvent
 object WebhookEvent {
   private type MR = io.pg.gitlab.webhook.MergeRequest
 
-  final case class Build(ref: String, buildId: Long, buildName: String, buildStage: String) extends WebhookEvent
   final case class Pipeline(mergeRequest: Option[MR], project: Project, objectAttributes: Pipeline.Attributes) extends WebhookEvent
 
   object Pipeline {
