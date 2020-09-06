@@ -34,9 +34,9 @@ object StateResolver {
 
       private def orHalt[A](msg: String)(opt: Option[A]): F[A] = opt.fold[F[A]](halt(msg))(_.pure[F])
 
-      private def unhalt[A]: F[A] => F[Either[String, A]] =
-        _.map(_.asRight[String]).recover {
-          case Halt(msg) => msg.asLeft[A]
+      private def unhalt[A](handle: String => F[Unit]): F[A] => F[Option[A]] =
+        _.map(_.some).recoverWith {
+          case Halt(msg) => handle(msg).as(none)
         }
 
       private def decodeMergeRequest(pipeline: WebhookEvent.Pipeline): F[io.pg.gitlab.webhook.MergeRequest] = {
@@ -98,12 +98,10 @@ object StateResolver {
                     status = p.objectAttributes.status
                   )
               }
-              .pipe(unhalt)
-              .flatTap {
-                case Left(reason) => Logger[F].debug("Couldn't build MR state", Map("reason" -> reason))
-                case Right(state) => Logger[F].info("Resolved MR state", Map("state" -> state.toString))
+              .pipe(unhalt(reason => Logger[F].debug("Couldn't build MR state", Map("reason" -> reason))))
+              .flatTap { state =>
+                Logger[F].info("Resolved MR state", Map("state" -> state.toString))
               }
-              .map(_.toOption)
 
           case e                        => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
         }
