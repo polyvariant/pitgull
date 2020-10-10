@@ -25,7 +25,11 @@ object Main extends IOApp {
           .withHttpApp(
             middleware
               .Logger
-              .httpApp(logHeaders = true, logBody = true, logAction = (logger.debug(_: String)).some)(
+              .httpApp(
+                logHeaders = true,
+                logBody = true,
+                logAction = (logger.debug(_: String)).some
+              )(
                 resources.routes
               )
           )
@@ -36,7 +40,10 @@ object Main extends IOApp {
         val logStarted = logger
           .info(
             "Started application",
-            Map("version" -> config.meta.version, "scalaVersion" -> config.meta.scalaVersion)
+            Map(
+              "version" -> config.meta.version,
+              "scalaVersion" -> config.meta.scalaVersion
+            )
           )
 
         server *>
@@ -46,7 +53,10 @@ object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     Blocker[IO]
       .flatMap { b =>
-        ProjectConfigReader.dhallJsonStringConfig[IO](b).flatTap(_.readConfig.flatMap(a => logger.info(a.toString))).resource *>
+        ProjectConfigReader
+          .dhallJsonStringConfig[IO](b)
+          .flatTap(_.readConfig.flatMap(a => logger.info(a.toString)))
+          .resource *>
           AppConfig
             .appConfig
             .resource[IO]

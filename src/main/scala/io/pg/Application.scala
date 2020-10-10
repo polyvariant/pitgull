@@ -29,11 +29,16 @@ object Event {
   final case class Webhook(value: WebhookEvent) extends Event
 }
 
-final class Application[F[_]](val routes: HttpApp[F], val background: NonEmptyList[BackgroundProcess[F]])
+final class Application[F[_]](
+  val routes: HttpApp[F],
+  val background: NonEmptyList[BackgroundProcess[F]]
+)
 
 object Application {
 
-  def resource[F[_]: ConcurrentEffect: ContextShift: Logger](config: AppConfig): Resource[F, Application[F]] = {
+  def resource[F[_]: ConcurrentEffect: ContextShift: Logger](
+    config: AppConfig
+  ): Resource[F, Application[F]] = {
     implicit val projectConfigReader = ProjectConfigReader.test[F]
 
     Blocker[F].flatMap { blocker =>
@@ -42,22 +47,35 @@ object Application {
         .map(Channel.fromQueue)
         .resource
         .flatMap { eventChannel =>
-          val webhookChannel = eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
+          val webhookChannel =
+            eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
 
           val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
             NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
 
           BlazeClientBuilder[F](ExecutionContext.global)
             .resource
-            .map(org.http4s.client.middleware.Logger(logHeaders = true, logBody = false))
+            .map(
+              org
+                .http4s
+                .client
+                .middleware
+                .Logger(logHeaders = true, logBody = false)
+            )
             .map { client =>
-              implicit val backend: SttpBackend[F, Nothing, Nothing] = Http4sBackend.usingClient[F](client, blocker)
+              implicit val backend: SttpBackend[F, Nothing, Nothing] =
+                Http4sBackend.usingClient[F](client, blocker)
 
-              implicit val gitlab: Gitlab[F] = Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
-              implicit val projectActions: ProjectActions[F] = ProjectActions.instance[F]
-              implicit val stateResolver: StateResolver[F] = StateResolver.instance[F]
+              implicit val gitlab: Gitlab[F] =
+                Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
+              implicit val projectActions: ProjectActions[F] =
+                ProjectActions.instance[F]
+              implicit val stateResolver: StateResolver[F] =
+                StateResolver.instance[F]
 
-              val webhookProcess = BackgroundProcess.fromProcessor(webhookChannel)(WebhookProcessor.instance[F])
+              val webhookProcess = BackgroundProcess.fromProcessor(
+                webhookChannel
+              )(WebhookProcessor.instance[F])
 
               import sttp.tapir.server.http4s._
 

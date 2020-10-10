@@ -24,10 +24,13 @@ object WebhookRouter {
     import sttp.tapir._
     import sttp.tapir.json.circe._
 
-    val webhook = infallibleEndpoint.post.in("webhook").in(jsonBody[WebhookEvent])
+    val webhook =
+      infallibleEndpoint.post.in("webhook").in(jsonBody[WebhookEvent])
   }
 
-  def routes[F[_]: Applicative](eventPublisher: Publisher[F, WebhookEvent]): NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+  def routes[F[_]: Applicative](
+    eventPublisher: Publisher[F, WebhookEvent]
+  ): NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
     NonEmptyList.of(
       endpoints.webhook.serverLogicRecoverErrors(eventPublisher.publish)
     )
@@ -37,7 +40,13 @@ object WebhookRouter {
 object WebhookProcessor {
   import scala.util.chaining._
 
-  def instance[F[_]: ProjectConfigReader: ProjectActions: StateResolver: Logger: MonadError[*[_], Throwable]](
+  def instance[
+    F[
+      _
+    ]: ProjectConfigReader: ProjectActions: StateResolver: Logger: MonadError[*[
+      _
+    ], Throwable]
+  ](
     implicit SC: fs2.Stream.Compiler[F, F]
   ): Processor[F, WebhookEvent] =
     Processor.simple { ev =>
@@ -45,10 +54,18 @@ object WebhookProcessor {
         _       <- Logger[F].info("Received event", Map("event" -> ev.toString()))
         config  <- ProjectConfigReader[F].readConfig
         state   <- StateResolver[F].resolve(ev)
-        actions <- state.traverse(validActions[F](_, config)).map(_.sequence.flattenOption)
-        _       <- Logger[F].debug("All actions to execute", Map("actions" -> actions.toString))
+        actions <- state
+                     .traverse(validActions[F](_, config))
+                     .map(_.sequence.flattenOption)
+        _       <- Logger[F].debug(
+                     "All actions to execute",
+                     Map("actions" -> actions.toString)
+                   )
         _       <- actions.traverse_ { action =>
-                     Logger[F].info("About to execute action", Map("action" -> action.toString)) *>
+                     Logger[F].info(
+                       "About to execute action",
+                       Map("action" -> action.toString)
+                     ) *>
                        ProjectActions[F].execute(action)
                    }
       } yield ()
@@ -60,7 +77,8 @@ object WebhookProcessor {
   )(
     implicit SC: fs2.Stream.Compiler[F, F]
   ): F[List[ProjectAction]] = {
-    def tapLeftAndDrop[L, R](log: L => F[Unit]): Pipe[F, Either[L, R], R] = _.evalTap(_.leftTraverse(log)).map(_.toOption).unNone
+    def tapLeftAndDrop[L, R](log: L => F[Unit]): Pipe[F, Either[L, R], R] =
+      _.evalTap(_.leftTraverse(log)).map(_.toOption).unNone
 
     val logMismatches: NonEmptyList[Mismatch] => F[Unit] = e =>
       Logger[F].debug(

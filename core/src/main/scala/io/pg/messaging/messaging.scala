@@ -15,7 +15,9 @@ final case class Processor[F[_], -A](process: fs2.Pipe[F, A, Unit])
 
 object Processor {
 
-  def simple[F[_]: ApplicativeError[*[_], Throwable]: Logger, A](f: A => F[Unit]): Processor[F, A] =
+  def simple[F[_]: ApplicativeError[*[_], Throwable]: Logger, A](
+    f: A => F[Unit]
+  ): Processor[F, A] =
     Processor[F, A] {
       _.evalMap { msg =>
         f(msg).handleErrorWith(logError[F, A](msg))
@@ -23,7 +25,12 @@ object Processor {
     }
 
   def logError[F[_]: Logger, A](msg: A): Throwable => F[Unit] =
-    e => Logger[F].error("Encountered error while processing message", Map("message" -> msg.toString()), e)
+    e =>
+      Logger[F].error(
+        "Encountered error while processing message",
+        Map("message" -> msg.toString()),
+        e
+      )
 
 }
 
@@ -40,7 +47,8 @@ object Channel {
       val consume: fs2.Stream[F, A] = q.dequeue
     }
 
-  implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A]) extends AnyVal {
+  implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A])
+    extends AnyVal {
 
     /**
       * Transforms a channel into one that forwards everything to the publisher,

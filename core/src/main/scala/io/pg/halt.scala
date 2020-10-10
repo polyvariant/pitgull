@@ -33,7 +33,8 @@ object Halt {
       def decease[A](handle: String => F[Unit])(fa: F[A]): F[Option[A]] =
         receaseWith[Option[A]](handle(_).as(none[A]))(fa.map(_.some))
 
-      def orCease[A](msg: String)(opt: Option[A]): F[A] = opt.fold[F[A]](cease(msg))(_.pure[F])
+      def orCease[A](msg: String)(opt: Option[A]): F[A] =
+        opt.fold[F[A]](cease(msg))(_.pure[F])
 
       def receaseWith[A](another: String => F[A])(fa: F[A]): F[A] =
         fa.handleErrorWith {

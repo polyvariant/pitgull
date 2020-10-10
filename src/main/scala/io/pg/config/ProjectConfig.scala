@@ -44,13 +44,17 @@ object ProjectConfigReader {
       val readConfig: F[ProjectConfig] = config.pure[F]
     }
 
-  def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](blocker: Blocker): F[ProjectConfigReader[F]] = {
+  def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](
+    blocker: Blocker
+  ): F[ProjectConfigReader[F]] = {
     val dhallCommand = "dhall-to-json"
     //todo: not reading a local file
     val filePath = "./example.dhall"
 
     def checkExitCode[O, E]: F[ProcessResult[O, E]] => F[ProcessResult[O, E]] =
-      _.ensure(new Throwable("Invalid exit code"))(_.exitCode == ExitCode.Success)
+      _.ensure(new Throwable("Invalid exit code"))(
+        _.exitCode == ExitCode.Success
+      )
 
     implicit val runner: ProcessRunner[F] = new JVMProcessRunner
 
@@ -71,9 +75,13 @@ object ProjectConfigReader {
     }
 
     val ensureCommandExists =
-      Process[F]("bash", "-c" :: s"command -v $dhallCommand" :: Nil).drainOutput(_.drain).run(blocker).pipe(checkExitCode).adaptError {
-        case e => new Throwable(s"Command $dhallCommand not found", e)
-      }
+      Process[F]("bash", "-c" :: s"command -v $dhallCommand" :: Nil)
+        .drainOutput(_.drain)
+        .run(blocker)
+        .pipe(checkExitCode)
+        .adaptError {
+          case e => new Throwable(s"Command $dhallCommand not found", e)
+        }
 
     ensureCommandExists.as(instance)
   }

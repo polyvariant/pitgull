@@ -23,7 +23,8 @@ object ProjectActions {
     //todo: perform check is the MR still open?
     //or fall back in case it's not
     //https://www.youtube.com/watch?v=vxKBHX9Datw
-    case Merge(projectId, mergeRequestIid) => Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
+    case Merge(projectId, mergeRequestIid) =>
+      Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
   }
 
   @autoContravariant
@@ -32,8 +33,13 @@ object ProjectActions {
   }
 
   object MatcherFunction {
-    def fromPredicate[In](predicate: In => Boolean, orElse: In => Mismatch): MatcherFunction[In] =
+
+    def fromPredicate[In](
+      predicate: In => Boolean,
+      orElse: In => Mismatch
+    ): MatcherFunction[In] =
       _.asRight[Mismatch].ensureOr(orElse)(predicate).toEitherNel.void
+
   }
 
   final case class Mismatch(reason: String)
@@ -49,12 +55,17 @@ object ProjectActions {
 
   //todo: matching logic :))
   //let the knife do the work
-  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => isSuccessful //todo
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ =>
+    isSuccessful //todo
 
-  def compile(state: MergeRequestState, project: ProjectConfig): List[Either[NonEmptyList[Mismatch], ProjectAction]] =
+  def compile(
+    state: MergeRequestState,
+    project: ProjectConfig
+  ): List[Either[NonEmptyList[Mismatch], ProjectAction]] =
     project.rules.map { rule =>
       val ruleAction: ProjectAction = rule.action match {
-        case Action.Merge => ProjectAction.Merge(state.projectId, state.mergeRequestIid)
+        case Action.Merge =>
+          ProjectAction.Merge(state.projectId, state.mergeRequestIid)
       }
 
       compileMatcher(rule.matcher).matches(state).as(ruleAction)
@@ -65,5 +76,6 @@ object ProjectActions {
 sealed trait ProjectAction extends Product with Serializable
 
 object ProjectAction {
-  final case class Merge(projectId: Long, mergeRequestIid: Long) extends ProjectAction
+  final case class Merge(projectId: Long, mergeRequestIid: Long)
+    extends ProjectAction
 }

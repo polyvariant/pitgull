@@ -13,9 +13,16 @@ sealed trait BackgroundProcess[F[_]] {
 
 object BackgroundProcess {
 
-  final case class DrainStream[F[_], G[_]](stream: fs2.Stream[F, Nothing], C: fs2.Stream.Compiler[F, G]) extends BackgroundProcess[G]
+  final case class DrainStream[F[_], G[_]](
+    stream: fs2.Stream[F, Nothing],
+    C: fs2.Stream.Compiler[F, G]
+  ) extends BackgroundProcess[G]
 
-  def fromStream[F[_], G[_]](stream: fs2.Stream[F, _])(implicit C: fs2.Stream.Compiler[F, G]): BackgroundProcess[G] =
+  def fromStream[F[_], G[_]](
+    stream: fs2.Stream[F, _]
+  )(
+    implicit C: fs2.Stream.Compiler[F, G]
+  ): BackgroundProcess[G] =
     new DrainStream(stream.drain, C)
 
   def fromProcessor[F[_], A](

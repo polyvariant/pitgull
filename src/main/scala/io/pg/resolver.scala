@@ -25,12 +25,16 @@ object StateResolver {
 
   //Option - some events don't yield a state to work with and should be ignored.
   //We should get an ADT for this.
-  def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]: Halt]: StateResolver[F] =
+  def instance[
+    F[_]: Gitlab: Logger: MonadError[*[_], Throwable]: Halt
+  ]: StateResolver[F] =
     // Implementation note: all effectful methods here can fail with Halt,
     // which should be handled gracefully as a reason for an incomplete state.
     new StateResolver[F] {
 
-      private def decodeMergeRequest(pipeline: WebhookEvent.Pipeline): F[io.pg.gitlab.webhook.MergeRequest] = {
+      private def decodeMergeRequest(
+        pipeline: WebhookEvent.Pipeline
+      ): F[io.pg.gitlab.webhook.MergeRequest] = {
         val project = pipeline.project
 
         val mergeRequestByHeadPipeline: F[io.pg.gitlab.webhook.MergeRequest] = {
@@ -45,14 +49,23 @@ object StateResolver {
             )
 
           query
-            .flatMap(_.headOption.pipe(Halt[F].orCease("No open MRs found for branch")))
+            .flatMap(
+              _.headOption.pipe(Halt[F].orCease("No open MRs found for branch"))
+            )
             .flatTap {
-              case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) => Applicative[F].unit
-              case (_, None)                                               => Halt[F].cease[Unit]("MR didn't have a head pipeline")
-              case _                                                       => Halt[F].cease[Unit]("Head pipeline didn't match event's pipeline ID")
+              case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>
+                Applicative[F].unit
+              case (_, None)                                               =>
+                Halt[F].cease[Unit]("MR didn't have a head pipeline")
+              case _                                                       =>
+                Halt[F].cease[Unit](
+                  "Head pipeline didn't match event's pipeline ID"
+                )
             }
             .map { case (mrIid, _) => mrIid }
-            .flatMap(_.toLongOption.pipe(Halt[F].orCease("MR id wasn't a Long")))
+            .flatMap(
+              _.toLongOption.pipe(Halt[F].orCease("MR id wasn't a Long"))
+            )
             .map(io.pg.gitlab.webhook.MergeRequest(_))
         }
 
@@ -62,11 +75,21 @@ object StateResolver {
           .pipe(Halt[F].recease(mergeRequestByHeadPipeline))
       }
 
-      private def findMergeRequestInfo(iid: Long, project: Project): F[(String, Option[String])] =
+      private def findMergeRequestInfo(
+        iid: Long,
+        project: Project
+      ): F[(String, Option[String])] =
         Gitlab[F]
-          .mergeRequestInfo(projectPath = project.pathWithNamespace, mergeRequestIId = iid.toString) {
+          .mergeRequestInfo(
+            projectPath = project.pathWithNamespace,
+            mergeRequestIId = iid.toString
+          ) {
             val authorEmail = MergeRequest
-              .author(User.email.map(_.liftTo[F](GitlabError("MR author's email missing"))))
+              .author(
+                User
+                  .email
+                  .map(_.liftTo[F](GitlabError("MR author's email missing")))
+              )
               .map(_.liftTo[F](GitlabError("MR author missing")))
 
             authorEmail ~ MergeRequest.description
@@ -80,7 +103,9 @@ object StateResolver {
             val project = p.project
 
             decodeMergeRequest(p)
-              .flatMap(mr => findMergeRequestInfo(mr.iid, project).tupleRight(mr))
+              .flatMap(mr =>
+                findMergeRequestInfo(mr.iid, project).tupleRight(mr)
+              )
               .map {
                 case ((email, description), mr) =>
                   MergeRequestState(
@@ -91,12 +116,23 @@ object StateResolver {
                     status = p.objectAttributes.status
                   )
               }
-              .pipe(Halt[F].decease(reason => Logger[F].debug("Couldn't build MR state", Map("reason" -> reason))))
+              .pipe(
+                Halt[F].decease(reason =>
+                  Logger[F]
+                    .debug("Couldn't build MR state", Map("reason" -> reason))
+                )
+              )
               .flatTap { state =>
-                Logger[F].info("Resolved MR state", Map("state" -> state.toString))
+                Logger[F].info(
+                  "Resolved MR state",
+                  Map("state" -> state.toString)
+                )
               }
 
-          case e                        => Logger[F].info("Ignoring event", Map("event" -> e.toString())).as(none)
+          case e                        =>
+            Logger[F]
+              .info("Ignoring event", Map("event" -> e.toString()))
+              .as(none)
         }
 
     }

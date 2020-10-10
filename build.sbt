@@ -5,7 +5,9 @@ inThisBuild(
   List(
     organization := "io.pg",
     homepage := Some(url("https://github.com/pitgull/pitgull")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    licenses := List(
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
+    ),
     developers := List(
       Developer(
         "kubukoz",
@@ -23,13 +25,19 @@ ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
 ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
-ThisBuild / githubWorkflowBuild := List(WorkflowStep.Sbt(List("test", "missinglinkCheck")))
+ThisBuild / githubWorkflowBuild := List(
+  WorkflowStep.Sbt(List("test", "missinglinkCheck"))
+)
 
 Test / fork := true
 
-missinglinkExcludedDependencies in ThisBuild += moduleFilter(organization = "org.slf4j", name = "slf4j-api")
+missinglinkExcludedDependencies in ThisBuild += moduleFilter(
+  organization = "org.slf4j",
+  name = "slf4j-api"
+)
 
-def crossPlugin(x: sbt.librarymanagement.ModuleID) = compilerPlugin(x.cross(CrossVersion.full))
+def crossPlugin(x: sbt.librarymanagement.ModuleID) =
+  compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
   crossPlugin("org.typelevel" % "kind-projector" % "0.11.0"),
@@ -92,9 +100,19 @@ val pitgull =
       name := "pitgull",
       dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
       dockerCommands ++=
-        Cmd("USER", "root") :: ExecCmd("RUN", "sh", "-c", "apk update && apk add curl bash") :: installDhallJson :: Nil,
+        Cmd("USER", "root") :: ExecCmd(
+          "RUN",
+          "sh",
+          "-c",
+          "apk update && apk add curl bash"
+        ) :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
-      Docker / mappings += ((file("./example.dhall"), "/opt/docker/example.dhall")),
+      Docker / mappings += (
+        (
+          file("./example.dhall"),
+          "/opt/docker/example.dhall"
+        )
+      ),
       mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
       buildInfoPackage := "io.pg",

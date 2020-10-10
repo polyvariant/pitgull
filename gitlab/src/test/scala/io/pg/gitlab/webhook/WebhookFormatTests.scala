@@ -288,10 +288,19 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
 }""".as[WebhookEvent] shouldBe WebhookEvent
         .Pipeline(
           MergeRequest(1L /* , MergeRequest.State.Opened */ ).some,
-          Project(id = 1L, name = "Gitlab Test", pathWithNamespace = "gitlab-org/gitlab-test", defaultBranch = "master"),
+          Project(
+            id = 1L,
+            name = "Gitlab Test",
+            pathWithNamespace = "gitlab-org/gitlab-test",
+            defaultBranch = "master"
+          ),
           WebhookEvent
             .Pipeline
-            .Attributes(id = 31L, ref = "master", status = WebhookEvent.Pipeline.Status.Success)
+            .Attributes(
+              id = 31L,
+              ref = "master",
+              status = WebhookEvent.Pipeline.Status.Success
+            )
         )
         .asRight
     }

@@ -6,7 +6,8 @@ import io.circe.generic.extras.semiauto._
 import io.circe.Codec
 
 private object circe {
-  implicit val circeConfig: Configuration = Configuration.default.withDiscriminator("kind")
+  implicit val circeConfig: Configuration =
+    Configuration.default.withDiscriminator("kind")
 }
 
 import circe.circeConfig

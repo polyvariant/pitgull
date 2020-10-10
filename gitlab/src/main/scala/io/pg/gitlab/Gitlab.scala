@@ -22,7 +22,13 @@ import io.odin.Logger
 
 @finalAlg
 trait Gitlab[F[_]] {
-  def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A]
+
+  def mergeRequestInfo[A](
+    projectPath: String,
+    mergeRequestIId: String
+  )(
+    selection: SelectionBuilder[MergeRequest, A]
+  ): F[A]
 
   def mergeRequests[A](
     projectPath: String,
@@ -49,17 +55,26 @@ object Gitlab {
 
     import sttp.tapir.client.sttp._
 
-    def runEndpoint[I, E, O](endpoint: Endpoint[I, E, O, Nothing]): I => F[Either[E, O]] =
+    def runEndpoint[I, E, O](
+      endpoint: Endpoint[I, E, O, Nothing]
+    ): I => F[Either[E, O]] =
       i => runRequest(endpoint.toSttpRequestUnsafe(baseUri).apply(i))
 
-    def runInfallibleEndpoint[I, O](endpoint: Endpoint[I, Nothing, O, Nothing]): I => F[O] =
+    def runInfallibleEndpoint[I, O](
+      endpoint: Endpoint[I, Nothing, O, Nothing]
+    ): I => F[O] =
       runEndpoint[I, Nothing, O](endpoint).nested.map(_.merge).value
 
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
       runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
 
     new Gitlab[F] {
-      def mergeRequestInfo[A](projectPath: String, mergeRequestIId: String)(selection: SelectionBuilder[MergeRequest, A]): F[A] =
+      def mergeRequestInfo[A](
+        projectPath: String,
+        mergeRequestIId: String
+      )(
+        selection: SelectionBuilder[MergeRequest, A]
+      ): F[A] =
         Query
           .project(projectPath)(
             Project
@@ -79,11 +94,17 @@ object Gitlab {
       ): F[List[A]] =
         Logger[F].info(
           "Finding merge requests",
-          Map("projectPath" -> projectPath, "sourceBranches" -> sourceBranches.mkString_(", "))
+          Map(
+            "projectPath" -> projectPath,
+            "sourceBranches" -> sourceBranches.mkString_(", ")
+          )
         ) *> Query
           .project(projectPath)(
             Project
-              .mergeRequests(sourceBranches = sourceBranches.toList.some, state = MergeRequestState.opened.some)(
+              .mergeRequests(
+                sourceBranches = sourceBranches.toList.some,
+                state = MergeRequestState.opened.some
+              )(
                 MergeRequestConnection
                   .nodes(selection)
                   .map(_.toList.flatMap(_.toList))
@@ -94,15 +115,21 @@ object Gitlab {
           .pipe(runGraphQLQuery(_))
           .flatten
           .flatTap { result =>
-            Logger[F].info("Found merge requests", Map("result" -> result.mkString))
+            Logger[F].info(
+              "Found merge requests",
+              Map("result" -> result.mkString)
+            )
           }
 
       def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
-        runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest).apply((projectId, mergeRequestIid)).void
+        runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest)
+          .apply((projectId, mergeRequestIid))
+          .void
     }
   }
 
-  final case class GitlabError(msg: String) extends Throwable(s"Gitlab error: $msg")
+  final case class GitlabError(msg: String)
+    extends Throwable(s"Gitlab error: $msg")
 }
 
 object GitlabEndpoints {
@@ -114,6 +141,10 @@ object GitlabEndpoints {
     baseEndpoint
       //hehe putin
       .put
-      .in("projects" / path[Long]("id") / "merge_requests" / path[Long]("merge_request_iid") / "merge")
+      .in(
+        "projects" / path[Long]("id") / "merge_requests" / path[Long](
+          "merge_request_iid"
+        ) / "merge"
+      )
 
 }
