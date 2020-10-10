@@ -57,7 +57,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-effect" % "2.2.0",
     "org.typelevel" %% "cats-tagless-macros" % "0.11",
     "co.fs2" %% "fs2-core" % "2.4.4",
-    "com.github.valskalla" %% "odin-core" % "0.8.1",
+    "com.github.valskalla" %% "odin-core" % "0.9.1",
     "io.circe" %% "circe-core" % "0.13.0",
     "org.scalatest" %% "scalatest" % "3.2.2" % Test //todo: munit
   ) ++ compilerPlugins
@@ -134,8 +134,8 @@ val pitgull =
         "com.olegpy" %% "meow-mtl-effects" % "0.4.1",
         "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
-        "com.github.valskalla" %% "odin-core" % "0.8.1",
-        "com.github.valskalla" %% "odin-slf4j" % "0.8.1",
+        "com.github.valskalla" %% "odin-core" % "0.9.1",
+        "com.github.valskalla" %% "odin-slf4j" % "0.9.1",
         "io.github.vigoo" %% "prox" % "0.5.2"
       )
     )
