@@ -59,7 +59,7 @@ val commonSettings = List(
     "co.fs2" %% "fs2-core" % "2.4.4",
     "com.github.valskalla" %% "odin-core" % "0.9.1",
     "io.circe" %% "circe-core" % "0.13.0",
-    "org.scalatest" %% "scalatest" % "3.2.2" % Test //todo: munit
+    "org.scalatest" %% "scalatest" % "3.2.3" % Test //todo: munit
   ) ++ compilerPlugins
 )
 
