@@ -56,7 +56,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-core" % "2.2.0",
     "org.typelevel" %% "cats-effect" % "2.2.0",
     "org.typelevel" %% "cats-tagless-macros" % "0.12",
-    "co.fs2" %% "fs2-core" % "2.4.4",
+    "co.fs2" %% "fs2-core" % "2.4.5",
     "com.github.valskalla" %% "odin-core" % "0.9.1",
     "io.circe" %% "circe-core" % "0.13.0",
     "org.scalatest" %% "scalatest" % "3.2.3" % Test //todo: munit
