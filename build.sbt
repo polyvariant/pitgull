@@ -108,10 +108,7 @@ val pitgull =
         ) :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
       Docker / mappings += (
-        (
-          file("./example.dhall"),
-          "/opt/docker/example.dhall"
-        )
+        file("./example.dhall") -> "/opt/docker/example.dhall"
       ),
       mainClass := Some("io.pg.ProjectConfigReader"),
       skip in publish := true,
