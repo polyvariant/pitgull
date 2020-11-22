@@ -18,14 +18,16 @@ import io.pg.Halt
 
 @finalAlg
 trait StateResolver[F[_]] {
-  def resolve(event: WebhookEvent): F[Option[MergeRequestState]]
+  def resolve(event: WebhookEvent): F[List[MergeRequestState]]
 }
 
 object StateResolver {
 
   //Option - some events don't yield a state to work with and should be ignored.
   //We should get an ADT for this.
-  def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]: Halt]: StateResolver[F] =
+  def instance[
+    F[_]: Gitlab: Logger: MonadError[*[_], Throwable]: Halt
+  ]: StateResolver[F] =
     // Implementation note: all effectful methods here can fail with Halt,
     // which should be handled gracefully as a reason for an incomplete state.
     new StateResolver[F] {
@@ -95,13 +97,15 @@ object StateResolver {
           .flatMap(_.leftSequence)
           .flatMap(_.leftSequence)
 
-      def resolve(event: WebhookEvent): F[Option[MergeRequestState]] =
+      def resolve(event: WebhookEvent): F[List[MergeRequestState]] =
         event match {
           case p: WebhookEvent.Pipeline =>
             val project = p.project
 
-            decodeMergeRequest(p)
-              .flatMap(mr => findMergeRequestInfo(mr.iid, project).tupleRight(mr))
+            val result: F[List[MergeRequestState]] = decodeMergeRequest(p)
+              .flatMap(mr =>
+                findMergeRequestInfo(mr.iid, project).tupleRight(mr)
+              )
               .map {
                 case ((email, description), mr) =>
                   MergeRequestState(
@@ -114,7 +118,8 @@ object StateResolver {
               }
               .pipe(
                 Halt[F].decease { reason =>
-                  Logger[F].debug("Couldn't build MR state", Map("reason" -> reason))
+                  Logger[F]
+                    .debug("Couldn't build MR state", Map("reason" -> reason))
                 }
               )
               .flatTap { state =>
@@ -122,12 +127,14 @@ object StateResolver {
                   "Resolved MR state",
                   Map("state" -> state.toString)
                 )
-              }
+              }.map(_.toList)
+
+            result
 
           case e                        =>
             Logger[F]
               .info("Ignoring event", Map("event" -> e.toString()))
-              .as(none)
+              .as(Nil)
         }
 
     }

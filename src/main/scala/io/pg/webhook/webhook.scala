@@ -53,10 +53,8 @@ object WebhookProcessor {
       for {
         _       <- Logger[F].info("Received event", Map("event" -> ev.toString()))
         config  <- ProjectConfigReader[F].readConfig
-        state   <- StateResolver[F].resolve(ev)
-        actions <- state
-                     .traverse(validActions[F](_, config))
-                     .map(_.sequence.flattenOption)
+        states  <- StateResolver[F].resolve(ev)
+        actions <- validActions[F](states, config)
         _       <- Logger[F].debug(
                      "All actions to execute",
                      Map("actions" -> actions.toString)
@@ -72,7 +70,7 @@ object WebhookProcessor {
     }
 
   private def validActions[F[_]: Logger: Applicative](
-    state: MergeRequestState,
+    states: List[MergeRequestState],
     config: ProjectConfig
   )(
     implicit SC: fs2.Stream.Compiler[F, F]
@@ -88,7 +86,7 @@ object WebhookProcessor {
 
     fs2
       .Stream
-      .emit(state)
+      .emits(states)
       .flatMap(ProjectActions.compile(_, config).pipe(fs2.Stream.emits(_)))
       .through(tapLeftAndDrop(logMismatches))
       .compile

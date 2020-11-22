@@ -28,10 +28,10 @@ object BackgroundProcess {
   def fromProcessor[F[_], A](
     channel: Channel[F, A]
   )(
-    consumer: Processor[F, A]
+    processor: Processor[F, A]
   )(
     implicit C: fs2.Stream.Compiler[F, F]
   ): BackgroundProcess[F] =
-    fromStream(channel.consume.through(consumer.process))
+    fromStream(channel.consume.through(processor.process))
 
 }

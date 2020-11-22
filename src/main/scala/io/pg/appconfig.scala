@@ -27,28 +27,27 @@ object AppConfig {
 
   import ciris._
 
-  private val httpConfig: ConfigValue[HttpConfig] =
+  val httpConfig: ConfigValue[HttpConfig] =
     env("HTTP_PORT").as[Int].default(8080).map(HttpConfig(_))
 
-  private val metaConfig: ConfigValue[MetaConfig] =
+  val metaConfig: ConfigValue[MetaConfig] =
     (
       default(bannerString),
       default(BuildInfo.version),
       default(BuildInfo.scalaVersion)
     ).parMapN(MetaConfig)
 
-  val decodeUri: String => ConfigValue[Uri] = s =>
-    Uri
-      .parse(s)
-      .fold(
-        e => ConfigValue.failed[Uri](ConfigError(s"Invalid URI, error: $e")),
-        ConfigValue.default(_)
-      )
+  implicit val decodeUri: ConfigDecoder[String, Uri] =
+    ConfigDecoder[String, String].mapEither { (key, value) =>
+      Uri
+        .parse(value)
+        .leftMap(e => ConfigError(s"Invalid URI ($value at $key), error: $e"))
+    }
 
-  private val gitConfig: ConfigValue[Git] =
+  val gitConfig: ConfigValue[Git] =
     (
       default(Git.Host.Gitlab),
-      env("GIT_API_URL").flatMap(decodeUri),
+      env("GIT_API_URL").as[Uri],
       env("GIT_API_TOKEN").secret
     ).mapN(Git.apply)
 

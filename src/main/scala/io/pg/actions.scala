@@ -9,7 +9,6 @@ import cats.tagless.autoContravariant
 import io.pg.config.Action
 import cats.data.EitherNel
 import cats.implicits._
-import cats.data.NonEmptyList
 import io.pg.gitlab.webhook.WebhookEvent
 
 @finalAlg
@@ -61,7 +60,7 @@ object ProjectActions {
   def compile(
     state: MergeRequestState,
     project: ProjectConfig
-  ): List[Either[NonEmptyList[Mismatch], ProjectAction]] =
+  ): List[EitherNel[Mismatch, ProjectAction]] =
     project.rules.map { rule =>
       val ruleAction: ProjectAction = rule.action match {
         case Action.Merge =>

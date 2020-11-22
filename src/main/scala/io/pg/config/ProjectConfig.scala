@@ -32,12 +32,10 @@ object ProjectConfigReader {
         Action.Merge
       )
 
-      val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
-
       val config: ProjectConfig = ProjectConfig(
         List(
           // steward,
-          mergeAnything
+          Rule.mergeAnything
         )
       )
 
@@ -57,7 +55,6 @@ object ProjectConfigReader {
       )
 
     implicit val runner: ProcessRunner[F] = new JVMProcessRunner
-
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
 
       val readConfig: F[ProjectConfig] = {

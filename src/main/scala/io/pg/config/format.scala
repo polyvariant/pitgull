@@ -42,5 +42,9 @@ object Action {
 @ConfiguredJsonCodec()
 final case class Rule(name: String, matcher: Matcher, action: Action)
 
+object Rule {
+  val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
+}
+
 @ConfiguredJsonCodec()
 final case class ProjectConfig(rules: List[Rule])
