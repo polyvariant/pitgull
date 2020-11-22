@@ -3,8 +3,9 @@ package io.pg.gitlab.webhook
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import cats.syntax.all._
+import org.scalatest.EitherValues
 
-class WebhookFormatTests extends AnyWordSpec with Matchers {
+class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
   import io.circe.literal._
 
   "Webhook events" when {
@@ -78,16 +79,14 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
     }
   ],
   "total_commits_count": 4
-}""".as[WebhookEvent] shouldBe WebhookEvent
-        .Push(
-          Project(
-            id = 15,
-            name = "Diaspora",
-            pathWithNamespace = "mike/diaspora",
-            defaultBranch = "master"
-          )
+}""".as[WebhookEvent].value shouldBe WebhookEvent(
+        Project(
+          id = 15,
+          name = "Diaspora",
+          pathWithNamespace = "mike/diaspora",
+          defaultBranch = "master"
         )
-        .asRight
+      )
     }
 
     "pipeline event" in {
@@ -285,22 +284,14 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
          }
       }
    ]
-}""".as[WebhookEvent] shouldBe WebhookEvent
-        .Pipeline(
-          Project(
-            id = 1L,
-            name = "Gitlab Test",
-            pathWithNamespace = "gitlab-org/gitlab-test",
-            defaultBranch = "master"
-          ),
-          WebhookEvent
-            .Pipeline
-            .Attributes(
-              id = 31L,
-              status = WebhookEvent.Pipeline.Status.Success
-            )
+}""".as[WebhookEvent].value shouldBe WebhookEvent(
+        Project(
+          id = 1L,
+          name = "Gitlab Test",
+          pathWithNamespace = "gitlab-org/gitlab-test",
+          defaultBranch = "master"
         )
-        .asRight
+      )
     }
   }
 }

@@ -46,8 +46,8 @@ object ProjectActions {
 
   val isSuccessful: MatcherFunction[MergeRequestState] =
     MatcherFunction
-      .fromPredicate[WebhookEvent.Pipeline.Status](
-        _ === WebhookEvent.Pipeline.Status.Success,
+      .fromPredicate[MergeRequestState.Status](
+        _ === MergeRequestState.Status.Success,
         value => Mismatch(s"not successful, actual status: $value")
       )
       .contramap(_.status)
