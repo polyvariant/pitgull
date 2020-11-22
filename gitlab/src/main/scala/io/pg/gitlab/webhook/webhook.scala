@@ -28,7 +28,6 @@ object WebhookEvent {
   private type MR = io.pg.gitlab.webhook.MergeRequest
 
   final case class Pipeline(
-    mergeRequest: Option[MR],
     project: Project,
     objectAttributes: Pipeline.Attributes
   ) extends WebhookEvent

@@ -36,43 +36,35 @@ object StateResolver {
         pipeline: WebhookEvent.Pipeline
       ): F[io.pg.gitlab.webhook.MergeRequest] = {
         val project = pipeline.project
+        val PipelineId = pipeline.objectAttributes.id.toString
 
-        val mergeRequestByHeadPipeline: F[io.pg.gitlab.webhook.MergeRequest] = {
-          val PipelineId = pipeline.objectAttributes.id.toString
+        val query = Gitlab[F]
+          .mergeRequests(
+            projectPath = project.pathWithNamespace,
+            sourceBranches = NonEmptyList.of(pipeline.objectAttributes.ref)
+          )(
+            MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
+          )
 
-          val query = Gitlab[F]
-            .mergeRequests(
-              projectPath = project.pathWithNamespace,
-              sourceBranches = NonEmptyList.of(pipeline.objectAttributes.ref)
-            )(
-              MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
-            )
-
-          query
-            .flatMap(
-              _.headOption.pipe(Halt[F].orCease("No open MRs found for branch"))
-            )
-            .flatTap {
-              case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>
-                Applicative[F].unit
-              case (_, None)                                               =>
-                Halt[F].cease[Unit]("MR didn't have a head pipeline")
-              case _                                                       =>
-                Halt[F].cease[Unit](
-                  "Head pipeline didn't match event's pipeline ID"
-                )
-            }
-            .map { case (mrIid, _) => mrIid }
-            .flatMap(
-              _.toLongOption.pipe(Halt[F].orCease("MR id wasn't a Long"))
-            )
-            .map(io.pg.gitlab.webhook.MergeRequest(_))
-        }
-
-        pipeline
-          .mergeRequest
-          .pipe(Halt[F].orCease("Webhook event is missing MR information"))
-          .pipe(Halt[F].recease(mergeRequestByHeadPipeline))
+        query
+          .flatMap(
+            _.headOption.pipe(Halt[F].orCease("No open MRs found for branch"))
+          )
+          .flatTap {
+            case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>
+              Applicative[F].unit
+            case (_, None)                                               =>
+              Halt[F].cease[Unit]("MR didn't have a head pipeline")
+            case _                                                       =>
+              Halt[F].cease[Unit](
+                "Head pipeline didn't match event's pipeline ID"
+              )
+          }
+          .map { case (mrIid, _) => mrIid }
+          .flatMap(
+            _.toLongOption.pipe(Halt[F].orCease("MR id wasn't a Long"))
+          )
+          .map(io.pg.gitlab.webhook.MergeRequest(_))
       }
 
       private def findMergeRequestInfo(
@@ -127,7 +119,8 @@ object StateResolver {
                   "Resolved MR state",
                   Map("state" -> state.toString)
                 )
-              }.map(_.toList)
+              }
+              .map(_.toList)
 
             result
 
