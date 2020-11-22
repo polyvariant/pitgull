@@ -297,7 +297,6 @@ class WebhookFormatTests extends AnyWordSpec with Matchers {
             .Pipeline
             .Attributes(
               id = 31L,
-              ref = "master",
               status = WebhookEvent.Pipeline.Status.Success
             )
         )

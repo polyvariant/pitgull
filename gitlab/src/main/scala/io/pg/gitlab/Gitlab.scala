@@ -31,8 +31,7 @@ trait Gitlab[F[_]] {
   ): F[A]
 
   def mergeRequests[A](
-    projectPath: String,
-    sourceBranches: NonEmptyList[String]
+    projectPath: String
   )(
     selection: SelectionBuilder[MergeRequest, A]
   ): F[List[A]]
@@ -87,22 +86,19 @@ object Gitlab {
           .flatten
 
       def mergeRequests[A](
-        projectPath: String,
-        sourceBranches: NonEmptyList[String]
+        projectPath: String
       )(
         selection: SelectionBuilder[graphql.MergeRequest, A]
       ): F[List[A]] =
         Logger[F].info(
           "Finding merge requests",
           Map(
-            "projectPath" -> projectPath,
-            "sourceBranches" -> sourceBranches.mkString_(", ")
+            "projectPath" -> projectPath
           )
         ) *> Query
           .project(projectPath)(
             Project
               .mergeRequests(
-                sourceBranches = sourceBranches.toList.some,
                 state = MergeRequestState.opened.some
               )(
                 MergeRequestConnection

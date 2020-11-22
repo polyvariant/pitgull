@@ -40,15 +40,14 @@ object StateResolver {
 
         val query = Gitlab[F]
           .mergeRequests(
-            projectPath = project.pathWithNamespace,
-            sourceBranches = NonEmptyList.of(pipeline.objectAttributes.ref)
+            projectPath = project.pathWithNamespace
           )(
             MergeRequest.iid ~ MergeRequest.headPipeline(Pipeline.id)
           )
 
         query
           .flatMap(
-            _.headOption.pipe(Halt[F].orCease("No open MRs found for branch"))
+            _.headOption.pipe(Halt[F].orCease("No open MRs found"))
           )
           .flatTap {
             case (mrIid, Some(s"gid://gitlab/Ci::Pipeline/$PipelineId")) =>

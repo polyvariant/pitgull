@@ -34,7 +34,7 @@ object WebhookEvent {
 
   object Pipeline {
     @ConfiguredJsonCodec
-    final case class Attributes(id: Long, ref: String, status: Status)
+    final case class Attributes(id: Long, status: Status)
 
     sealed trait Status
 
