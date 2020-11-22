@@ -6,6 +6,8 @@ import cats.Applicative
 
 object Prelude {
 
+  type @@[A, B] = A
+
   implicit class EffectToResourceLiftSyntax[F[_], A](private val fa: F[A])
     extends AnyVal {
 

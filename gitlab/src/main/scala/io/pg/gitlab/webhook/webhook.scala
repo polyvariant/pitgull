@@ -64,7 +64,9 @@ object WebhookEvent {
 }
 
 @ConfiguredJsonCodec
-final case class MergeRequest(iid: Long /* , state: MergeRequest.State */ )
+final case class MergeRequest(
+  iid: Long /* , state: MergeRequest.State , shouldBeRebased: Boolean*/
+)
 
 object MergeRequest {
   sealed trait State
