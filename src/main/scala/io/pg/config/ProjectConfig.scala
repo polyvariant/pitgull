@@ -77,8 +77,8 @@ object ProjectConfigReader {
         .drainOutput(_.drain)
         .run(blocker)
         .pipe(checkExitCode)
-        .adaptError {
-          case e => new Throwable(s"Command $dhallCommand not found", e)
+        .adaptError { case e =>
+          new Throwable(s"Command $dhallCommand not found", e)
         }
 
     ensureCommandExists.as(instance)
