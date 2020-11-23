@@ -52,8 +52,8 @@ object WebhookProcessor {
     Processor.simple { ev =>
       for {
         _       <- Logger[F].info("Received event", Map("event" -> ev.toString()))
-        config  <- ProjectConfigReader[F].readConfig
-        states  <- StateResolver[F].resolve(ev)
+        config  <- ProjectConfigReader[F].readConfig(ev.project)
+        states  <- StateResolver[F].resolve(ev.project)
         actions <- validActions[F](states, config)
         _       <- Logger[F].debug(
                      "All actions to execute",
