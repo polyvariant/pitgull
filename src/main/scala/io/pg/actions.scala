@@ -1,15 +1,16 @@
 package io.pg
 
-import cats.tagless.finalAlg
-import io.pg.gitlab.Gitlab
-import io.pg.ProjectAction.Merge
-import io.pg.config.ProjectConfig
-import io.pg.config.Matcher
-import cats.tagless.autoContravariant
-import io.pg.config.Action
 import cats.data.EitherNel
 import cats.implicits._
-import io.pg.gitlab.webhook.WebhookEvent
+import cats.tagless.autoContravariant
+import cats.tagless.finalAlg
+import io.pg.ProjectAction.Merge
+import io.pg.config.Action
+import io.pg.config.Matcher
+import io.pg.config.ProjectConfig
+import io.pg.gitlab.Gitlab
+import io.odin.Logger
+import io.pg.Prelude.MonadThrow
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -18,12 +19,23 @@ trait ProjectActions[F[_]] {
 
 object ProjectActions {
 
-  def instance[F[_]: Gitlab]: ProjectActions[F] = {
+  def instance[F[_]: Gitlab: Logger: MonadThrow]: ProjectActions[F] = {
     //todo: perform check is the MR still open?
     //or fall back in case it's not
     //https://www.youtube.com/watch?v=vxKBHX9Datw
     case Merge(projectId, mergeRequestIid) =>
-      Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
+      Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid).onError {
+        case error =>
+          Logger[F]
+            .error(
+              "Couldn't accept merge request",
+              Map(
+                "projectId" -> projectId.toString(),
+                "mergeRequestIid" -> mergeRequestIid.toString()
+              ),
+              error
+            )
+      }
   }
 
   @autoContravariant
@@ -54,8 +66,7 @@ object ProjectActions {
 
   //todo: matching logic :))
   //let the knife do the work
-  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ =>
-    isSuccessful //todo
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => isSuccessful //todo
 
   def compile(
     state: MergeRequestState,
@@ -75,6 +86,5 @@ object ProjectActions {
 sealed trait ProjectAction extends Product with Serializable
 
 object ProjectAction {
-  final case class Merge(projectId: Long, mergeRequestIid: Long)
-    extends ProjectAction
+  final case class Merge(projectId: Long, mergeRequestIid: Long) extends ProjectAction
 }

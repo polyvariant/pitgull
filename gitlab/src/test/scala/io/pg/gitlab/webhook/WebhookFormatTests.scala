@@ -82,7 +82,8 @@ class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
         Project(
           id = 15,
           pathWithNamespace = "mike/diaspora"
-        )
+        ),
+        objectKind = "push"
       )
     }
 
@@ -285,7 +286,8 @@ class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
         Project(
           id = 1L,
           pathWithNamespace = "gitlab-org/gitlab-test"
-        )
+        ),
+        objectKind = "pipeline"
       )
     }
   }

@@ -16,7 +16,7 @@ private object CirceConfiguration {
 import CirceConfiguration._
 
 @ConfiguredJsonCodec
-final case class WebhookEvent(project: Project)
+final case class WebhookEvent(project: Project, objectKind: String /* for logs */ )
 
 @ConfiguredJsonCodec
 final case class Project(
