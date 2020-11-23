@@ -24,17 +24,16 @@ object ProjectActions {
     //or fall back in case it's not
     //https://www.youtube.com/watch?v=vxKBHX9Datw
     case Merge(projectId, mergeRequestIid) =>
-      Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid).onError {
-        case error =>
-          Logger[F]
-            .error(
-              "Couldn't accept merge request",
-              Map(
-                "projectId" -> projectId.toString(),
-                "mergeRequestIid" -> mergeRequestIid.toString()
-              ),
-              error
-            )
+      Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid).handleErrorWith { error =>
+        Logger[F]
+          .error(
+            "Couldn't accept merge request",
+            Map(
+              "projectId" -> projectId.toString(),
+              "mergeRequestIid" -> mergeRequestIid.toString()
+            ),
+            error
+          )
       }
   }
 
