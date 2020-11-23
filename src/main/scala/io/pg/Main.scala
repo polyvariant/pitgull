@@ -1,17 +1,17 @@
 package io.pg
 
-import cats.effect.IOApp
+import scala.concurrent.ExecutionContext
+
+import cats.effect.Blocker
 import cats.effect.ExitCode
 import cats.effect.IO
-
-import org.http4s.server.blaze.BlazeServerBuilder
-import scala.concurrent.ExecutionContext
-import io.pg.Prelude._
+import cats.effect.IOApp
 import cats.syntax.all._
+import io.pg.Prelude._
+import io.pg.config.ProjectConfigReader
+import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
-import cats.effect.Blocker
-import io.pg.config.ProjectConfigReader
 
 object Main extends IOApp {
 
@@ -55,7 +55,7 @@ object Main extends IOApp {
       .flatMap { b =>
         ProjectConfigReader
           .dhallJsonStringConfig[IO](b)
-          .flatTap(_.readConfig.flatMap(a => logger.info(a.toString)))
+          .flatTap(_.readConfig(io.pg.gitlab.webhook.Project.demo).flatMap(a => logger.info(a.toString)))
           .resource *>
           AppConfig
             .appConfig

@@ -1,7 +1,6 @@
 package io.pg
 
 import cats.tagless.finalAlg
-import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import cats.MonadError
@@ -16,7 +15,7 @@ import io.pg.gitlab.webhook.Project
 
 @finalAlg
 trait StateResolver[F[_]] {
-  def resolve(event: WebhookEvent): F[List[MergeRequestState]]
+  def resolve(project: Project): F[List[MergeRequestState]]
 }
 
 object StateResolver {
@@ -65,8 +64,8 @@ object StateResolver {
         fs2.Stream.evals(statesQuery).evalMap(identity)
       }
 
-      def resolve(event: WebhookEvent): F[List[MergeRequestState]] =
-        findMergeRequests(event.project)
+      def resolve(project: Project): F[List[MergeRequestState]] =
+        findMergeRequests(project)
           .evalTap { state =>
             Logger[F].info("Resolved MR state", Map("state" -> state.toString))
           }

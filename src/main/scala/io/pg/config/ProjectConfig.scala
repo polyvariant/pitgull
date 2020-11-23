@@ -10,10 +10,11 @@ import io.github.vigoo.prox._
 import scala.util.chaining._
 import cats.Applicative
 import cats.tagless.finalAlg
+import io.pg.gitlab.webhook.Project
 
 @finalAlg
 trait ProjectConfigReader[F[_]] {
-  def readConfig: F[ProjectConfig]
+  def readConfig(project: Project): F[ProjectConfig]
 }
 
 object ProjectConfigReader {
@@ -39,7 +40,7 @@ object ProjectConfigReader {
         )
       )
 
-      val readConfig: F[ProjectConfig] = config.pure[F]
+      def readConfig(project: Project): F[ProjectConfig] = config.pure[F]
     }
 
   def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](
@@ -57,7 +58,7 @@ object ProjectConfigReader {
     implicit val runner: ProcessRunner[F] = new JVMProcessRunner
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
 
-      val readConfig: F[ProjectConfig] = {
+      def readConfig(project: Project): F[ProjectConfig] = {
         val input = fs2.io.file.readAll[F](Paths.get(filePath), blocker, 4096)
 
         Process[F](dhallCommand)

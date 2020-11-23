@@ -21,7 +21,9 @@ final case class WebhookEvent(project: Project)
 @ConfiguredJsonCodec
 final case class Project(
   id: Long,
-  name: String,
-  pathWithNamespace: String,
-  defaultBranch: String
+  pathWithNamespace: String
 )
+
+object Project {
+  val demo = Project(20190338, "kubukoz/demo")
+}

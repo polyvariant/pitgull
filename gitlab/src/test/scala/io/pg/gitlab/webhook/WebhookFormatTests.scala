@@ -2,7 +2,6 @@ package io.pg.gitlab.webhook
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import cats.syntax.all._
 import org.scalatest.EitherValues
 
 class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
@@ -82,9 +81,7 @@ class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
 }""".as[WebhookEvent].value shouldBe WebhookEvent(
         Project(
           id = 15,
-          name = "Diaspora",
-          pathWithNamespace = "mike/diaspora",
-          defaultBranch = "master"
+          pathWithNamespace = "mike/diaspora"
         )
       )
     }
@@ -287,9 +284,7 @@ class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
 }""".as[WebhookEvent].value shouldBe WebhookEvent(
         Project(
           id = 1L,
-          name = "Gitlab Test",
-          pathWithNamespace = "gitlab-org/gitlab-test",
-          defaultBranch = "master"
+          pathWithNamespace = "gitlab-org/gitlab-test"
         )
       )
     }
