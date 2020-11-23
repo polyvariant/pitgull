@@ -11,6 +11,7 @@ import io.pg.config.ProjectConfig
 import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import io.pg.Prelude.MonadThrow
+import io.pg.messaging.Processor
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -18,6 +19,14 @@ trait ProjectActions[F[_]] {
 }
 
 object ProjectActions {
+
+  def processor[F[_]: ProjectActions: Logger: MonadThrow]: Processor[F, ProjectAction] =
+    Processor.simple { action =>
+      Logger[F].info(
+        "About to execute action",
+        Map("action" -> action.toString)
+      ) *> ProjectActions[F].execute(action)
+    }
 
   def instance[F[_]: Gitlab: Logger: MonadThrow]: ProjectActions[F] = {
     //todo: perform check is the MR still open?

@@ -1,22 +1,22 @@
 package io.pg.webhook
 
-import cats.data.NonEmptyList
-import sttp.tapir.server.ServerEndpoint
-import io.pg.gitlab.webhook.WebhookEvent
-import io.pg.messaging.Publisher
-import io.pg.messaging.Processor
-import io.odin.Logger
 import cats.Applicative
-import io.pg.config.ProjectConfigReader
+import cats.data.NonEmptyList
 import cats.syntax.all._
-import cats.MonadError
-import io.pg.StateResolver
-import io.pg.ProjectActions
-import io.pg.ProjectAction
-import io.pg.MergeRequestState
-import io.pg.config.ProjectConfig
 import fs2.Pipe
+import io.odin.Logger
+import io.pg.MergeRequestState
+import io.pg.Prelude.MonadThrow
+import io.pg.ProjectAction
+import io.pg.ProjectActions
 import io.pg.ProjectActions.Mismatch
+import io.pg.StateResolver
+import io.pg.config.ProjectConfig
+import io.pg.config.ProjectConfigReader
+import io.pg.gitlab.webhook.WebhookEvent
+import io.pg.messaging.Processor
+import io.pg.messaging.Publisher
+import sttp.tapir.server.ServerEndpoint
 
 object WebhookRouter {
 
@@ -40,13 +40,9 @@ object WebhookRouter {
 object WebhookProcessor {
   import scala.util.chaining._
 
-  def instance[
-    F[
-      _
-    ]: ProjectConfigReader: ProjectActions: StateResolver: Logger: MonadError[*[
-      _
-    ], Throwable]
-  ](
+  def instance[F[_]: ProjectConfigReader: StateResolver: Logger: MonadThrow](
+    projectActionPublisher: Publisher[F, ProjectAction]
+  )(
     implicit SC: fs2.Stream.Compiler[F, F]
   ): Processor[F, WebhookEvent] =
     Processor.simple { ev =>
@@ -59,13 +55,7 @@ object WebhookProcessor {
                      "All actions to execute",
                      Map("actions" -> actions.toString)
                    )
-        _       <- actions.traverse_ { action =>
-                     Logger[F].info(
-                       "About to execute action",
-                       Map("action" -> action.toString)
-                     ) *>
-                       ProjectActions[F].execute(action)
-                   }
+        _       <- actions.traverse_(projectActionPublisher.publish)
       } yield ()
     }
 

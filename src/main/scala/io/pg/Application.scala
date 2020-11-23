@@ -27,6 +27,7 @@ sealed trait Event extends Product with Serializable
 
 object Event {
   final case class Webhook(value: WebhookEvent) extends Event
+  final case class ProjectAction(value: io.pg.ProjectAction) extends Event
 }
 
 final class Application[F[_]](
@@ -50,6 +51,9 @@ object Application {
           val webhookChannel =
             eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
 
+          val projectActionChannel =
+            eventChannel.only[Event.ProjectAction].imap(_.value)(Event.ProjectAction)
+
           BlazeClientBuilder[F](ExecutionContext.global)
             .resource
             .map(
@@ -72,7 +76,11 @@ object Application {
 
               val webhookProcess = BackgroundProcess.fromProcessor(
                 webhookChannel
-              )(WebhookProcessor.instance[F])
+              )(WebhookProcessor.instance[F](projectActionChannel))
+
+              val projectActionProcess = BackgroundProcess.fromProcessor(
+                projectActionChannel
+              )(ProjectActions.processor[F])
 
               import sttp.tapir.server.http4s._
 
@@ -81,7 +89,7 @@ object Application {
 
               new Application[F](
                 routes = endpoints.toList.toRoutes.orNotFound,
-                background = NonEmptyList.one(webhookProcess)
+                background = NonEmptyList.of(webhookProcess, projectActionProcess)
               )
             }
         }

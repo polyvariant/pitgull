@@ -15,6 +15,8 @@ final case class Processor[F[_], -A](process: fs2.Pipe[F, A, Unit])
 
 object Processor {
 
+  // Processes inputs one by one, reporting any errors it encounters.
+  // Failures are handled, so inputs have no effect on each other.
   def simple[F[_]: ApplicativeError[*[_], Throwable]: Logger, A](
     f: A => F[Unit]
   ): Processor[F, A] =
@@ -47,8 +49,7 @@ object Channel {
       val consume: fs2.Stream[F, A] = q.dequeue
     }
 
-  implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A])
-    extends AnyVal {
+  implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A]) extends AnyVal {
 
     /**
       * Transforms a channel into one that forwards everything to the publisher,
