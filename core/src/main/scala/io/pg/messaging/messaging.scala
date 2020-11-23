@@ -47,11 +47,9 @@ object Channel {
       val consume: fs2.Stream[F, A] = q.dequeue
     }
 
-  implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A])
-    extends AnyVal {
+  implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A]) extends AnyVal {
 
-    /**
-      * Transforms a channel into one that forwards everything to the publisher,
+    /** Transforms a channel into one that forwards everything to the publisher,
       * but only consumes a subset of the original channel's messages (the ones that match `f`).
       */
     def prism[B](f: PartialFunction[A, B])(g: B => A): Channel[F, B] =
@@ -60,12 +58,11 @@ object Channel {
         val consume: fs2.Stream[F, B] = ch.consume.collect(f)
       }
 
-    /**
-      * Limits a channel to a subtype of its message type.
+    /** Limits a channel to a subtype of its message type.
       */
     def only[B <: A: ClassTag]: Channel[F, B] =
-      ch.prism {
-        case b: B => b
+      ch.prism { case b: B =>
+        b
       }(identity)
 
   }
