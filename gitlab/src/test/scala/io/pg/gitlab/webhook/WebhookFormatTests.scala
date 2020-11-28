@@ -4,7 +4,7 @@ import cats.implicits._
 import io.circe.literal._
 import weaver.SimpleIOSuite
 
-object X extends SimpleIOSuite {
+object WebhookFormatTests extends SimpleIOSuite {
   pureTest("webhook push event") {
     val source = json"""
       {
