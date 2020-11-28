@@ -1,24 +1,24 @@
 package io.pg.gitlab
 
-import ciris.Secret
-import cats.syntax.all._
-import sttp.model.Uri
-import sttp.client.Request
-import sttp.client.SttpBackend
-import sttp.client.NothingT
-import sttp.tapir.Endpoint
-import cats.MonadError
-import cats.tagless.finalAlg
-import io.pg.gitlab.graphql.Project
-import io.pg.gitlab.graphql.MergeRequest
-import caliban.client.SelectionBuilder
-import caliban.client.Operations.IsOperation
-import io.pg.gitlab.graphql.Query
 import scala.util.chaining._
-import cats.data.NonEmptyList
+
+import caliban.client.Operations.IsOperation
+import caliban.client.SelectionBuilder
+import cats.MonadError
+import cats.syntax.all._
+import cats.tagless.finalAlg
+import ciris.Secret
+import io.odin.Logger
+import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.MergeRequestConnection
 import io.pg.gitlab.graphql.MergeRequestState
-import io.odin.Logger
+import io.pg.gitlab.graphql.Project
+import io.pg.gitlab.graphql.Query
+import sttp.client.NothingT
+import sttp.client.Request
+import sttp.client.SttpBackend
+import sttp.model.Uri
+import sttp.tapir.Endpoint
 
 @finalAlg
 trait Gitlab[F[_]] {

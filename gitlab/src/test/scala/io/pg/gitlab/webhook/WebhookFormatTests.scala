@@ -1,15 +1,12 @@
 package io.pg.gitlab.webhook
 
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.EitherValues
+import cats.implicits._
+import io.circe.literal._
+import weaver.SimpleIOSuite
 
-class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
-  import io.circe.literal._
-
-  "Webhook events" when {
-    "push event" in {
-      json"""
+object X extends SimpleIOSuite {
+  pureTest("webhook push event") {
+    val source = json"""
       {
   "object_kind": "push",
   "before": "95790bf891e76fee5e1747ab589903a6a1f80f22",
@@ -78,17 +75,21 @@ class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
     }
   ],
   "total_commits_count": 4
-}""".as[WebhookEvent].value shouldBe WebhookEvent(
+}"""
+
+    expect {
+      source.as[WebhookEvent] == WebhookEvent(
         Project(
           id = 15,
           pathWithNamespace = "mike/diaspora"
         ),
         objectKind = "push"
-      )
+      ).asRight
     }
+  }
 
-    "pipeline event" in {
-      json"""
+  pureTest("webhook pipeline event") {
+    val source = json"""
       {
    "object_kind": "pipeline",
    "object_attributes":{
@@ -282,13 +283,16 @@ class WebhookFormatTests extends AnyWordSpec with Matchers with EitherValues {
          }
       }
    ]
-}""".as[WebhookEvent].value shouldBe WebhookEvent(
+}"""
+
+    expect {
+      source.as[WebhookEvent] == WebhookEvent(
         Project(
           id = 1L,
           pathWithNamespace = "gitlab-org/gitlab-test"
         ),
         objectKind = "pipeline"
-      )
+      ).asRight
     }
   }
 }
