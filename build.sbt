@@ -59,8 +59,10 @@ val commonSettings = List(
     "co.fs2" %% "fs2-core" % "2.4.6",
     "com.github.valskalla" %% "odin-core" % "0.9.1",
     "io.circe" %% "circe-core" % "0.13.0",
-    "org.scalatest" %% "scalatest" % "3.2.3" % Test //todo: munit
-  ) ++ compilerPlugins
+    "com.disneystreaming" %% "weaver-framework" % "0.5.0" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.5.0" % Test
+  ) ++ compilerPlugins,
+  testFrameworks += new TestFramework("weaver.framework.TestFramework")
 )
 
 val gitlab = project
