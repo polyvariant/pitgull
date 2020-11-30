@@ -11,7 +11,9 @@ trait Publisher[F[_], -A] {
   def publish(a: A): F[Unit]
 }
 
-final case class Processor[F[_], -A](process: fs2.Pipe[F, A, Unit])
+final case class Processor[F[_], -A](process: fs2.Pipe[F, A, Unit]) {
+  def processOne(msg: A): fs2.Stream[F, Unit] = fs2.Stream.emit(msg).through(process)
+}
 
 object Processor {
 
