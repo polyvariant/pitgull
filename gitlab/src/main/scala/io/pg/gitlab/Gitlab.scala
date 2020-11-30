@@ -105,7 +105,8 @@ object Gitlab {
                     .map(_.toList.flatMap(_.toList))
                 )
             )
-            .map(a => a.toList.flatMap(_.flatMap(_.flatten.toList.flatten.flatten)))
+            // o boi, here I come flattening again
+            .map(_.toList.flatMap(_.flatMap(_.flatten.toList.flatten.flatten)))
         )
           .map(_.liftTo[F](GitlabError("Project not found")))
           .pipe(runGraphQLQuery(_))
