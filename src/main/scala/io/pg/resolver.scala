@@ -48,7 +48,7 @@ object StateResolver {
 
         val statesQuery = Gitlab[F]
           .mergeRequests(
-            projectPath = project.pathWithNamespace
+            projectId = project.id
           ) {
             (
               MergeRequest.iid.map(_.toLongOption.liftTo[F](GitlabError("MR IID wasn't a Long"))) ~

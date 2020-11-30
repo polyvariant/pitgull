@@ -2,8 +2,6 @@ package io.pg.gitlab
 
 import scala.util.chaining._
 
-import caliban.client.Operations.IsOperation
-import caliban.client.SelectionBuilder
 import cats.MonadError
 import cats.syntax.all._
 import cats.tagless.finalAlg
@@ -13,25 +11,20 @@ import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.MergeRequestConnection
 import io.pg.gitlab.graphql.MergeRequestState
 import io.pg.gitlab.graphql.Project
-import io.pg.gitlab.graphql.Query
+import io.pg.gitlab.graphql.ProjectConnection
 import sttp.client.NothingT
 import sttp.client.Request
 import sttp.client.SttpBackend
 import sttp.model.Uri
 import sttp.tapir.Endpoint
+import caliban.client.Operations.IsOperation
+import caliban.client.SelectionBuilder
 
 @finalAlg
 trait Gitlab[F[_]] {
 
-  def mergeRequestInfo[A](
-    projectPath: String,
-    mergeRequestIId: String
-  )(
-    selection: SelectionBuilder[MergeRequest, A]
-  ): F[A]
-
   def mergeRequests[A](
-    projectPath: String
+    projectId: Long
   )(
     selection: SelectionBuilder[MergeRequest, A]
   ): F[List[A]]
@@ -68,46 +61,53 @@ object Gitlab {
       runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
 
     new Gitlab[F] {
-      def mergeRequestInfo[A](
-        projectPath: String,
-        mergeRequestIId: String
+      import caliban.client.Argument
+      import caliban.client.FieldBuilder.Obj
+      import caliban.client.FieldBuilder.OptionOf
+      import caliban.client.Operations
+
+      //todo: replace with Query.projects from caliban-gitlab when it can be released
+      def projects[A](
+        ids: Option[List[String]] = None
       )(
-        selection: SelectionBuilder[MergeRequest, A]
-      ): F[A] =
-        Query
-          .project(projectPath)(
-            Project
-              .mergeRequest(mergeRequestIId)(selection)
-              .map(_.liftTo[F](GitlabError("MR not found")))
+        innerSelection: SelectionBuilder[ProjectConnection, A]
+      ): SelectionBuilder[Operations.RootQuery, Option[A]] =
+        caliban
+          .client
+          .SelectionBuilder
+          .Field(
+            "projects",
+            OptionOf(Obj(innerSelection)),
+            arguments = List(
+              Argument("ids", ids)
+            )
           )
-          .map(_.liftTo[F](GitlabError("Project not found")))
-          .pipe(runGraphQLQuery(_))
-          .flatten
-          .flatten
 
       def mergeRequests[A](
-        projectPath: String
+        projectId: Long
       )(
         selection: SelectionBuilder[graphql.MergeRequest, A]
       ): F[List[A]] =
         Logger[F].info(
           "Finding merge requests",
           Map(
-            "projectPath" -> projectPath
+            "projectId" -> projectId.show
           )
-        ) *> Query
-          .project(projectPath)(
-            Project
-              .mergeRequests(
-                state = MergeRequestState.opened.some
-              )(
-                MergeRequestConnection
-                  .nodes(selection)
-                  .map(_.toList.flatMap(_.toList))
-              )
-              .map(_.toList.flatten.flattenOption)
-          )
-          .map(_.liftTo[F](new Throwable("Project not found")))
+        ) *> projects(ids = List(show"gid://gitlab/Project/$projectId").some)(
+          ProjectConnection
+            .nodes(
+              Project
+                .mergeRequests(
+                  state = MergeRequestState.opened.some
+                )(
+                  MergeRequestConnection
+                    .nodes(selection)
+                    .map(_.toList.flatMap(_.toList))
+                )
+            )
+            .map(a => a.toList.flatMap(_.flatMap(_.flatten.toList.flatten.flatten)))
+        )
+          .map(_.liftTo[F](GitlabError("Project not found")))
           .pipe(runGraphQLQuery(_))
           .flatten
           .flatTap { result =>

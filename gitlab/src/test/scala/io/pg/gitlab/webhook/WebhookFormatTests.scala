@@ -79,10 +79,7 @@ object WebhookFormatTests extends SimpleIOSuite {
 
     expect {
       source.as[WebhookEvent] == WebhookEvent(
-        Project(
-          id = 15,
-          pathWithNamespace = "mike/diaspora"
-        ),
+        Project(id = 15),
         objectKind = "push"
       ).asRight
     }
@@ -287,10 +284,7 @@ object WebhookFormatTests extends SimpleIOSuite {
 
     expect {
       source.as[WebhookEvent] == WebhookEvent(
-        Project(
-          id = 1L,
-          pathWithNamespace = "gitlab-org/gitlab-test"
-        ),
+        Project(id = 1L),
         objectKind = "pipeline"
       ).asRight
     }
