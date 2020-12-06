@@ -72,7 +72,7 @@ object Application {
 
               val webhookProcess = BackgroundProcess.fromProcessor(
                 webhookChannel
-              )(WebhookProcessor.instance[F])
+              )(Processor.simple(WebhookProcessor.instance[F]))
 
               import sttp.tapir.server.http4s._
 
