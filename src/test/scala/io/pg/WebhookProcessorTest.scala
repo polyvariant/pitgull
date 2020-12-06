@@ -14,13 +14,10 @@ import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging.Processor
 import io.pg.webhook.WebhookProcessor
 import monocle.Lens
-import weaver.MutableIOSuite
+import weaver.SimpleIOSuite
+import weaver.Expectations
 
-object WebhookProcessorTest extends MutableIOSuite {
-
-  // todo move to utils
-  //unused for now
-  def lensRef[F[_]: Sync, A, B <: AnyRef](lens: Lens[A, B])(ref: Ref[F, A]): Ref[F, B] = Ref.lens(ref)(lens.get, a => b => lens.set(b)(a))
+object WebhookProcessorTest extends SimpleIOSuite {
 
   final case class Resources[F[_]](
     actions: ProjectActions[F],
@@ -31,9 +28,7 @@ object WebhookProcessorTest extends MutableIOSuite {
     process: Processor[IO, WebhookEvent]
   )
 
-  type Res = Resources[IO]
-
-  def sharedResource: Resource[IO, Res] =
+  val mkResources =
     ProjectConfigReaderFake
       .refInstance[IO]
       .flatMap { implicit configReader =>
@@ -52,7 +47,10 @@ object WebhookProcessorTest extends MutableIOSuite {
       }
       .resource
 
-  test("known project with no MRs") { resources =>
+  def testWithResources(name: String)(use: Resources[IO] => IO[Expectations]) =
+    test(name)(mkResources.use(use))
+
+  testWithResources("known project with no MRs") { resources =>
     import resources._
     val projectId = 66L
     val projectName = "kubukoz/demo"
