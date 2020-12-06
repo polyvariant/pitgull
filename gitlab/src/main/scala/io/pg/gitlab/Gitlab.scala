@@ -19,6 +19,7 @@ import sttp.model.Uri
 import sttp.tapir.Endpoint
 import caliban.client.Operations.IsOperation
 import caliban.client.SelectionBuilder
+import io.pg.gitlab.graphql.Query
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -61,28 +62,6 @@ object Gitlab {
       runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
 
     new Gitlab[F] {
-      import caliban.client.Argument
-      import caliban.client.FieldBuilder.Obj
-      import caliban.client.FieldBuilder.OptionOf
-      import caliban.client.Operations
-
-      //todo: replace with Query.projects from caliban-gitlab when it can be released
-      def projects[A](
-        ids: Option[List[String]] = None
-      )(
-        innerSelection: SelectionBuilder[ProjectConnection, A]
-      ): SelectionBuilder[Operations.RootQuery, Option[A]] =
-        caliban
-          .client
-          .SelectionBuilder
-          .Field(
-            "projects",
-            OptionOf(Obj(innerSelection)),
-            arguments = List(
-              Argument("ids", ids)
-            )
-          )
-
       def mergeRequests[A](
         projectId: Long
       )(
@@ -93,21 +72,22 @@ object Gitlab {
           Map(
             "projectId" -> projectId.show
           )
-        ) *> projects(ids = List(show"gid://gitlab/Project/$projectId").some)(
-          ProjectConnection
-            .nodes(
-              Project
-                .mergeRequests(
-                  state = MergeRequestState.opened.some
-                )(
-                  MergeRequestConnection
-                    .nodes(selection)
-                    .map(_.toList.flatMap(_.toList).flatten)
-                )
-            )
-            // o boi, here I come flattening again
-            .map(_.toList.flatMap(_.flatMap(_.flatten.toList.flatten)))
-        )
+        ) *> Query
+          .projects(ids = List(show"gid://gitlab/Project/$projectId").some)(
+            ProjectConnection
+              .nodes(
+                Project
+                  .mergeRequests(
+                    state = MergeRequestState.opened.some
+                  )(
+                    MergeRequestConnection
+                      .nodes(selection)
+                      .map(_.toList.flatMap(_.toList).flatten)
+                  )
+              )
+              // o boi, here I come flattening again
+              .map(_.toList.flatMap(_.flatMap(_.flatten.toList.flatten)))
+          )
           .map(_.liftTo[F](GitlabError("Project not found")))
           .pipe(runGraphQLQuery(_))
           .flatten
