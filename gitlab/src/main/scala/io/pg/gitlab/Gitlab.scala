@@ -20,6 +20,7 @@ import sttp.tapir.Endpoint
 import caliban.client.Operations.IsOperation
 import caliban.client.SelectionBuilder
 import io.pg.gitlab.graphql.Query
+import caliban.client.CalibanClientError.DecodingError
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -88,9 +89,8 @@ object Gitlab {
               // o boi, here I come flattening again
               .map(_.toList.flatMap(_.flatMap(_.flatten.toList.flatten)))
           )
-          .map(_.liftTo[F](GitlabError("Project not found")))
+          .mapEither(_.toRight(DecodingError("Project not found")))
           .pipe(runGraphQLQuery(_))
-          .flatten
           .flatTap { result =>
             Logger[F].info(
               "Found merge requests",
