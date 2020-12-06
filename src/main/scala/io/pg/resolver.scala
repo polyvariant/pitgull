@@ -25,26 +25,8 @@ object StateResolver {
   ): StateResolver[F] =
     new StateResolver[F] {
 
-      private def findMergeRequests(project: Project): F[List[MergeRequestState]] = {
-        def buildState(
-          mergeRequestIid: Long,
-          pipelineStatus: Option[PipelineStatusEnum],
-          authorEmail: String,
-          description: Option[String]
-        ): MergeRequestState =
-          MergeRequestState(
-            projectId = project.id,
-            mergeRequestIid = mergeRequestIid,
-            authorEmail = authorEmail,
-            description = description,
-            status = MergeRequestState
-              .Status
-              .fromPipelineStatus(
-                pipelineStatus.getOrElse(PipelineStatusEnum.SUCCESS /* i guess */ )
-              )
-          )
-
-        val statesQuery = Gitlab[F]
+      private def findMergeRequests(project: Project): F[List[MergeRequestState]] =
+        Gitlab[F]
           .mergeRequests(
             projectId = project.id
           ) {
@@ -55,11 +37,28 @@ object StateResolver {
                   .author(User.publicEmail.mapEither(_.toRight(DecodingError("MR author's email missing"))))
                   .mapEither(_.toRight(DecodingError("MR author missing"))) ~
                 MergeRequest.description
-            ).mapN(buildState _)
+            ).mapN(buildState(project.id) _)
           }
 
-        statesQuery
-      }
+      private def buildState(
+        projectId: Long
+      )(
+        mergeRequestIid: Long,
+        pipelineStatus: Option[PipelineStatusEnum],
+        authorEmail: String,
+        description: Option[String]
+      ): MergeRequestState =
+        MergeRequestState(
+          projectId = projectId,
+          mergeRequestIid = mergeRequestIid,
+          authorEmail = authorEmail,
+          description = description,
+          status = MergeRequestState
+            .Status
+            .fromPipelineStatus(
+              pipelineStatus.getOrElse(PipelineStatusEnum.SUCCESS /* i guess */ )
+            )
+        )
 
       def resolve(project: Project): F[List[MergeRequestState]] =
         findMergeRequests(project)
