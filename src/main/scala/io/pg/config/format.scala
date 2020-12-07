@@ -18,7 +18,6 @@ sealed trait TextMatcher extends Product with Serializable
 object TextMatcher {
   final case class Equals(value: String) extends TextMatcher
   final case class Matches(regex: String) extends TextMatcher
-
 }
 
 @ConfiguredJsonCodec()
