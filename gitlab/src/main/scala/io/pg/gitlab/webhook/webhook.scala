@@ -20,10 +20,9 @@ final case class WebhookEvent(project: Project, objectKind: String /* for logs *
 
 @ConfiguredJsonCodec
 final case class Project(
-  id: Long,
-  pathWithNamespace: String
+  id: Long
 )
 
 object Project {
-  val demo = Project(20190338, "kubukoz/demo")
+  val demo = Project(20190338)
 }

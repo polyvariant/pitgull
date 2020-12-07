@@ -1,16 +1,16 @@
 package io.pg
 
-import cats.tagless.finalAlg
-import io.pg.gitlab.Gitlab
-import io.odin.Logger
+import caliban.client.CalibanClientError.DecodingError
 import cats.MonadError
+import cats.kernel.Eq
 import cats.syntax.all._
+import cats.tagless.finalAlg
+import io.odin.Logger
+import io.pg.gitlab.Gitlab
 import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.Pipeline
-import io.pg.gitlab.graphql.User
-import io.pg.gitlab.Gitlab.GitlabError
 import io.pg.gitlab.graphql.PipelineStatusEnum
-import cats.kernel.Eq
+import io.pg.gitlab.graphql.User
 import io.pg.gitlab.webhook.Project
 
 @finalAlg
@@ -25,52 +25,46 @@ object StateResolver {
   ): StateResolver[F] =
     new StateResolver[F] {
 
-      private def findMergeRequests(project: Project): fs2.Stream[F, MergeRequestState] = {
-        def buildState(
-          mergeRequestIidF: F[Long],
-          pipelineStatus: Option[PipelineStatusEnum],
-          authorEmailF: F[String],
-          description: Option[String]
-        ): F[MergeRequestState] =
-          (mergeRequestIidF, authorEmailF).mapN { (mergeRequestIid, authorEmail) =>
-            MergeRequestState(
-              projectId = project.id,
-              mergeRequestIid = mergeRequestIid,
-              authorEmail = authorEmail,
-              description = description,
-              status = MergeRequestState
-                .Status
-                .fromPipelineStatus(
-                  pipelineStatus.getOrElse(PipelineStatusEnum.SUCCESS /* i guess */ )
-                )
-            )
-          }
-
-        val statesQuery = Gitlab[F]
+      private def findMergeRequests(project: Project): F[List[MergeRequestState]] =
+        Gitlab[F]
           .mergeRequests(
-            projectPath = project.pathWithNamespace
+            projectId = project.id
           ) {
             (
-              MergeRequest.iid.map(_.toLongOption.liftTo[F](GitlabError("MR IID wasn't a Long"))) ~
+              MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
+                MergeRequest.headPipeline(Pipeline.status) ~
                 MergeRequest
-                  .headPipeline(Pipeline.status) ~
-                MergeRequest
-                  .author(User.email.map(_.liftTo[F](GitlabError("MR author's email missing"))))
-                  .map(_.liftTo[F](GitlabError("MR author missing")).flatten) ~
+                  .author(User.publicEmail.mapEither(_.toRight(DecodingError("MR author's email missing"))))
+                  .mapEither(_.toRight(DecodingError("MR author missing"))) ~
                 MergeRequest.description
-            ).mapN(buildState _)
+            ).mapN(buildState(project.id) _)
           }
 
-        fs2.Stream.evals(statesQuery).evalMap(identity)
-      }
+      private def buildState(
+        projectId: Long
+      )(
+        mergeRequestIid: Long,
+        pipelineStatus: Option[PipelineStatusEnum],
+        authorEmail: String,
+        description: Option[String]
+      ): MergeRequestState =
+        MergeRequestState(
+          projectId = projectId,
+          mergeRequestIid = mergeRequestIid,
+          authorEmail = authorEmail,
+          description = description,
+          status = MergeRequestState
+            .Status
+            .fromPipelineStatus(
+              pipelineStatus.getOrElse(PipelineStatusEnum.SUCCESS /* i guess */ )
+            )
+        )
 
       def resolve(project: Project): F[List[MergeRequestState]] =
         findMergeRequests(project)
-          .evalTap { state =>
+          .flatTap { state =>
             Logger[F].info("Resolved MR state", Map("state" -> state.toString))
           }
-          .compile
-          .toList
 
     }
 

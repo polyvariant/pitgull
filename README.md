@@ -13,3 +13,8 @@
 - https://gitlab.com/-/graphql-explorer - Gitlab API's GraphiQL
 - `cat example.dhall | dhall-to-json` - normalize example and convert to JSON
 - `http post :8080/webhook @path-to-file.json` - send fake webhook event from file
+
+### Related projects
+
+We're using https://github.com/kubukoz/caliban-gitlab/ for some communication with Gitlab,
+as well as https://github.com/softwaremill/tapir for the actions not available via the GraphQL API.
