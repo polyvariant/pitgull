@@ -2,39 +2,61 @@ package io.pg.gitlab
 
 import scala.util.chaining._
 
+import caliban.client.CalibanClientError.DecodingError
+import caliban.client.Operations.IsOperation
+import caliban.client.SelectionBuilder
 import cats.MonadError
+import cats.kernel.Eq
 import cats.syntax.all._
 import cats.tagless.finalAlg
 import ciris.Secret
 import io.odin.Logger
+import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.MergeRequestConnection
 import io.pg.gitlab.graphql.MergeRequestState
+import io.pg.gitlab.graphql.Pipeline
+import io.pg.gitlab.graphql.PipelineStatusEnum
 import io.pg.gitlab.graphql.Project
 import io.pg.gitlab.graphql.ProjectConnection
+import io.pg.gitlab.graphql.Query
+import io.pg.gitlab.graphql.User
 import sttp.client.NothingT
 import sttp.client.Request
 import sttp.client.SttpBackend
 import sttp.model.Uri
 import sttp.tapir.Endpoint
-import caliban.client.Operations.IsOperation
-import caliban.client.SelectionBuilder
-import io.pg.gitlab.graphql.Query
-import caliban.client.CalibanClientError.DecodingError
 
 @finalAlg
 trait Gitlab[F[_]] {
-
-  def mergeRequests[A](
-    projectId: Long
-  )(
-    selection: SelectionBuilder[MergeRequest, A]
-  ): F[List[A]]
-
+  def mergeRequests(projectId: Long): F[List[MergeRequestInfo]]
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
 object Gitlab {
+
+  // VCS-specific MR information
+  // Not specific to the method of fetching (no graphql model references etc.)
+  // Fields only required according to reason (e.g. must have a numeric ID - we might loosen this later)
+  final case class MergeRequestInfo(
+    projectId: Long,
+    mergeRequestIid: Long,
+    status: Option[MergeRequestInfo.Status],
+    authorEmail: Option[String],
+    description: Option[String]
+  )
+
+  object MergeRequestInfo {
+    sealed trait Status extends Product with Serializable
+
+    object Status {
+      case object Success extends Status
+      final case class Other(value: String) extends Status
+
+      implicit val eq: Eq[Status] = Eq.fromUniversalEquals
+    }
+
+  }
 
   def sttpInstance[F[_]: Logger: MonadError[*[_], Throwable]](
     baseUri: Uri,
@@ -63,11 +85,7 @@ object Gitlab {
       runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
 
     new Gitlab[F] {
-      def mergeRequests[A](
-        projectId: Long
-      )(
-        selection: SelectionBuilder[graphql.MergeRequest, A]
-      ): F[List[A]] =
+      def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
         Logger[F].info(
           "Finding merge requests",
           Map(
@@ -82,12 +100,10 @@ object Gitlab {
                     state = MergeRequestState.opened.some
                   )(
                     MergeRequestConnection
-                      .nodes(selection)
-                      .map(_.toList.flatMap(_.toList).flatten)
+                      .nodes(mergeRequestInfoSelection(projectId))
                   )
               )
-              // o boi, here I come flattening again
-              .map(_.toList.flatMap(_.flatMap(_.flatten.toList.flatten)))
+              .map(flattenTheEarth)
           )
           .mapEither(_.toRight(DecodingError("Project not found")))
           .pipe(runGraphQLQuery(_))
@@ -97,6 +113,38 @@ object Gitlab {
               Map("result" -> result.mkString)
             )
           }
+
+      private def flattenTheEarth[A]: Option[List[Option[Option[Option[List[Option[A]]]]]]] => List[A] =
+        _.toList.flatten.flatten.flatten.flatten.flatten.flatten
+
+      private def mergeRequestInfoSelection(projectId: Long): SelectionBuilder[MergeRequest, MergeRequestInfo] = (
+        MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
+          MergeRequest.headPipeline(Pipeline.status.map(convertPipelineStatus)) ~
+          MergeRequest
+            .author(User.publicEmail)
+            .mapEither(_.toRight(DecodingError("MR has no author"))) ~
+          MergeRequest.description
+      ).mapN(buildMergeRequest(projectId) _)
+
+      private def buildMergeRequest(
+        projectId: Long
+      )(
+        mergeRequestIid: Long,
+        status: Option[MergeRequestInfo.Status],
+        authorEmail: Option[String],
+        description: Option[String]
+      ): MergeRequestInfo = MergeRequestInfo(
+        projectId = projectId,
+        mergeRequestIid = mergeRequestIid,
+        status = status,
+        authorEmail = authorEmail,
+        description = description
+      )
+
+      private val convertPipelineStatus: PipelineStatusEnum => MergeRequestInfo.Status = {
+        case PipelineStatusEnum.SUCCESS => MergeRequestInfo.Status.Success
+        case other                      => MergeRequestInfo.Status.Other(other.toString)
+      }
 
       def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest)

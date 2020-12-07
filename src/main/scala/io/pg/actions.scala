@@ -11,6 +11,7 @@ import io.pg.config.ProjectConfig
 import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import io.pg.Prelude.MonadThrow
+import io.pg.gitlab.Gitlab.MergeRequestInfo
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -57,8 +58,8 @@ object ProjectActions {
 
   val isSuccessful: MatcherFunction[MergeRequestState] =
     MatcherFunction
-      .fromPredicate[MergeRequestState.Status](
-        _ === MergeRequestState.Status.Success,
+      .fromPredicate[MergeRequestInfo.Status](
+        _ === MergeRequestInfo.Status.Success,
         value => Mismatch(s"not successful, actual status: $value")
       )
       .contramap(_.status)
