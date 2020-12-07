@@ -1,12 +1,12 @@
 version: "3.0"
 services:
   steward:
-    image: fthomas/scala-steward:latest
-    command: "--workspace /opt/scala-steward/workspace --repos-file /opt/scala-steward/repos.md --git-author-email kubukoz@gmail.com --vcs-type gitlab --vcs-api-host https://gitlab.com/api/v4 --vcs-login kubukoz --git-ask-pass /opt/scala-steward/.gitlab/askpass/pass.sh --do-not-fork"
+    image: "fthomas/scala-steward:latest"
+    command: "--vcs-login ignored --git-author-email scala-steward@example.com --workspace /opt/scala-steward/workspace --repos-file /opt/scala-steward/repos.md --vcs-type gitlab --vcs-api-host https://gitlab.com/api/v4 --git-ask-pass /opt/scala-steward/.gitlab/askpass/pass.sh --do-not-fork"
     volumes:
-      - steward-data:/opt/scala-steward
-      - ./repos.md:/opt/scala-steward/repos.md
-      - ./pass.sh:/opt/scala-steward/.gitlab/askpass/pass.sh
+      - "steward-data:/opt/scala-steward"
+      - "./repos.md:/opt/scala-steward/repos.md"
+      - "./pass.sh:/opt/scala-steward/.gitlab/askpass/pass.sh"
 
 volumes:
   steward-data:
