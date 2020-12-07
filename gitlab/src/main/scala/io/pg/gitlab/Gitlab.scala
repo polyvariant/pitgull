@@ -85,16 +85,7 @@ object Gitlab {
       runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
 
     new Gitlab[F] {
-      def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] = {
-        val selection: SelectionBuilder[MergeRequest, MergeRequestInfo] = (
-          MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
-            MergeRequest.headPipeline(Pipeline.status) ~
-            MergeRequest
-              .author(User.publicEmail)
-              .mapEither(_.toRight(DecodingError("MR has no author"))) ~
-            MergeRequest.description
-        ).mapN(buildMergeRequest(projectId) _)
-
+      def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
         Logger[F].info(
           "Finding merge requests",
           Map(
@@ -109,12 +100,10 @@ object Gitlab {
                     state = MergeRequestState.opened.some
                   )(
                     MergeRequestConnection
-                      .nodes(selection)
-                      .map(_.toList.flatMap(_.toList).flatten)
+                      .nodes(mergeRequestInfoSelection(projectId))
                   )
               )
-              // o boi, here I come flattening again
-              .map(_.toList.flatMap(_.flatMap(_.flatten.toList.flatten)))
+              .map(flattenTheEarth)
           )
           .mapEither(_.toRight(DecodingError("Project not found")))
           .pipe(runGraphQLQuery(_))
@@ -124,18 +113,30 @@ object Gitlab {
               Map("result" -> result.mkString)
             )
           }
-      }
+
+      private def flattenTheEarth[A]: Option[List[Option[Option[Option[List[Option[A]]]]]]] => List[A] =
+        _.toList.flatten.flatten.flatten.flatten.flatten.flatten
+
+      private def mergeRequestInfoSelection(projectId: Long): SelectionBuilder[MergeRequest, MergeRequestInfo] = (
+        MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
+          MergeRequest.headPipeline(Pipeline.status.map(convertPipelineStatus)) ~
+          MergeRequest
+            .author(User.publicEmail)
+            .mapEither(_.toRight(DecodingError("MR has no author"))) ~
+          MergeRequest.description
+      ).mapN(buildMergeRequest(projectId) _)
+
       private def buildMergeRequest(
         projectId: Long
       )(
         mergeRequestIid: Long,
-        pipelineStatus: Option[PipelineStatusEnum],
+        status: Option[MergeRequestInfo.Status],
         authorEmail: Option[String],
         description: Option[String]
       ): MergeRequestInfo = MergeRequestInfo(
         projectId = projectId,
         mergeRequestIid = mergeRequestIid,
-        status = pipelineStatus.map(convertPipelineStatus),
+        status = status,
         authorEmail = authorEmail,
         description = description
       )
