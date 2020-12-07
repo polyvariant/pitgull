@@ -20,6 +20,8 @@ as well as https://github.com/softwaremill/tapir for the actions not available v
 
 ### Docker
 
+You're going to need docker and docker-compose.
+
 You can use the setup in the `docker` directory to run Scala Steward with [the test repository](https://gitlab.com/kubukoz/demo), or customize it to your needs.
 Checkout https://github.com/scala-steward-org/scala-steward/blob/master/docs/running.md#running-scala-steward for more information.
 You'll need to add a `pass.sh` file that prints your GitLab token to standard output when run (consult the Scala Steward docs to see how).
