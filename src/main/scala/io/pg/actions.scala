@@ -12,6 +12,9 @@ import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import io.pg.Prelude.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
+import io.pg.config.TextMatcher
+import cats.kernel.Monoid
+import cats.MonoidK
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -45,12 +48,20 @@ object ProjectActions {
 
   object MatcherFunction {
 
+    implicit def monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
+      override def combineK[A](x: MatcherFunction[A], y: MatcherFunction[A]): MatcherFunction[A] = 
+        in => (x.matches(in).toValidated |+| y.matches(in).toValidated).toEither
+      override def empty[A]: MatcherFunction[A] = _ => Right(())
+    }
+
     def fromPredicate[In](
       predicate: In => Boolean,
       orElse: In => Mismatch
     ): MatcherFunction[In] =
       _.asRight[Mismatch].ensureOr(orElse)(predicate).toEitherNel.void
 
+    def success[In]: MatcherFunction[In] = 
+      _.pure[Matched].void
   }
 
   final case class Mismatch(reason: String)
@@ -64,9 +75,43 @@ object ProjectActions {
       )
       .contramap(_.status)
 
-  //todo: matching logic :))
-  //let the knife do the work
-  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => isSuccessful //todo
+  def matchTextMatcher(matcher: TextMatcher)(value: String) = {
+    /*
+    FIXME[MP] 
+      - move the logic away - perhaps TextMatcher ops?
+      - check if new Regex is safe
+    */
+    import scala.util.matching.Regex 
+    matcher match {
+      case TextMatcher.Equals(expected) => value === expected 
+      case TextMatcher.Matches(regex) => new Regex(regex).matches(value) 
+    }
+  }
+
+  def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
+    MatcherFunction
+      .fromPredicate[Option[String]](
+        x => x.exists(matchTextMatcher(matcher)) ,
+        value => Mismatch(s"not successful, actual status: $value")
+      )
+      .contramap(_.authorEmail)
+
+  // FIXME[MP] both matchers are very similar, could be generic, taking a function (MergeRequestState => Option[String])
+  def descriptionMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
+    MatcherFunction
+      .fromPredicate[Option[String]](
+        x => x.exists(matchTextMatcher(matcher)) ,
+        value => Mismatch(s"not successful, actual status: $value")
+      )
+      .contramap(_.description)
+
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = {  
+    case Matcher.Author(email) => autorMatches(email)
+    case Matcher.Description(text) => descriptionMatches(text)
+    case Matcher.PipelineStatus(status) => isSuccessful 
+    case Matcher.Many(Nil) => MatcherFunction.success
+    case state @ Matcher.Many(values) => values.foldMapK(compileMatcher)
+  }
 
   def compile(
     state: MergeRequestState,
