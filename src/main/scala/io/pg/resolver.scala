@@ -34,6 +34,16 @@ object StateResolver {
         mr
           .into[MergeRequestState]
           .withFieldComputed(_.status, _.status.getOrElse(MergeRequestInfo.Status.Success)) //for now - no pipeline means success
+          .withFieldComputed(
+            _.mergeability,
+            info =>
+              MergeRequestState
+                .Mergeability
+                .fromFlags(
+                  hasConflicts = info.hasConflicts,
+                  needsRebase = info.needsRebase
+                )
+          )
           .transform
 
       def resolve(project: Project): F[List[MergeRequestState]] =
@@ -53,5 +63,23 @@ final case class MergeRequestState(
   mergeRequestIid: Long,
   authorEmail: Option[String],
   description: Option[String],
-  status: MergeRequestInfo.Status
+  status: MergeRequestInfo.Status,
+  mergeability: MergeRequestState.Mergeability
 )
+
+object MergeRequestState {
+  sealed trait Mergeability extends Product with Serializable
+
+  object Mergeability {
+    case object CanMerge extends Mergeability
+    case object NeedsRebase extends Mergeability
+    case object HasConflicts extends Mergeability
+
+    def fromFlags(hasConflicts: Boolean, needsRebase: Boolean): Mergeability =
+      if (hasConflicts) HasConflicts
+      else if (needsRebase) NeedsRebase
+      else CanMerge
+
+  }
+
+}
