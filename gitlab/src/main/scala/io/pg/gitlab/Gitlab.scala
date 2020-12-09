@@ -43,7 +43,9 @@ object Gitlab {
     mergeRequestIid: Long,
     status: Option[MergeRequestInfo.Status],
     authorEmail: Option[String],
-    description: Option[String]
+    description: Option[String],
+    needsRebase: Boolean,
+    hasConflicts: Boolean
   )
 
   object MergeRequestInfo {
@@ -123,8 +125,10 @@ object Gitlab {
           MergeRequest
             .author(User.publicEmail)
             .mapEither(_.toRight(DecodingError("MR has no author"))) ~
-          MergeRequest.description
-      ).mapN(buildMergeRequest(projectId) _)
+          MergeRequest.description ~
+          MergeRequest.shouldBeRebased ~
+          MergeRequest.conflicts
+      ).mapN((buildMergeRequest(projectId) _))
 
       private def buildMergeRequest(
         projectId: Long
@@ -132,13 +136,17 @@ object Gitlab {
         mergeRequestIid: Long,
         status: Option[MergeRequestInfo.Status],
         authorEmail: Option[String],
-        description: Option[String]
+        description: Option[String],
+        needsRebase: Boolean,
+        hasConflicts: Boolean
       ): MergeRequestInfo = MergeRequestInfo(
         projectId = projectId,
         mergeRequestIid = mergeRequestIid,
         status = status,
         authorEmail = authorEmail,
-        description = description
+        description = description,
+        needsRebase = needsRebase,
+        hasConflicts = hasConflicts
       )
 
       private val convertPipelineStatus: PipelineStatusEnum => MergeRequestInfo.Status = {
