@@ -13,7 +13,6 @@ import io.odin.Logger
 import io.pg.Prelude.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.config.TextMatcher
-import cats.kernel.Monoid
 import cats.MonoidK
 
 @finalAlg
@@ -48,7 +47,7 @@ object ProjectActions {
 
   object MatcherFunction {
 
-    implicit def monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
+    implicit val monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
       override def combineK[A](x: MatcherFunction[A], y: MatcherFunction[A]): MatcherFunction[A] = 
         in => (x.matches(in).toValidated |+| y.matches(in).toValidated).toEither
       override def empty[A]: MatcherFunction[A] = _ => Right(())
@@ -60,7 +59,7 @@ object ProjectActions {
     ): MatcherFunction[In] =
       _.asRight[Mismatch].ensureOr(orElse)(predicate).toEitherNel.void
 
-    def success[In]: MatcherFunction[In] = 
+    val success: MatcherFunction[Any] = 
       _.pure[Matched].void
   }
 
@@ -110,7 +109,7 @@ object ProjectActions {
     case Matcher.Description(text) => descriptionMatches(text)
     case Matcher.PipelineStatus(status) => isSuccessful 
     case Matcher.Many(Nil) => MatcherFunction.success
-    case state @ Matcher.Many(values) => values.foldMapK(compileMatcher)
+    case Matcher.Many(values) => values.foldMapK(compileMatcher)
   }
 
   def compile(
