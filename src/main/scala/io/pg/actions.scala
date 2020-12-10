@@ -14,6 +14,8 @@ import io.pg.Prelude.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.config.TextMatcher
 import cats.MonoidK
+import cats.Applicative
+import cats.Functor
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -74,34 +76,29 @@ object ProjectActions {
       )
       .contramap(_.status)
 
-  def matchTextMatcher(matcher: TextMatcher)(value: String) = {
-    /*
-    FIXME[MP] 
-      - move the logic away - perhaps TextMatcher ops?
-      - check if new Regex is safe
-    */
-    import scala.util.matching.Regex 
-    matcher match {
-      case TextMatcher.Equals(expected) => value === expected 
-      case TextMatcher.Matches(regex) => new Regex(regex).matches(value) 
-    }
+  def matchTextMatcher: TextMatcher => MatcherFunction[String] = {
+    case TextMatcher.Equals(expected) => 
+      MatcherFunction.fromPredicate[String](
+        _ === expected,
+        value => Mismatch(show"invalid value, expected $expected, got $value")
+      )
+    case TextMatcher.Matches(regex) => 
+      MatcherFunction.fromPredicate[String](
+        regex.r.matches, // FIXME - unsafe, should be wrapped
+        value => Mismatch(show"invalid value, expected to match $regex, got $value")
+      )
   }
 
+
+  def exists[A](base: MatcherFunction[A]): MatcherFunction[Option[A]] =
+    _.fold[Matched[Unit]](Mismatch("Option was empty").leftNel)(base.matches)
+
   def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
-    MatcherFunction
-      .fromPredicate[Option[String]](
-        x => x.exists(matchTextMatcher(matcher)) ,
-        value => Mismatch(s"not successful, actual status: $value")
-      )
+    exists(matchTextMatcher(matcher))
       .contramap(_.authorEmail)
 
-  // FIXME[MP] both matchers are very similar, could be generic, taking a function (MergeRequestState => Option[String])
   def descriptionMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
-    MatcherFunction
-      .fromPredicate[Option[String]](
-        x => x.exists(matchTextMatcher(matcher)) ,
-        value => Mismatch(s"not successful, actual status: $value")
-      )
+    exists(matchTextMatcher(matcher))
       .contramap(_.description)
 
   val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = {  
