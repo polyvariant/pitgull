@@ -12,7 +12,7 @@ import fs2.concurrent.Queue
 import Prelude._
 import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging._
-import io.pg.background.BackgroundProcess
+                 import io.pg.background.BackgroundProcess
 import io.odin.Logger
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.Gitlab
