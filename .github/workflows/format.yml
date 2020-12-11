@@ -9,8 +9,8 @@ jobs:
       - name: Checkout current branch (full)
         uses: actions/checkout@v2
         with:
-          # ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          # fetch-depth: 0
       - name: Format
         uses: openlawteam/scalafmt-ci@v2
         with:
