@@ -15,7 +15,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Format
-        run: nix-shell -p scalafmt --command "ls -alG && scalafmt --diff-branch main --test"
+        run: nix-shell -p scalafmt --command "ls -alG && scalafmt --diff-branch main -v"
       # - name: Commit changes
       #   uses: stefanzweifel/git-auto-commit-action@v4.1.2
       #   with:
