@@ -11,10 +11,11 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - name: Format
-        uses: openlawteam/scalafmt-ci@v2
+      - uses: cachix/install-nix-action@v12
         with:
-          args: "--diff-branch main"
+          nix_path: nixpkgs=channel:nixos-unstable
+      - name: Format
+        run: nix-shell -p scalafmt --command "scalafmt --diff-branch main"
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4.1.2
         with:
