@@ -31,6 +31,7 @@ import sttp.tapir.Endpoint
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[MergeRequestInfo]]
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
+  def rebaseMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
 object Gitlab {
@@ -158,6 +159,11 @@ object Gitlab {
         runInfallibleEndpoint(GitlabEndpoints.acceptMergeRequest)
           .apply((projectId, mergeRequestIid))
           .void
+
+      def rebaseMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit] =
+        runInfallibleEndpoint(GitlabEndpoints.rebaseMergeRequest)
+          .apply((projectId, mergeRequestIid))
+          .void
     }
   }
 
@@ -173,10 +179,15 @@ object GitlabEndpoints {
     baseEndpoint
       //hehe putin
       .put
-      .in(
-        "projects" / path[Long]("id") / "merge_requests" / path[Long](
-          "merge_request_iid"
-        ) / "merge"
-      )
+      .in("projects" / path[Long]("projectId"))
+      .in("merge_requests" / path[Long]("merge_request_iid"))
+      .in("merge")
+
+  val rebaseMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Nothing] =
+    baseEndpoint
+      .put
+      .in("projects" / path[Long]("projectId"))
+      .in("merge_requests" / path[Long]("merge_request_iid"))
+      .in("rebase")
 
 }
