@@ -17,6 +17,7 @@ import io.pg.MergeRequestState
 import io.pg.config.ProjectConfig
 import fs2.Pipe
 import io.pg.ProjectActions.Mismatch
+import sttp.tapir.generic.auto._
 
 object WebhookRouter {
 
@@ -30,7 +31,7 @@ object WebhookRouter {
 
   def routes[F[_]: Applicative](
     eventPublisher: Publisher[F, WebhookEvent]
-  ): NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+  ): NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
     NonEmptyList.of(
       endpoints.webhook.serverLogicRecoverErrors(eventPublisher.publish)
     )
