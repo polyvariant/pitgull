@@ -56,7 +56,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-core" % "2.3.1",
     "org.typelevel" %% "cats-effect" % "2.3.1",
     "org.typelevel" %% "cats-tagless-macros" % "0.12",
-    "co.fs2" %% "fs2-core" % "2.4.6",
+    "co.fs2" %% "fs2-core" % "2.5.0",
     "com.github.valskalla" %% "odin-core" % "0.9.1",
     "io.circe" %% "circe-core" % "0.13.0",
     "com.disneystreaming" %% "weaver-framework" % "0.5.1" % Test,
