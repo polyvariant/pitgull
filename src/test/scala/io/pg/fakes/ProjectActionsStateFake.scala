@@ -13,6 +13,8 @@ import cats.implicits._
 import cats.FlatMap
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
+import io.pg.gitlab.Gitlab.MergeRequestInfo
+import io.pg.MergeRequestState.Mergeability
 
 object ProjectActionsStateFake {
   sealed case class MergeRequestDescription(projectId: Long, mergeRequestIid: Long)
@@ -79,9 +81,10 @@ object ProjectActionsStateFake {
         val initState = MergeRequestState(
           projectId = projectId,
           mergeRequestIid = newId,
-          authorEmail = authorEmail,
+          authorEmail = authorEmail.some,
           description = description,
-          status = MergeRequestState.Status.Other("Created")
+          status = MergeRequestInfo.Status.Other("Created"),
+          mergeability = Mergeability.CanMerge
         )
 
         Data[F].modify {
@@ -99,7 +102,7 @@ object ProjectActionsStateFake {
 
           _.updatedWith(key) {
             _.map { state =>
-              state.copy(status = MergeRequestState.Status.Success)
+              state.copy(status = MergeRequestInfo.Status.Success)
             }
           }
         }

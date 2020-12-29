@@ -49,9 +49,8 @@ object WebhookProcessorTest extends SimpleIOSuite {
   testWithResources("unknown project") { resources =>
     import resources._
     val projectId = 66L
-    val projectName = "any"
 
-    process(WebhookEvent(Project(projectId, projectName), "merge_request"))
+    process(WebhookEvent(Project(projectId), "merge_request"))
       .attempt
       .map { result =>
         expect(result.isLeft)
@@ -61,18 +60,16 @@ object WebhookProcessorTest extends SimpleIOSuite {
   testWithResources("known project with no MRs") { resources =>
     import resources._
     val projectId = 66L
-    val projectName = "any"
 
     projectConfigModifiers.register(projectId, ProjectConfig.empty) *>
-      process(WebhookEvent(Project(projectId, projectName), "merge_request")).as(success)
+      process(WebhookEvent(Project(projectId), "merge_request")).as(success)
   }
 
   testWithResources("known project with one mergeable MR and one non-mergeable MR") { resources =>
     import resources._
     val projectId = 66L
-    val projectName = "any"
 
-    val project = Project(projectId, projectName)
+    val project = Project(projectId)
 
     for {
       _              <- projectConfigModifiers.register(projectId, ProjectConfig(List(Rule.mergeAnything)))
