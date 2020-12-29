@@ -1,23 +1,43 @@
 package io.pg.config
 
+import cats.implicits._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto._
+import scala.util.Try
+import scala.util.matching.Regex
 import io.circe.Codec
+import io.circe.Decoder
+import io.circe.Encoder
+import io.circe.DecodingFailure
 
 private object circe {
   implicit val circeConfig: Configuration =
     Configuration.default.withDiscriminator("kind")
+
+  private val decodeRegex: Decoder[Regex] = Decoder.instance {
+    _.value
+      .asString
+      .toRight(DecodingFailure("Failed to decode as String", Nil))
+      .flatMap { s =>
+        Either.fromTry(Try(s.r)).leftMap(e => DecodingFailure(s"Failed to compile regex: $e", Nil))
+      }
+  }
+
+  private val encodeRegex: Encoder[Regex] = Encoder.encodeString.contramap[Regex](_.toString)
+
+  implicit val regexCodec: Codec[Regex] = Codec.from(decodeRegex, encodeRegex)
 }
 
 import circe.circeConfig
+import circe.regexCodec
 
-@ConfiguredJsonCodec()
 sealed trait TextMatcher extends Product with Serializable
 
 object TextMatcher {
   final case class Equals(value: String) extends TextMatcher
-  final case class Matches(regex: String) extends TextMatcher
+  final case class Matches(regex: Regex) extends TextMatcher
+  implicit val codec: Codec[TextMatcher] = deriveConfiguredCodec
 }
 
 @ConfiguredJsonCodec()

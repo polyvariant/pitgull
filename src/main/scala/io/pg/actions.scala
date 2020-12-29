@@ -14,8 +14,6 @@ import io.pg.Prelude.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.config.TextMatcher
 import cats.MonoidK
-import cats.Applicative
-import cats.Functor
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -84,8 +82,8 @@ object ProjectActions {
       )
     case TextMatcher.Matches(regex) => 
       MatcherFunction.fromPredicate[String](
-        regex.r.matches, // FIXME - unsafe, should be wrapped
-        value => Mismatch(show"invalid value, expected to match $regex, got $value")
+        regex.matches,
+        value => Mismatch(show"invalid value, expected to match ${regex.toString}, got $value")
       )
   }
 
