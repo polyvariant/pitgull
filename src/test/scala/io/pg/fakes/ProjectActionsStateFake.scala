@@ -15,6 +15,8 @@ import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.MergeRequestState.Mergeability
+import io.pg.ProjectAction.Rebase
+import cats.data.Chain
 
 object ProjectActionsStateFake {
   sealed case class MergeRequestDescription(projectId: Long, mergeRequestIid: Long)
@@ -25,11 +27,12 @@ object ProjectActionsStateFake {
 
   @Lenses
   sealed case class State(
-    mergeRequests: Map[MergeRequestDescription, MergeRequestState]
+    mergeRequests: Map[MergeRequestDescription, MergeRequestState],
+    actionLog: Chain[ProjectAction]
   )
 
   object State {
-    val initial: State = State(Map.empty)
+    val initial: State = State(Map.empty, Chain.nil)
 
     /**  A collection of modifiers on the state, which will be provided together with the instance using it.
       */
@@ -37,6 +40,40 @@ object ProjectActionsStateFake {
       // returns Iid of created MR
       def open(projectId: Long, authorEmail: String, description: Option[String]): F[Long]
       def finishPipeline(projectId: Long, mergeRequestIid: Long): F[Unit]
+      def setMergeability(projectId: Long, mergeRequestIid: Long, mergeability: Mergeability): F[Unit]
+      def getActionLog: F[List[ProjectAction]]
+    }
+
+    private[ProjectActionsStateFake] object modifications {
+
+      def logAction(action: ProjectAction): State => State =
+        State.actionLog.modify(_.append(action))
+
+      def merge(action: ProjectAction.Merge): State => State =
+        State.mergeRequests.modify(_ - MergeRequestDescription.fromMergeAction(action))
+
+      def rebase(action: ProjectAction.Rebase): State => State =
+        // Note: this doesn't check for conflicts
+        setMergeabilityInternal(action.projectId, action.mergeRequestIid, Mergeability.CanMerge)
+
+      def setMergeabilityInternal(projectId: Long, mergeRequestIid: Long, mergeability: Mergeability): State => State =
+        State.mergeRequests.modify { mrs =>
+          val key = MergeRequestDescription(projectId, mergeRequestIid)
+          mrs ++ mrs.get(key).map(_.copy(mergeability = mergeability)).tupleLeft(key)
+        }
+
+      def save(key: MergeRequestDescription, state: MergeRequestState) = State.mergeRequests.modify {
+        _ + (key -> state)
+      }
+
+      def finishPipeline(key: MergeRequestDescription) = State.mergeRequests.modify {
+        _.updatedWith(key) {
+          _.map { state =>
+            state.copy(status = MergeRequestInfo.Status.Success)
+          }
+        }
+      }
+
     }
 
   }
@@ -45,7 +82,7 @@ object ProjectActionsStateFake {
   def Data[F[_]: Data]: Data[F] = implicitly[Data[F]]
 
   def refInstance[F[_]: Sync]: F[ProjectActions[F] with StateResolver[F] with State.Modifiers[F]] =
-    Ref[F].of(State(Map.empty)).map(FakeUtils.statefulRef(_)).map(implicit F => instance[F])
+    Ref[F].of(State.initial).map(FakeUtils.statefulRef(_)).map(implicit F => instance[F])
 
   /** This instance has both the capabilities of ProjectActions and StateResolver,
     * because they operate on the same state, and the state is sealed by convention.
@@ -54,12 +91,14 @@ object ProjectActionsStateFake {
     F[_]: Data: FlatMap
   ]: ProjectActions[F] with StateResolver[F] with State.Modifiers[F] = new ProjectActions[F] with StateResolver[F] with State.Modifiers[F] {
 
-    def execute(action: ProjectAction): F[Unit] = action match {
-      case m: Merge => merge(m)
-    }
+    def execute(action: ProjectAction): F[Unit] = Data[F].modify {
+      val actionChange = action match {
+        case m: Merge  => State.modifications.merge(m)
+        case r: Rebase => State.modifications.rebase(r)
+      }
 
-    private def merge(action: ProjectAction.Merge): F[Unit] =
-      Data[F].modify(State.mergeRequests.modify(_ - MergeRequestDescription.fromMergeAction(action)))
+      actionChange >>> State.modifications.logAction(action)
+    }
 
     def resolve(project: Project): F[List[MergeRequestState]] =
       Data[F].get.map(_.mergeRequests).map(_.values.toList)
@@ -88,26 +127,21 @@ object ProjectActionsStateFake {
         )
 
         Data[F].modify {
-          State.mergeRequests.modify {
-            _ + (MergeRequestDescription(projectId, newId) -> initState)
-          }
+          State.modifications.save(MergeRequestDescription(projectId, newId), initState)
         }
       }
     }
 
+    def setMergeability(projectId: Long, mergeRequestIid: Long, mergeability: Mergeability): F[Unit] = Data[F].modify {
+      State.modifications.setMergeabilityInternal(projectId, mergeRequestIid, mergeability)
+    }
+
     def finishPipeline(projectId: Long, mergeRequestIid: Long): F[Unit] =
       Data[F].modify {
-        State.mergeRequests.modify {
-          val key = MergeRequestDescription(projectId, mergeRequestIid)
-
-          _.updatedWith(key) {
-            _.map { state =>
-              state.copy(status = MergeRequestInfo.Status.Success)
-            }
-          }
-        }
+        State.modifications.finishPipeline(MergeRequestDescription(projectId, mergeRequestIid))
       }
 
+    def getActionLog: F[List[ProjectAction]] = Data[F].inspect(_.actionLog.toList)
   }
 
 }

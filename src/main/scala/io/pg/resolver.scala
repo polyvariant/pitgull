@@ -1,7 +1,8 @@
 package io.pg
 
 import cats.MonadError
-import cats.syntax.all._
+import cats.implicits._
+import cats.kernel.Order
 import cats.tagless.finalAlg
 import io.odin.Logger
 import io.pg.gitlab.Gitlab
@@ -80,6 +81,7 @@ object MergeRequestState {
       else if (needsRebase) NeedsRebase
       else CanMerge
 
+    implicit val order: Order[Mergeability] = Order.by(List(CanMerge, NeedsRebase, HasConflicts).indexOf)
   }
 
 }

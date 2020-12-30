@@ -15,6 +15,7 @@ import io.pg.config.Rule
 import io.pg.config.Matcher
 import io.pg.config.Action
 import io.pg.config.TextMatcher
+import io.pg.MergeRequestState.Mergeability
 
 object WebhookProcessorTest extends SimpleIOSuite {
 
@@ -48,7 +49,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
   def testWithResources(name: String)(use: Resources[IO] => IO[Expectations]) =
     test(name)(mkResources.use(use))
-
+  /*
   testWithResources("unknown project") { resources =>
     import resources._
     val projectId = 66L
@@ -74,7 +75,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val project = Project(projectId)
 
-    val matchSuccessfulPipeline = 
+    val matchSuccessfulPipeline =
       Rule("pipeline successful", Matcher.PipelineStatus("success"), Action.Merge)
 
     for {
@@ -89,6 +90,29 @@ object WebhookProcessorTest extends SimpleIOSuite {
       mergeRequestsAfterProcess.map(_.mergeRequestIid) == List(freshMR)
     }
   }
+   */
+  testWithResources("known project with one mergeable MR and one rebaseable MR") { resources =>
+    import resources._
+    val projectId = 66L
+
+    val project = Project(projectId)
+
+    for {
+      _   <- projectConfigModifiers.register(projectId, ProjectConfig(List(Rule.mergeAnything)))
+      mr1 <- projectModifiers.open(projectId, "anyone@example.com", None)
+      mr2 <- projectModifiers.open(projectId, "anyone@example.com", None)
+      _   <- projectModifiers.finishPipeline(projectId, mr1)
+      _   <- projectModifiers.finishPipeline(projectId, mr2)
+      _   <- projectModifiers.setMergeability(projectId, mr2, Mergeability.NeedsRebase)
+
+      _                         <- process(WebhookEvent(project, "merge_request"))
+      mergeRequestsAfterProcess <- resolver.resolve(project)
+      log                       <- projectModifiers.getActionLog
+    } yield expect {
+      mergeRequestsAfterProcess.map(_.mergeRequestIid) == Nil &&
+      log == List(ProjectAction.Merge(projectId, mr1), ProjectAction.Rebase(projectId, mr2), ProjectAction.Merge(projectId, mr2))
+    }
+  }
 
   testWithResources("known project with one mergeable MR - matching by author") { resources =>
     import resources._
@@ -98,13 +122,13 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val correctDomainRegex = ".*@example.com".r
 
-    val matchAuthorEmailDomain = 
+    val matchAuthorEmailDomain =
       Rule("pipeline successful", Matcher.Author(TextMatcher.Matches(correctDomainRegex)), Action.Merge)
 
     for {
-      _              <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorEmailDomain)))
-      mergeRequestId <- projectModifiers.open(projectId, "anyone@example.com", None)
-      _              <- projectModifiers.finishPipeline(projectId, mergeRequestId)
+      _                         <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorEmailDomain)))
+      mergeRequestId            <- projectModifiers.open(projectId, "anyone@example.com", None)
+      _                         <- projectModifiers.finishPipeline(projectId, mergeRequestId)
       _                         <- process(WebhookEvent(project, "merge_request"))
       mergeRequestsAfterProcess <- resolver.resolve(project)
     } yield expect {
