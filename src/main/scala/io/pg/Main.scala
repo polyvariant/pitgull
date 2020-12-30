@@ -1,67 +1,91 @@
 package io.pg
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-import cats.effect.Blocker
+import cats.Parallel
+import cats.effect.ConcurrentEffect
+import cats.effect.ContextShift
+import cats.effect.Effect
 import cats.effect.ExitCode
 import cats.effect.IO
 import cats.effect.IOApp
+import cats.effect.Resource
+import cats.effect.Sync
+import cats.effect.Timer
+import cats.effect.implicits._
 import cats.syntax.all._
+import io.chrisdavenport.cats.time.instances.all._
+import io.odin.Level
+import io.odin.Logger
+import io.odin.formatter.Formatter
 import io.pg.Prelude._
-import io.pg.config.ProjectConfigReader
+import org.http4s.HttpApp
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware
 import org.slf4j.impl.StaticLoggerBinder
 
 object Main extends IOApp {
 
-  implicit val logger = StaticLoggerBinder.baseLogger
+  def mkLogger[F[_]: ConcurrentEffect: Timer: ContextShift] = {
 
-  def serve(config: AppConfig) =
-    Application
-      .resource[IO](config)
-      .flatMap { resources =>
-        val server = BlazeServerBuilder[IO](ExecutionContext.global)
-          .withHttpApp(
-            middleware
-              .Logger
-              .httpApp(
-                logHeaders = true,
-                logBody = true,
-                logAction = (logger.debug(_: String)).some
-              )(
-                resources.routes
-              )
-          )
-          .bindHttp(port = config.http.port, host = "0.0.0.0")
-          .withBanner(config.meta.banner.linesIterator.toList)
-          .resource
+    // is withMinimalLevel even working??
+    val console = io.odin.consoleLogger[F](formatter = Formatter.colorful).withMinimalLevel(Level.Info).pure[Resource[F, *]]
 
-        val logStarted = logger
-          .info(
-            "Started application",
-            Map(
-              "version" -> config.meta.version,
-              "scalaVersion" -> config.meta.scalaVersion
-            )
-          )
+    val file = io
+      .odin
+      .asyncRollingFileLogger[F](
+        // https://github.com/valskalla/odin/issues/229
+        fileNamePattern = dateTime => show"/tmp/log/pitgull/pitgull-logs-${dateTime.toLocalDate}.txt",
+        rolloverInterval = 1.day.some,
+        maxFileSizeInBytes = (10L * 1024 * 1024 /* 10MB */ ).some,
+        maxBufferSize = 10.some,
+        formatter = Formatter.colorful,
+        minLevel = Level.Debug
+      )
+    console |+| file
+  }
+    .evalTap { logger =>
+      Sync[F].delay(StaticLoggerBinder.globalLogger.set(logger.mapK(Effect.toIOK).some))
+    }
 
-        server *>
-          logStarted.resource_.as(resources.background)
-      }
+  def mkServer[F[_]: Logger: ConcurrentEffect: Timer](http: HttpConfig, meta: MetaConfig, routes: HttpApp[F]) = {
+    val app = middleware
+      .Logger
+      .httpApp(
+        logHeaders = true,
+        logBody = true,
+        logAction = (Logger[F].debug(_: String)).some
+      )(routes)
+
+    BlazeServerBuilder[F](ExecutionContext.global)
+      .withHttpApp(app)
+      .bindHttp(port = http.port, host = "0.0.0.0")
+      .withBanner(meta.banner.linesIterator.toList)
+      .resource
+  }
+
+  def logStarting[F[_]: Logger](meta: MetaConfig) =
+    Logger[F].info("Starting application", Map("version" -> meta.version, "scalaVersion" -> meta.scalaVersion))
+
+  def logStarted[F[_]: Logger](meta: MetaConfig) =
+    Logger[F].info("Started application", Map("version" -> meta.version, "scalaVersion" -> meta.scalaVersion))
+
+  def serve[F[_]: ConcurrentEffect: ContextShift: Timer: Parallel](config: AppConfig) =
+    for {
+      implicit0(logger: Logger[F]) <- mkLogger[F]
+      _                            <- logStarting(config.meta).resource_
+      resources                    <- Application.resource[F](config)
+      _                            <- mkServer[F](config.http, config.meta, resources.routes)
+      _                            <- resources.background.parTraverse_(_.run).background
+      _                            <- logStarted(config.meta).resource_
+    } yield resources.background
 
   def run(args: List[String]): IO[ExitCode] =
-    Blocker[IO]
-      .flatMap { b =>
-        ProjectConfigReader
-          .dhallJsonStringConfig[IO](b)
-          .flatTap(_.readConfig(io.pg.gitlab.webhook.Project.demo).flatMap(a => logger.info(a.toString)))
-          .resource *>
-          AppConfig
-            .appConfig
-            .resource[IO]
-            .flatMap(serve)
-      }
-      .use(_.parTraverse_(_.run) *> IO.never)
+    AppConfig
+      .appConfig
+      .resource[IO]
+      .flatMap(serve[IO])
+      .use(_ => IO.never)
 
 }

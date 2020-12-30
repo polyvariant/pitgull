@@ -5,7 +5,6 @@ import cats.implicits._
 import cats.tagless.autoContravariant
 import cats.tagless.finalAlg
 import io.pg.ProjectAction.Merge
-import io.pg.config.Action
 import io.pg.config.Matcher
 import io.pg.config.ProjectConfig
 import io.pg.gitlab.Gitlab
