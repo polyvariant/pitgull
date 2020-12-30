@@ -1,22 +1,21 @@
 package io.pg.webhook
 
+import cats.Applicative
+import cats.MonadError
 import cats.data.NonEmptyList
-import sttp.tapir.server.ServerEndpoint
+import cats.syntax.all._
+import fs2.Pipe
+import io.odin.Logger
+import io.pg.MergeRequestState
+import io.pg.ProjectAction
+import io.pg.ProjectActions
+import io.pg.ProjectActions.Mismatch
+import io.pg.StateResolver
+import io.pg.config.ProjectConfig
+import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging.Publisher
-import io.pg.messaging.Processor
-import io.odin.Logger
-import cats.Applicative
-import io.pg.config.ProjectConfigReader
-import cats.syntax.all._
-import cats.MonadError
-import io.pg.StateResolver
-import io.pg.ProjectActions
-import io.pg.ProjectAction
-import io.pg.MergeRequestState
-import io.pg.config.ProjectConfig
-import fs2.Pipe
-import io.pg.ProjectActions.Mismatch
+import sttp.tapir.server.ServerEndpoint
 
 object WebhookRouter {
 
