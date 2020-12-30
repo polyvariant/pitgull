@@ -42,11 +42,10 @@ object Main extends IOApp {
         formatter = Formatter.colorful,
         minLevel = Level.Debug
       )
-    //todo
-    console // |+| file
+    console |+| file
   }
     .evalTap { logger =>
-      Sync[F].delay(OdinInterop.globalLogger.set(logger.mapK(Effect.toIOK).some))
+      Sync[F].delay(StaticLoggerBinder.globalLogger.set(logger.mapK(Effect.toIOK).some))
     }
 
   def mkServer[F[_]: Logger: ConcurrentEffect: Timer](http: HttpConfig, meta: MetaConfig, routes: HttpApp[F]) = {
