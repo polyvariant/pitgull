@@ -1,6 +1,7 @@
 package io.pg
 
 import cats.effect.IO
+import cats.implicits._
 import io.pg.Prelude._
 import io.pg.config.ProjectConfig
 import io.pg.config.ProjectConfigReader
@@ -97,6 +98,8 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val project = Project(projectId)
 
+    val perform = (process(WebhookEvent(project, "merge_request")) *> resolver.resolve(project), projectModifiers.getActionLog).tupled
+
     for {
       _   <- projectConfigModifiers.register(projectId, ProjectConfig(List(Rule.mergeAnything)))
       mr1 <- projectModifiers.open(projectId, "anyone@example.com", None)
@@ -105,12 +108,26 @@ object WebhookProcessorTest extends SimpleIOSuite {
       _   <- projectModifiers.finishPipeline(projectId, mr2)
       _   <- projectModifiers.setMergeability(projectId, mr2, Mergeability.NeedsRebase)
 
-      _                         <- process(WebhookEvent(project, "merge_request"))
-      mergeRequestsAfterProcess <- resolver.resolve(project)
-      log                       <- projectModifiers.getActionLog
-    } yield expect {
-      mergeRequestsAfterProcess.map(_.mergeRequestIid) == Nil &&
-      log == List(ProjectAction.Merge(projectId, mr1), ProjectAction.Rebase(projectId, mr2), ProjectAction.Merge(projectId, mr2))
+      (mergeRequestsAfterProcess1, logAfterProcess1) <- perform
+      (mergeRequestsAfterProcess2, logAfterProcess2) <- perform
+      (mergeRequestsAfterProcess3, logAfterProcess3) <- perform
+    } yield {
+      val merge1 = ProjectAction.Merge(projectId, mr1)
+      val rebase2 = ProjectAction.Rebase(projectId, mr2)
+      val merge2 = ProjectAction.Merge(projectId, mr2)
+
+      val firstMerged = expect(mergeRequestsAfterProcess1.map(_.mergeRequestIid) == List(mr2)) &&
+        expect(logAfterProcess1 == List(merge1))
+
+      val secondRebased = expect(mergeRequestsAfterProcess2.map(_.mergeRequestIid) == List(mr2)) &&
+        expect(logAfterProcess2 == List(merge1, rebase2))
+
+      val secondMerged = expect(mergeRequestsAfterProcess3.map(_.mergeRequestIid) == Nil) &&
+        expect(logAfterProcess3 == List(merge1, rebase2, merge2))
+
+      firstMerged &&
+      secondRebased &&
+      secondMerged
     }
   }
 

@@ -53,8 +53,7 @@ object WebhookProcessor {
   ](
     implicit SC: fs2.Stream.Compiler[F, F]
   ): WebhookEvent => F[Unit] = { ev =>
-    def loop: F[Unit] = for {
-      _      <- Logger[F].info("Received event", Map("event" -> ev.toString()))
+    val loop: F[Unit] = for {
       config <- ProjectConfigReader[F].readConfig(ev.project)
       states <- StateResolver[F]
                   .resolve(ev.project)
@@ -81,10 +80,11 @@ object WebhookProcessor {
 
                         nextAction.leftSequence.map(_.toOption)
                       }
-      _          <- nextAction.traverse_(ProjectActions[F].execute(_) *> loop)
+      _          <- nextAction.traverse_(ProjectActions[F].execute)
     } yield ()
 
-    loop
+    Logger[F].info("Received event", Map("event" -> ev.toString())) *>
+      loop
   }
 
   private def validActions[F[_]: Logger: Applicative, E: Show, A, B](
