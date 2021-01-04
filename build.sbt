@@ -46,7 +46,7 @@ val compilerPlugins = List(
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
-val Scala213 = "2.13.3"
+val Scala213 = "2.13.4"
 
 val commonSettings = List(
   scalaVersion := Scala213,
@@ -59,10 +59,12 @@ val commonSettings = List(
     "co.fs2" %% "fs2-core" % "2.5.0",
     "com.github.valskalla" %% "odin-core" % "0.9.1",
     "io.circe" %% "circe-core" % "0.13.0",
+    "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0" % Test,
     "com.disneystreaming" %% "weaver-framework" % "0.5.1" % Test,
     "com.disneystreaming" %% "weaver-scalacheck" % "0.5.1" % Test
   ) ++ compilerPlugins,
-  testFrameworks += new TestFramework("weaver.framework.TestFramework")
+  testFrameworks += new TestFramework("weaver.framework.TestFramework"),
+  skip in publish := true
 )
 
 val gitlab = project
@@ -82,8 +84,8 @@ val gitlab = project
 
 val core = project.settings(commonSettings).settings(name += "-core")
 
-//temporary workaround for docker not accepting sbt-dynver's insanely specific versions as tags
-ThisBuild / version := "0.0.0"
+//workaround for docker not accepting + (the default separator in sbt-dynver)
+dynverSeparator in ThisBuild := "-"
 
 val installDhallJson =
   ExecCmd(
@@ -113,7 +115,6 @@ val pitgull =
         file("./example.dhall") -> "/opt/docker/example.dhall"
       ),
       mainClass := Some("io.pg.ProjectConfigReader"),
-      skip in publish := true,
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
@@ -130,8 +131,6 @@ val pitgull =
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
         "org.typelevel" %% "cats-mtl-core" % "0.7.1",
-        "com.olegpy" %% "meow-mtl-effects" % "0.4.1",
-        "com.olegpy" %% "meow-mtl-core" % "0.4.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
         "com.github.valskalla" %% "odin-core" % "0.9.1",
         "com.github.valskalla" %% "odin-slf4j" % "0.9.1",

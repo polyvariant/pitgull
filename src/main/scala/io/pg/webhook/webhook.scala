@@ -1,22 +1,21 @@
 package io.pg.webhook
 
+import cats.Applicative
+import cats.MonadError
 import cats.data.NonEmptyList
-import sttp.tapir.server.ServerEndpoint
+import cats.syntax.all._
+import fs2.Pipe
+import io.odin.Logger
+import io.pg.MergeRequestState
+import io.pg.ProjectAction
+import io.pg.ProjectActions
+import io.pg.ProjectActions.Mismatch
+import io.pg.StateResolver
+import io.pg.config.ProjectConfig
+import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging.Publisher
-import io.pg.messaging.Processor
-import io.odin.Logger
-import cats.Applicative
-import io.pg.config.ProjectConfigReader
-import cats.syntax.all._
-import cats.MonadError
-import io.pg.StateResolver
-import io.pg.ProjectActions
-import io.pg.ProjectAction
-import io.pg.MergeRequestState
-import io.pg.config.ProjectConfig
-import fs2.Pipe
-import io.pg.ProjectActions.Mismatch
+import sttp.tapir.server.ServerEndpoint
 
 object WebhookRouter {
 
@@ -48,26 +47,25 @@ object WebhookProcessor {
     ], Throwable]
   ](
     implicit SC: fs2.Stream.Compiler[F, F]
-  ): Processor[F, WebhookEvent] =
-    Processor.simple { ev =>
-      for {
-        _       <- Logger[F].info("Received event", Map("event" -> ev.toString()))
-        config  <- ProjectConfigReader[F].readConfig(ev.project)
-        states  <- StateResolver[F].resolve(ev.project)
-        actions <- validActions[F](states, config)
-        _       <- Logger[F].debug(
-                     "All actions to execute",
-                     Map("actions" -> actions.toString)
-                   )
-        _       <- actions.traverse_ { action =>
-                     Logger[F].info(
-                       "About to execute action",
-                       Map("action" -> action.toString)
-                     ) *>
-                       ProjectActions[F].execute(action)
-                   }
-      } yield ()
-    }
+  ): WebhookEvent => F[Unit] = { ev =>
+    for {
+      _       <- Logger[F].info("Received event", Map("event" -> ev.toString()))
+      config  <- ProjectConfigReader[F].readConfig(ev.project)
+      states  <- StateResolver[F].resolve(ev.project)
+      actions <- validActions[F](states, config)
+      _       <- Logger[F].debug(
+                   "All actions to execute",
+                   Map("actions" -> actions.toString)
+                 )
+      _       <- actions.traverse_ { action =>
+                   Logger[F].info(
+                     "About to execute action",
+                     Map("action" -> action.toString)
+                   ) *>
+                     ProjectActions[F].execute(action)
+                 }
+    } yield ()
+  }
 
   private def validActions[F[_]: Logger: Applicative](
     states: List[MergeRequestState],
