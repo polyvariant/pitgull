@@ -22,6 +22,8 @@ import cats.effect.ConcurrentEffect
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
 import sttp.client.SttpBackend
+import sttp.tapir.server.http4s.Http4sServerInterpreter
+import cats.effect.Timer
 
 sealed trait Event extends Product with Serializable
 
@@ -36,7 +38,7 @@ final class Application[F[_]](
 
 object Application {
 
-  def resource[F[_]: ConcurrentEffect: ContextShift: Logger](
+  def resource[F[_]: ConcurrentEffect: ContextShift: Timer: Logger](
     config: AppConfig
   ): Resource[F, Application[F]] = {
     implicit val projectConfigReader = ProjectConfigReader.test[F]
@@ -74,13 +76,11 @@ object Application {
                 webhookChannel
               )(Processor.simple(WebhookProcessor.instance[F]))
 
-              import sttp.tapir.server.http4s._
-
-              val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+              val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
                 NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
 
               new Application[F](
-                routes = endpoints.toList.toRoutes.orNotFound,
+                routes = Http4sServerInterpreter.toRoutes(endpoints.toList).orNotFound,
                 background = NonEmptyList.one(webhookProcess)
               )
             }
