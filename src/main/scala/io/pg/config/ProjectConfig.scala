@@ -27,7 +27,7 @@ object ProjectConfigReader {
         Matcher.Many(
           List(
             Matcher.Author(TextMatcher.Equals("scala-steward@ocado.com")),
-            Matcher.Description(TextMatcher.Matches(".+labels:.+semver-patch.+".r))
+            Matcher.Description(TextMatcher.Matches(".*labels:.*semver-patch.*".r))
           )
         ),
         Action.Merge

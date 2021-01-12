@@ -4,7 +4,6 @@ import cats.implicits._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto._
-import scala.util.Try
 import scala.util.matching.Regex
 import io.circe.Codec
 import io.circe.Decoder
@@ -20,7 +19,7 @@ private object circe {
       .asString
       .toRight(DecodingFailure("Failed to decode as String", Nil))
       .flatMap { s =>
-        Either.fromTry(Try(s.r)).leftMap(e => DecodingFailure(s"Failed to compile regex: $e", Nil))
+        Either.catchNonFatal(s.r).leftMap(DecodingFailure.fromThrowable(_, Nil))
       }
   }
 
