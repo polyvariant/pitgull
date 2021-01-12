@@ -74,6 +74,17 @@ object ProjectActions {
       )
       .contramap(_.status)
 
+  def statusMatches(expectedStatus: String): MatcherFunction[MergeRequestState] =
+    MatcherFunction
+      .fromPredicate[MergeRequestInfo.Status](
+        {
+          case MergeRequestInfo.Status.Success => expectedStatus.toLowerCase === "success"
+          case MergeRequestInfo.Status.Other(value) => expectedStatus === value
+        },
+        value => Mismatch(s"""Status is not "$expectedStatus", actual status: "$value"""")
+      )
+      .contramap(_.status)
+
   def matchTextMatcher: TextMatcher => MatcherFunction[String] = {
     case TextMatcher.Equals(expected) => 
       MatcherFunction.fromPredicate[String](
@@ -102,7 +113,7 @@ object ProjectActions {
   val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = {  
     case Matcher.Author(email) => autorMatches(email)
     case Matcher.Description(text) => descriptionMatches(text)
-    case Matcher.PipelineStatus(status) => isSuccessful 
+    case Matcher.PipelineStatus(status) => statusMatches(status)
     case Matcher.Many(Nil) => MatcherFunction.success
     case Matcher.Many(values) => values.foldMapK(compileMatcher)
   }
