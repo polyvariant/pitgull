@@ -50,7 +50,7 @@ object ProjectActions {
     implicit val monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
       override def combineK[A](x: MatcherFunction[A], y: MatcherFunction[A]): MatcherFunction[A] = 
         in => (x.matches(in).toValidated |+| y.matches(in).toValidated).toEither
-      override def empty[A]: MatcherFunction[A] = _ => Right(())
+      override def empty[A]: MatcherFunction[A] = success
     }
 
     def fromPredicate[In](
@@ -65,14 +65,6 @@ object ProjectActions {
 
   final case class Mismatch(reason: String)
   type Matched[A] = EitherNel[Mismatch, A]
-
-  val isSuccessful: MatcherFunction[MergeRequestState] =
-    MatcherFunction
-      .fromPredicate[MergeRequestInfo.Status](
-        _ === MergeRequestInfo.Status.Success,
-        value => Mismatch(s"not successful, actual status: $value")
-      )
-      .contramap(_.status)
 
   def statusMatches(expectedStatus: String): MatcherFunction[MergeRequestState] =
     MatcherFunction
@@ -114,7 +106,6 @@ object ProjectActions {
     case Matcher.Author(email) => autorMatches(email)
     case Matcher.Description(text) => descriptionMatches(text)
     case Matcher.PipelineStatus(status) => statusMatches(status)
-    case Matcher.Many(Nil) => MatcherFunction.success
     case Matcher.Many(values) => values.foldMapK(compileMatcher)
   }
 
