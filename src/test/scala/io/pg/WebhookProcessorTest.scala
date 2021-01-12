@@ -12,6 +12,9 @@ import io.pg.webhook.WebhookProcessor
 import weaver.Expectations
 import weaver.SimpleIOSuite
 import io.pg.config.Rule
+import io.pg.config.Matcher
+import io.pg.config.Action
+import io.pg.config.TextMatcher
 
 object WebhookProcessorTest extends SimpleIOSuite {
 
@@ -71,8 +74,11 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val project = Project(projectId)
 
+    val matchSuccessfulPipeline = 
+      Rule("pipeline successful", Matcher.PipelineStatus("success"), Action.Merge)
+
     for {
-      _              <- projectConfigModifiers.register(projectId, ProjectConfig(List(Rule.mergeAnything)))
+      _              <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchSuccessfulPipeline)))
       mergeRequestId <- projectModifiers.open(projectId, "anyone@example.com", None)
       _              <- projectModifiers.finishPipeline(projectId, mergeRequestId)
       freshMR        <- projectModifiers.open(projectId, "anyone@example.com", None)
@@ -81,6 +87,28 @@ object WebhookProcessorTest extends SimpleIOSuite {
       mergeRequestsAfterProcess <- resolver.resolve(project)
     } yield expect {
       mergeRequestsAfterProcess.map(_.mergeRequestIid) == List(freshMR)
+    }
+  }
+
+  testWithResources("known project with one mergeable MR - matching by author") { resources =>
+    import resources._
+    val projectId = 66L
+
+    val project = Project(projectId)
+
+    val correctDomainRegex = ".*@example.com".r
+
+    val matchAuthorEmailDomain = 
+      Rule("pipeline successful", Matcher.Author(TextMatcher.Matches(correctDomainRegex)), Action.Merge)
+
+    for {
+      _              <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorEmailDomain)))
+      mergeRequestId <- projectModifiers.open(projectId, "anyone@example.com", None)
+      _              <- projectModifiers.finishPipeline(projectId, mergeRequestId)
+      _                         <- process(WebhookEvent(project, "merge_request"))
+      mergeRequestsAfterProcess <- resolver.resolve(project)
+    } yield expect {
+      mergeRequestsAfterProcess.map(_.mergeRequestIid) == Nil
     }
   }
 

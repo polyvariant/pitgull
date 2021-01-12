@@ -12,6 +12,8 @@ import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import io.pg.Prelude.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
+import io.pg.config.TextMatcher
+import cats.MonoidK
 
 @finalAlg
 trait ProjectActions[F[_]] {
@@ -45,28 +47,67 @@ object ProjectActions {
 
   object MatcherFunction {
 
+    implicit val monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
+      override def combineK[A](x: MatcherFunction[A], y: MatcherFunction[A]): MatcherFunction[A] = 
+        in => (x.matches(in).toValidated |+| y.matches(in).toValidated).toEither
+      override def empty[A]: MatcherFunction[A] = success
+    }
+
     def fromPredicate[In](
       predicate: In => Boolean,
       orElse: In => Mismatch
     ): MatcherFunction[In] =
       _.asRight[Mismatch].ensureOr(orElse)(predicate).toEitherNel.void
 
+    val success: MatcherFunction[Any] = 
+      _.pure[Matched].void
   }
 
   final case class Mismatch(reason: String)
   type Matched[A] = EitherNel[Mismatch, A]
 
-  val isSuccessful: MatcherFunction[MergeRequestState] =
+  def statusMatches(expectedStatus: String): MatcherFunction[MergeRequestState] =
     MatcherFunction
       .fromPredicate[MergeRequestInfo.Status](
-        _ === MergeRequestInfo.Status.Success,
-        value => Mismatch(s"not successful, actual status: $value")
+        {
+          case MergeRequestInfo.Status.Success => expectedStatus.toLowerCase === "success"
+          case MergeRequestInfo.Status.Other(value) => expectedStatus === value
+        },
+        value => Mismatch(s"""Status is not "$expectedStatus", actual status: "$value"""")
       )
       .contramap(_.status)
 
-  //todo: matching logic :))
-  //let the knife do the work
-  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = _ => isSuccessful //todo
+  val matchTextMatcher: TextMatcher => MatcherFunction[String] = {
+    case TextMatcher.Equals(expected) => 
+      MatcherFunction.fromPredicate[String](
+        _ === expected,
+        value => Mismatch(show"invalid value, expected $expected, got $value")
+      )
+    case TextMatcher.Matches(regex) => 
+      MatcherFunction.fromPredicate[String](
+        regex.matches,
+        value => Mismatch(show"invalid value, expected to match ${regex.toString}, got $value")
+      )
+  }
+
+
+  def exists[A](base: MatcherFunction[A]): MatcherFunction[Option[A]] =
+    _.fold[Matched[Unit]](Mismatch("Option was empty").leftNel)(base.matches)
+
+  def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
+    exists(matchTextMatcher(matcher))
+      .contramap(_.authorEmail)
+
+  def descriptionMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
+    exists(matchTextMatcher(matcher))
+      .contramap(_.description)
+
+  val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = {  
+    case Matcher.Author(email) => autorMatches(email)
+    case Matcher.Description(text) => descriptionMatches(text)
+    case Matcher.PipelineStatus(status) => statusMatches(status)
+    case Matcher.Many(values) => values.foldMapK(compileMatcher)
+  }
 
   def compile(
     state: MergeRequestState,
