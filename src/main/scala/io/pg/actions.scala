@@ -77,7 +77,7 @@ object ProjectActions {
       )
       .contramap(_.status)
 
-  def matchTextMatcher: TextMatcher => MatcherFunction[String] = {
+  val matchTextMatcher: TextMatcher => MatcherFunction[String] = {
     case TextMatcher.Equals(expected) => 
       MatcherFunction.fromPredicate[String](
         _ === expected,
