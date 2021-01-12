@@ -43,7 +43,8 @@ object Main extends IOApp {
         formatter = Formatter.colorful,
         minLevel = Level.Debug
       )
-    console |+| file
+    //todo
+    console // |+| file
   }
     .evalTap { logger =>
       Sync[F].delay(StaticLoggerBinder.globalLogger.set(logger.mapK(Effect.toIOK).some))
