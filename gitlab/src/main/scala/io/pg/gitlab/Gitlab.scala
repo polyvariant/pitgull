@@ -129,7 +129,7 @@ object Gitlab {
         MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
           MergeRequest.headPipeline(Pipeline.status.map(convertPipelineStatus)) ~
           MergeRequest
-            .author(User.publicEmail)
+            .author(User.username)
             .mapEither(_.toRight(DecodingError("MR has no author"))) ~
           MergeRequest.description ~
           MergeRequest.shouldBeRebased ~
