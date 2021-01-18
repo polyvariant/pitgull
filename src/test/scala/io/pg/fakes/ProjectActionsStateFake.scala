@@ -38,7 +38,7 @@ object ProjectActionsStateFake {
       */
     trait Modifiers[F[_]] {
       // returns Iid of created MR
-      def open(projectId: Long, authorEmail: String, description: Option[String]): F[Long]
+      def open(projectId: Long, authorUsername: String, description: Option[String]): F[Long]
       def finishPipeline(projectId: Long, mergeRequestIid: Long): F[Unit]
       def setMergeability(projectId: Long, mergeRequestIid: Long, mergeability: Mergeability): F[Unit]
       def getActionLog: F[List[ProjectAction]]
@@ -103,7 +103,7 @@ object ProjectActionsStateFake {
     def resolve(project: Project): F[List[MergeRequestState]] =
       Data[F].get.map(_.mergeRequests).map(_.values.toList)
 
-    def open(projectId: Long, authorEmail: String, description: Option[String]): F[Long] = {
+    def open(projectId: Long, authorUsername: String, description: Option[String]): F[Long] = {
 
       val getNextId = Data[F]
         .get
@@ -120,7 +120,7 @@ object ProjectActionsStateFake {
         val initState = MergeRequestState(
           projectId = projectId,
           mergeRequestIid = newId,
-          authorEmail = authorEmail.some,
+          authorUsername = authorUsername,
           description = description,
           status = MergeRequestInfo.Status.Other("Created"),
           mergeability = Mergeability.CanMerge

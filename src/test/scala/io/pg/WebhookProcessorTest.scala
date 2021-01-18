@@ -139,11 +139,11 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val correctDomainRegex = ".*@example.com".r
 
-    val matchAuthorEmailDomain =
+    val matchAuthorUsernameDomain =
       Rule("pipeline successful", Matcher.Author(TextMatcher.Matches(correctDomainRegex)), Action.Merge)
 
     for {
-      _                         <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorEmailDomain)))
+      _                         <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorUsernameDomain)))
       mergeRequestId            <- projectModifiers.open(projectId, "anyone@example.com", None)
       _                         <- projectModifiers.finishPipeline(projectId, mergeRequestId)
       _                         <- process(WebhookEvent(project, "merge_request"))

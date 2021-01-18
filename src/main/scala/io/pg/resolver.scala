@@ -65,7 +65,7 @@ object StateResolver {
 final case class MergeRequestState(
   projectId: Long,
   mergeRequestIid: Long,
-  authorEmail: Option[String],
+  authorUsername: String,
   description: Option[String],
   status: MergeRequestInfo.Status,
   mergeability: MergeRequestState.Mergeability

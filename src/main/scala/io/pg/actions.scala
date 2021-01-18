@@ -109,8 +109,8 @@ object ProjectActions {
     _.fold[Matched[Unit]](Mismatch("Option was empty").leftNel)(base.matches)
 
   def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
-    exists(matchTextMatcher(matcher))
-      .contramap(_.authorEmail)
+    matchTextMatcher(matcher)
+      .contramap(_.authorUsername)
 
   def descriptionMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
     exists(matchTextMatcher(matcher))
