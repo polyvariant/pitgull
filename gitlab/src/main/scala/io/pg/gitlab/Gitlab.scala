@@ -25,6 +25,7 @@ import sttp.client3.Request
 import sttp.client3.SttpBackend
 import sttp.model.Uri
 import sttp.tapir.Endpoint
+import io.pg.gitlab.GitlabEndpoints.ApprovalRule
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -171,10 +172,22 @@ object Gitlab {
           .apply((projectId, mergeRequestIid))
           .void
 
+
+      private def listMRApprovalRules(projectId: Long, mergeRequestIid: Long): F[List[ApprovalRule]]=
+        runInfallibleEndpoint(GitlabEndpoints.listMRApprovaRules)
+          .apply((projectId, mergeRequestIid))
+
+      private def setMrRuleApprovals(projectId: Long, mergeRequestIid: Long, ruleId: Long, amount: Long): F[Unit] =
+        runInfallibleEndpoint(GitlabEndpoints.setMRRuleApprovalRequirement)
+          .apply((projectId, mergeRequestIid, ruleId, amount))
+
       def forceApprove(projectId: Long, mergeRequestIid: Long): F[Unit] =
-        runInfallibleEndpoint(GitlabEndpoints.setApprovalRequirement)
-          .apply((projectId, mergeRequestIid, 0))
-          .void
+        listMRApprovalRules(projectId, mergeRequestIid)
+          .flatMap{ approvalRules => 
+            approvalRules.filterNot(_.rule_type == "code_owner").traverseTap { rule => 
+              setMrRuleApprovals(projectId, mergeRequestIid, rule.id, 0)
+            }.void
+          }.void
     }
   }
 
@@ -207,6 +220,34 @@ object GitlabEndpoints {
       .in("projects" / path[Long]("projectId"))
       .in("merge_requests" / path[Long]("merge_request_iid"))
       .in("approvals")
+      .in(query[Long]("approvals_required"))
+
+  import io.circe.generic.semiauto._
+  import sttp.tapir._
+  import sttp.tapir.json.circe._
+  import io.circe.{ Codec => CirceCodec }
+  
+  final case class ApprovalRule(id: Long, name: String, rule_type: String)
+  object ApprovalRule {
+    implicit val codec: CirceCodec[ApprovalRule] = deriveCodec
+  }
+
+  val listMRApprovaRules: Endpoint[(Long, Long), Nothing, List[ApprovalRule], Nothing] =
+    baseEndpoint
+      .get
+      .in("projects" / path[Long]("projectId"))
+      .in("merge_requests" / path[Long]("merge_request_iid"))
+      .in("approval_rules")
+      .out(
+        jsonBody[List[ApprovalRule]]
+      )
+
+  val setMRRuleApprovalRequirement: Endpoint[(Long, Long, Long, Long), Nothing, Unit, Nothing] =
+    baseEndpoint
+      .put
+      .in("projects" / path[Long]("projectId"))
+      .in("merge_requests" / path[Long]("merge_request_iid"))
+      .in("approval_rules" / path[Long]("approval_rule_id"))
       .in(query[Long]("approvals_required"))
 
 }
