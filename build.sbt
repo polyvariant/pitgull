@@ -25,9 +25,10 @@ ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
 ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
-ThisBuild / githubWorkflowBuild := List(
-  WorkflowStep.Sbt(List("test", "missinglinkCheck"))
-)
+// todo: reenable missinglink
+//ThisBuild / githubWorkflowBuild := List(
+//  WorkflowStep.Sbt(List("test", "missinglinkCheck"))
+//)
 
 Test / fork := true
 
