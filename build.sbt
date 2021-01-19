@@ -76,9 +76,9 @@ val gitlab = project
       "io.circe" %% "circe-generic-extras" % "0.13.0",
       "io.circe" %% "circe-parser" % "0.13.0" % Test,
       "io.circe" %% "circe-literal" % "0.13.0" % Test,
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.9",
-      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.16.9",
-      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.16.9"
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.6",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.6",
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.6"
     )
   )
 
