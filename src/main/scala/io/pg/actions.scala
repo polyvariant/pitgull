@@ -26,6 +26,14 @@ object ProjectActions {
   def instance[F[_]: Gitlab: Logger: MonadThrow]: ProjectActions[F] = action => {
     val logBefore = Logger[F].info("About to execute action", Map("action" -> action.toString))
 
+    val approve = action match {
+      case Merge(projectId, mergeRequestIid) =>
+        Logger[F].info("Forcing approval befor merge", Map("action" -> action.toString)) *>
+          Gitlab[F].forceApprove(projectId, mergeRequestIid)
+      case _ =>
+        Logger[F].info("Approval forcing not required", Map("action" -> action.toString))
+    }
+    
     val perform = action match {
       //todo: perform check is the MR still open?
       //or fall back in case it's not
@@ -37,7 +45,7 @@ object ProjectActions {
         Gitlab[F].rebaseMergeRequest(projectId, mergeRequestIid)
     }
 
-    logBefore *> perform.handleErrorWith { error =>
+    logBefore *> approve *> perform.handleErrorWith { error =>
       Logger[F]
         .error(
           "Couldn't perform action",

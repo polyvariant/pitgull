@@ -31,6 +31,7 @@ trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[MergeRequestInfo]]
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
   def rebaseMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
+  def forceApprove(projectId: Long, mergeRequestIid: Long): F[Unit]
 }
 
 object Gitlab {
@@ -169,6 +170,11 @@ object Gitlab {
         runInfallibleEndpoint(GitlabEndpoints.rebaseMergeRequest)
           .apply((projectId, mergeRequestIid))
           .void
+
+      def forceApprove(projectId: Long, mergeRequestIid: Long): F[Unit] =
+        runInfallibleEndpoint(GitlabEndpoints.setApprovalRequirement)
+          .apply((projectId, mergeRequestIid, 0))
+          .void
     }
   }
 
@@ -194,5 +200,13 @@ object GitlabEndpoints {
       .in("projects" / path[Long]("projectId"))
       .in("merge_requests" / path[Long]("merge_request_iid"))
       .in("rebase")
+
+  val setApprovalRequirement: Endpoint[(Long, Long, Long), Nothing, Unit, Nothing] =
+    baseEndpoint
+      .post
+      .in("projects" / path[Long]("projectId"))
+      .in("merge_requests" / path[Long]("merge_request_iid"))
+      .in("approvals")
+      .in(query[Long]("approvals_required"))
 
 }
