@@ -21,9 +21,8 @@ import io.pg.gitlab.graphql.Project
 import io.pg.gitlab.graphql.ProjectConnection
 import io.pg.gitlab.graphql.Query
 import io.pg.gitlab.graphql.User
-import sttp.client.NothingT
-import sttp.client.Request
-import sttp.client.SttpBackend
+import sttp.client3.Request
+import sttp.client3.SttpBackend
 import sttp.model.Uri
 import sttp.tapir.Endpoint
 
@@ -65,27 +64,33 @@ object Gitlab {
     baseUri: Uri,
     accessToken: Secret[String]
   )(
-    implicit backend: SttpBackend[F, Nothing, NothingT]
+    implicit backend: SttpBackend[F, Any],
+    backend2: sttp.client.SttpBackend[F, Nothing, sttp.client.NothingT]
   ): Gitlab[F] = {
 
-    def runRequest[O](request: Request[O, Nothing]): F[O] =
+    def runRequest[O](request: Request[O, Any]): F[O] =
+      //todo multiple possible header names...
+      request.header("Private-Token", accessToken.value).send(backend).map(_.body)
+
+    //this is needed while caliban hasn't upgraded to sttp3
+    def runRequestSttp2[O](request: sttp.client.Request[O, Nothing]): F[O] =
       //todo multiple possible header names...
       request.header("Private-Token", accessToken.value).send[F]().map(_.body)
 
     import sttp.tapir.client.sttp._
 
     def runEndpoint[I, E, O](
-      endpoint: Endpoint[I, E, O, Nothing]
+      endpoint: Endpoint[I, E, O, Any]
     ): I => F[Either[E, O]] =
-      i => runRequest(endpoint.toSttpRequestUnsafe(baseUri).apply(i))
+      SttpClientInterpreter.toClientThrowDecodeFailures[F, I, E, O, Any](endpoint, baseUri.some, backend)
 
     def runInfallibleEndpoint[I, O](
-      endpoint: Endpoint[I, Nothing, O, Nothing]
+      endpoint: Endpoint[I, Nothing, O, Any]
     ): I => F[O] =
       runEndpoint[I, Nothing, O](endpoint).nested.map(_.merge).value
 
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
-      runRequest(a.toRequest(baseUri.path("api", "graphql"))).rethrow
+      runRequestSttp2(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
 
     new Gitlab[F] {
       def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
@@ -175,7 +180,7 @@ object GitlabEndpoints {
 
   private val baseEndpoint = infallibleEndpoint.in("api" / "v4")
 
-  val acceptMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Nothing] =
+  val acceptMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Any] =
     baseEndpoint
       //hehe putin
       .put
@@ -183,7 +188,7 @@ object GitlabEndpoints {
       .in("merge_requests" / path[Long]("merge_request_iid"))
       .in("merge")
 
-  val rebaseMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Nothing] =
+  val rebaseMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Any] =
     baseEndpoint
       .put
       .in("projects" / path[Long]("projectId"))

@@ -118,12 +118,9 @@ val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.6",
-        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.6",
         "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.6",
-        "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.6",
-        "com.softwaremill.sttp.client" %% "circe" % "2.2.9",
         "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.9",
+        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.0.0",
         "org.http4s" %% "http4s-blaze-server" % "0.21.15",
         "org.http4s" %% "http4s-blaze-client" % "0.21.15",
         "is.cir" %% "ciris" % "1.2.1",
