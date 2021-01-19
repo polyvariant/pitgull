@@ -17,11 +17,14 @@ import io.odin.Logger
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.Gitlab
 import cats.effect.Blocker
-import sttp.client.http4s.Http4sBackend
+import sttp.client3.http4s.Http4sBackend
 import cats.effect.ConcurrentEffect
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
-import sttp.client.SttpBackend
+import sttp.client3.SttpBackend
+import sttp.tapir.server.http4s.Http4sServerInterpreter
+import cats.effect.Timer
+import sttp.capabilities.fs2.Fs2Streams
 
 sealed trait Event extends Product with Serializable
 
@@ -36,7 +39,7 @@ final class Application[F[_]](
 
 object Application {
 
-  def resource[F[_]: ConcurrentEffect: ContextShift: Logger](
+  def resource[F[_]: ConcurrentEffect: ContextShift: Timer: Logger](
     config: AppConfig
   ): Resource[F, Application[F]] = {
     implicit val projectConfigReader = ProjectConfigReader.test[F]
@@ -60,13 +63,18 @@ object Application {
                 .Logger(logHeaders = true, logBody = false)
             )
             .map { client =>
-              implicit val backend: SttpBackend[F, Nothing, Nothing] =
+              implicit val backend: SttpBackend[F, Fs2Streams[F]] =
                 Http4sBackend.usingClient[F](client, blocker)
+
+              implicit val backend2: sttp.client.SttpBackend[F, Nothing, Nothing] =
+                sttp.client.http4s.Http4sBackend.usingClient[F](client, blocker)
 
               implicit val gitlab: Gitlab[F] =
                 Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
+
               implicit val projectActions: ProjectActions[F] =
                 ProjectActions.instance[F]
+
               implicit val stateResolver: StateResolver[F] =
                 StateResolver.instance[F]
 
@@ -74,13 +82,11 @@ object Application {
                 webhookChannel
               )(Processor.simple(WebhookProcessor.instance[F]))
 
-              import sttp.tapir.server.http4s._
-
-              val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+              val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
                 NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
 
               new Application[F](
-                routes = endpoints.toList.toRoutes.orNotFound,
+                routes = Http4sServerInterpreter.toRoutes(endpoints.toList).orNotFound,
                 background = NonEmptyList.one(webhookProcess)
               )
             }

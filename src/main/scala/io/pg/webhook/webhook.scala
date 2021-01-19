@@ -22,6 +22,7 @@ object WebhookRouter {
   object endpoints {
     import sttp.tapir._
     import sttp.tapir.json.circe._
+    import sttp.tapir.generic.auto._
 
     val webhook =
       infallibleEndpoint.post.in("webhook").in(jsonBody[WebhookEvent])
@@ -29,7 +30,7 @@ object WebhookRouter {
 
   def routes[F[_]: Applicative](
     eventPublisher: Publisher[F, WebhookEvent]
-  ): NonEmptyList[ServerEndpoint[_, _, _, Nothing, F]] =
+  ): NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
     NonEmptyList.of(
       endpoints.webhook.serverLogicRecoverErrors(eventPublisher.publish)
     )
