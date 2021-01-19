@@ -82,7 +82,7 @@ object Gitlab {
     def runEndpoint[I, E, O](
       endpoint: Endpoint[I, E, O, Any]
     ): I => F[Either[E, O]] =
-      SttpClientInterpreter.toClientThrowDecodeFailures[F, I, E, O, Any](endpoint, baseUri.some, backend)
+      i => runRequest(SttpClientInterpreter.toRequestThrowDecodeFailures(endpoint, baseUri.some).apply(i))
 
     def runInfallibleEndpoint[I, O](
       endpoint: Endpoint[I, Nothing, O, Any]
