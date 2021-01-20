@@ -77,9 +77,9 @@ val gitlab = project
       "io.circe" %% "circe-generic-extras" % "0.13.0",
       "io.circe" %% "circe-parser" % "0.13.0" % Test,
       "io.circe" %% "circe-literal" % "0.13.0" % Test,
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.6",
-      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.6",
-      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.6"
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.7",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.7",
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.7"
     )
   )
 
@@ -119,7 +119,7 @@ val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.6",
+        "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.7",
         "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.9",
         "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.0.0",
         "org.http4s" %% "http4s-blaze-server" % "0.21.15",
