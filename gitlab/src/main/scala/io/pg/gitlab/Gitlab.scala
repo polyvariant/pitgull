@@ -42,7 +42,7 @@ object Gitlab {
     projectId: Long,
     mergeRequestIid: Long,
     status: Option[MergeRequestInfo.Status],
-    authorEmail: Option[String],
+    authorUsername: String,
     description: Option[String],
     needsRebase: Boolean,
     hasConflicts: Boolean
@@ -129,7 +129,7 @@ object Gitlab {
         MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
           MergeRequest.headPipeline(Pipeline.status.map(convertPipelineStatus)) ~
           MergeRequest
-            .author(User.publicEmail)
+            .author(User.username)
             .mapEither(_.toRight(DecodingError("MR has no author"))) ~
           MergeRequest.description ~
           MergeRequest.shouldBeRebased ~
@@ -141,7 +141,7 @@ object Gitlab {
       )(
         mergeRequestIid: Long,
         status: Option[MergeRequestInfo.Status],
-        authorEmail: Option[String],
+        authorUsername: String,
         description: Option[String],
         needsRebase: Boolean,
         hasConflicts: Boolean
@@ -149,7 +149,7 @@ object Gitlab {
         projectId = projectId,
         mergeRequestIid = mergeRequestIid,
         status = status,
-        authorEmail = authorEmail,
+        authorUsername = authorUsername,
         description = description,
         needsRebase = needsRebase,
         hasConflicts = hasConflicts

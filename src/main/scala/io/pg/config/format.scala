@@ -49,6 +49,7 @@ object Matcher {
   final case class Many(values: List[Matcher]) extends Matcher
 }
 
+//todo: remove this type altogether and assume Merge for now?
 sealed trait Action extends Product with Serializable
 
 object Action {

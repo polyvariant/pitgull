@@ -1,13 +1,16 @@
 package io.pg
 
 import cats.MonadError
-import cats.syntax.all._
+import cats.implicits._
+import cats.kernel.Order
 import cats.tagless.finalAlg
 import io.odin.Logger
 import io.pg.gitlab.Gitlab
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.gitlab.webhook.Project
 import io.scalaland.chimney.dsl._
+import cats.Show
+import monocle.macros.Lenses
 
 @finalAlg
 trait StateResolver[F[_]] {
@@ -49,7 +52,7 @@ object StateResolver {
       def resolve(project: Project): F[List[MergeRequestState]] =
         findMergeRequests(project)
           .flatTap { state =>
-            Logger[F].info("Resolved MR state", Map("state" -> state.toString))
+            Logger[F].info("Resolved MR state", Map("state" -> state.show))
           }
 
     }
@@ -58,10 +61,11 @@ object StateResolver {
 
 //current MR state - rebuilt on every event.
 //Checked against rules to come up with a decision.
+@Lenses
 final case class MergeRequestState(
   projectId: Long,
   mergeRequestIid: Long,
-  authorEmail: Option[String],
+  authorUsername: String,
   description: Option[String],
   status: MergeRequestInfo.Status,
   mergeability: MergeRequestState.Mergeability
@@ -80,6 +84,14 @@ object MergeRequestState {
       else if (needsRebase) NeedsRebase
       else CanMerge
 
+    implicit val order: Order[Mergeability] = Order.by(List(CanMerge, NeedsRebase, HasConflicts).indexOf)
   }
 
+  private def trim(maxChars: Int)(s: String): String = {
+    val ellipsis = "." * 3
+    if (s.lengthIs > maxChars) s.take(maxChars - ellipsis.length) ++ ellipsis
+    else s
+  }
+
+  implicit val showTrimmed: Show[MergeRequestState] = MergeRequestState.description.modify(_.map(trim(maxChars = 80))).apply(_).toString
 }

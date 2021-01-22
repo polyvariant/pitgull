@@ -1,6 +1,7 @@
 package io.pg
 
 import cats.effect.IO
+import cats.implicits._
 import io.pg.Prelude._
 import io.pg.config.ProjectConfig
 import io.pg.config.ProjectConfigReader
@@ -15,6 +16,7 @@ import io.pg.config.Rule
 import io.pg.config.Matcher
 import io.pg.config.Action
 import io.pg.config.TextMatcher
+import io.pg.MergeRequestState.Mergeability
 
 object WebhookProcessorTest extends SimpleIOSuite {
 
@@ -48,7 +50,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
   def testWithResources(name: String)(use: Resources[IO] => IO[Expectations]) =
     test(name)(mkResources.use(use))
-
+  /*
   testWithResources("unknown project") { resources =>
     import resources._
     val projectId = 66L
@@ -74,7 +76,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val project = Project(projectId)
 
-    val matchSuccessfulPipeline = 
+    val matchSuccessfulPipeline =
       Rule("pipeline successful", Matcher.PipelineStatus("success"), Action.Merge)
 
     for {
@@ -89,6 +91,45 @@ object WebhookProcessorTest extends SimpleIOSuite {
       mergeRequestsAfterProcess.map(_.mergeRequestIid) == List(freshMR)
     }
   }
+   */
+  testWithResources("known project with one mergeable MR and one rebaseable MR") { resources =>
+    import resources._
+    val projectId = 66L
+
+    val project = Project(projectId)
+
+    val perform = (process(WebhookEvent(project, "merge_request")) *> resolver.resolve(project), projectModifiers.getActionLog).tupled
+
+    for {
+      _   <- projectConfigModifiers.register(projectId, ProjectConfig(List(Rule.mergeAnything)))
+      mr1 <- projectModifiers.open(projectId, "anyone@example.com", None)
+      mr2 <- projectModifiers.open(projectId, "anyone@example.com", None)
+      _   <- projectModifiers.finishPipeline(projectId, mr1)
+      _   <- projectModifiers.finishPipeline(projectId, mr2)
+      _   <- projectModifiers.setMergeability(projectId, mr2, Mergeability.NeedsRebase)
+
+      (mergeRequestsAfterProcess1, logAfterProcess1) <- perform
+      (mergeRequestsAfterProcess2, logAfterProcess2) <- perform
+      (mergeRequestsAfterProcess3, logAfterProcess3) <- perform
+    } yield {
+      val merge1 = ProjectAction.Merge(projectId, mr1)
+      val rebase2 = ProjectAction.Rebase(projectId, mr2)
+      val merge2 = ProjectAction.Merge(projectId, mr2)
+
+      val firstMerged = expect(mergeRequestsAfterProcess1.map(_.mergeRequestIid) == List(mr2)) &&
+        expect(logAfterProcess1 == List(merge1))
+
+      val secondRebased = expect(mergeRequestsAfterProcess2.map(_.mergeRequestIid) == List(mr2)) &&
+        expect(logAfterProcess2 == List(merge1, rebase2))
+
+      val secondMerged = expect(mergeRequestsAfterProcess3.map(_.mergeRequestIid) == Nil) &&
+        expect(logAfterProcess3 == List(merge1, rebase2, merge2))
+
+      firstMerged &&
+      secondRebased &&
+      secondMerged
+    }
+  }
 
   testWithResources("known project with one mergeable MR - matching by author") { resources =>
     import resources._
@@ -98,13 +139,13 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val correctDomainRegex = ".*@example.com".r
 
-    val matchAuthorEmailDomain = 
+    val matchAuthorUsernameDomain =
       Rule("pipeline successful", Matcher.Author(TextMatcher.Matches(correctDomainRegex)), Action.Merge)
 
     for {
-      _              <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorEmailDomain)))
-      mergeRequestId <- projectModifiers.open(projectId, "anyone@example.com", None)
-      _              <- projectModifiers.finishPipeline(projectId, mergeRequestId)
+      _                         <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorUsernameDomain)))
+      mergeRequestId            <- projectModifiers.open(projectId, "anyone@example.com", None)
+      _                         <- projectModifiers.finishPipeline(projectId, mergeRequestId)
       _                         <- process(WebhookEvent(project, "merge_request"))
       mergeRequestsAfterProcess <- resolver.resolve(project)
     } yield expect {

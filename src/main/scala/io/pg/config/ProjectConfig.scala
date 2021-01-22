@@ -26,7 +26,7 @@ object ProjectConfigReader {
         "scala-steward",
         Matcher.Many(
           List(
-            Matcher.Author(TextMatcher.Equals("scala-steward@ocado.com")),
+            Matcher.Author(TextMatcher.Matches("(scala_steward)|(michal.pawlik)|(j.kozlowski)".r)),
             Matcher.Description(TextMatcher.Matches(".*labels:.*semver-patch.*".r))
           )
         ),
