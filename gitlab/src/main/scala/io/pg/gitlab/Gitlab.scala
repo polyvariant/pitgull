@@ -12,6 +12,7 @@ import cats.tagless.finalAlg
 import ciris.Secret
 import io.odin.Logger
 import io.pg.gitlab.Gitlab.MergeRequestInfo
+import io.pg.gitlab.GitlabEndpoints.transport.ApprovalRule
 import io.pg.gitlab.graphql.MergeRequest
 import io.pg.gitlab.graphql.MergeRequestConnection
 import io.pg.gitlab.graphql.MergeRequestState
@@ -25,7 +26,11 @@ import sttp.client3.Request
 import sttp.client3.SttpBackend
 import sttp.model.Uri
 import sttp.tapir.Endpoint
-import io.pg.gitlab.GitlabEndpoints.ApprovalRule
+import sttp.tapir.json.circe._
+import fs2.Stream
+import io.circe.{Codec => CirceCodec}
+import io.circe.generic.extras.semiauto._
+import io.circe.generic.extras.Configuration
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -67,7 +72,8 @@ object Gitlab {
     accessToken: Secret[String]
   )(
     implicit backend: SttpBackend[F, Any],
-    backend2: sttp.client.SttpBackend[F, Nothing, sttp.client.NothingT]
+    backend2: sttp.client.SttpBackend[F, Nothing, sttp.client.NothingT],
+    SC: fs2.Stream.Compiler[F, F]
   ): Gitlab[F] = {
 
     def runRequest[O](request: Request[O, Any]): F[O] =
@@ -172,8 +178,7 @@ object Gitlab {
           .apply((projectId, mergeRequestIid))
           .void
 
-
-      private def listMRApprovalRules(projectId: Long, mergeRequestIid: Long): F[List[ApprovalRule]]=
+      private def listMRApprovalRules(projectId: Long, mergeRequestIid: Long): F[List[ApprovalRule]] =
         runInfallibleEndpoint(GitlabEndpoints.listMRApprovaRules)
           .apply((projectId, mergeRequestIid))
 
@@ -182,12 +187,14 @@ object Gitlab {
           .apply((projectId, mergeRequestIid, ruleId, amount))
 
       def forceApprove(projectId: Long, mergeRequestIid: Long): F[Unit] =
-        listMRApprovalRules(projectId, mergeRequestIid)
-          .flatMap{ approvalRules => 
-            approvalRules.filterNot(_.rule_type == "code_owner").traverseTap { rule => 
-              setMrRuleApprovals(projectId, mergeRequestIid, rule.id, 0)
-            }.void
-          }.void
+        Stream
+          .evals(listMRApprovalRules(projectId, mergeRequestIid))
+          .filter(_.isMutable)
+          .evalMap { rule =>
+            setMrRuleApprovals(projectId, mergeRequestIid, rule.id, 0)
+          }
+          .compile
+          .drain
     }
   }
 
@@ -222,16 +229,6 @@ object GitlabEndpoints {
       .in("approvals")
       .in(query[Long]("approvals_required"))
 
-  import io.circe.generic.semiauto._
-  import sttp.tapir._
-  import sttp.tapir.json.circe._
-  import io.circe.{ Codec => CirceCodec }
-  
-  final case class ApprovalRule(id: Long, name: String, rule_type: String)
-  object ApprovalRule {
-    implicit val codec: CirceCodec[ApprovalRule] = deriveCodec
-  }
-
   val listMRApprovaRules: Endpoint[(Long, Long), Nothing, List[ApprovalRule], Nothing] =
     baseEndpoint
       .get
@@ -250,4 +247,14 @@ object GitlabEndpoints {
       .in("approval_rules" / path[Long]("approval_rule_id"))
       .in(query[Long]("approvals_required"))
 
+  object transport {
+    implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
+    final case class ApprovalRule(id: Long, name: String, ruleType: String) {
+      val isMutable: Boolean = ruleType != "code_owner"
+    }
+
+    object ApprovalRule {
+      implicit val codec: CirceCodec[ApprovalRule] = deriveConfiguredCodec
+    }
+  }
 }
