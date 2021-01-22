@@ -26,6 +26,7 @@ import sttp.client3.Request
 import sttp.client3.SttpBackend
 import sttp.model.Uri
 import sttp.tapir.Endpoint
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import fs2.Stream
 import io.circe.{Codec => CirceCodec}
@@ -221,15 +222,7 @@ object GitlabEndpoints {
       .in("merge_requests" / path[Long]("merge_request_iid"))
       .in("rebase")
 
-  val setApprovalRequirement: Endpoint[(Long, Long, Long), Nothing, Unit, Nothing] =
-    baseEndpoint
-      .post
-      .in("projects" / path[Long]("projectId"))
-      .in("merge_requests" / path[Long]("merge_request_iid"))
-      .in("approvals")
-      .in(query[Long]("approvals_required"))
-
-  val listMRApprovaRules: Endpoint[(Long, Long), Nothing, List[ApprovalRule], Nothing] =
+  val listMRApprovaRules: Endpoint[(Long, Long), Nothing, List[ApprovalRule], Any] =
     baseEndpoint
       .get
       .in("projects" / path[Long]("projectId"))
@@ -239,7 +232,7 @@ object GitlabEndpoints {
         jsonBody[List[ApprovalRule]]
       )
 
-  val setMRRuleApprovalRequirement: Endpoint[(Long, Long, Long, Long), Nothing, Unit, Nothing] =
+  val setMRRuleApprovalRequirement: Endpoint[(Long, Long, Long, Long), Nothing, Unit, Any] =
     baseEndpoint
       .put
       .in("projects" / path[Long]("projectId"))
