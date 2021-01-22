@@ -123,18 +123,6 @@ object ProjectActions {
     case Matcher.Many(values)           => values.foldMapK(compileMatcher)
   }
 
-  // def compile(
-  //   state: MergeRequestState,
-  //   project: ProjectConfig
-  // ): List[EitherNel[Mismatch, ProjectAction]] =
-  //   project.rules.map { rule =>
-  //     val ruleAction: ProjectAction = rule.action match {
-  //       case Action.Merge =>
-  //         ProjectAction.Merge(state.projectId, state.mergeRequestIid)
-  //     }
-
-  //     compileMatcher(rule.matcher).matches(state).as(ruleAction)
-  //   }
   def compile(
     state: MergeRequestState,
     project: ProjectConfig
