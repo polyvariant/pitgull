@@ -10,7 +10,7 @@ import io.circe.Decoder
 import io.circe.Encoder
 import io.circe.DecodingFailure
 
-private object circe {
+object circe {
   implicit val circeConfig: Configuration =
     Configuration.default.withDiscriminator("kind")
 
