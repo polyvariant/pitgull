@@ -228,7 +228,7 @@ object GitlabEndpoints {
       .in("rebase")
 
   // Legacy method, still in use though
-  val setMergeRequestApprovals: Endpoint[(Long, Long, Int), Nothing, Unit, Nothing] =
+  val setMergeRequestApprovals: Endpoint[(Long, Long, Int), Nothing, Unit, Any] =
     baseEndpoint
       .post
       .in("projects" / path[Long]("projectId"))
