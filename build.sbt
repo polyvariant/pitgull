@@ -104,13 +104,13 @@ val pitgull =
     .settings(
       name := "pitgull",
       dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
-      dockerCommands ++=
-        Cmd("USER", "root") :: ExecCmd(
-          "RUN",
-          "sh",
-          "-c",
-          "apk update && apk add curl bash"
-        ) :: installDhallJson :: Nil,
+      // dockerCommands ++=
+      //   Cmd("USER", "root") :: ExecCmd(
+      //     "RUN",
+      //     "sh",
+      //     "-c",
+      //     "apk update && apk add curl bash"
+      //   ) :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
       Docker / mappings += (
         file("./example.dhall") -> "/opt/docker/example.dhall"
