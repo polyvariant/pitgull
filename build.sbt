@@ -103,7 +103,7 @@ val pitgull =
     .settings(commonSettings)
     .settings(
       name := "pitgull",
-      // dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
+      dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10",
       // dockerCommands += ExecCmd(
       //   "RUN",
       //   "sh",
