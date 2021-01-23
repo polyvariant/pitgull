@@ -22,12 +22,13 @@ object ProjectConfigReader {
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {
 
+      //todo: dhall needs to be updated
       val steward = Rule(
         "scala-steward",
         Matcher.Many(
           List(
             Matcher.Author(TextMatcher.Matches("(scala_steward)|(michal.pawlik)|(j.kozlowski)".r)),
-            Matcher.Description(TextMatcher.Matches(".*labels:.*semver-patch.*".r))
+            Matcher.Description(TextMatcher.Matches("(?s).*labels:.*semver-patch.*".r))
           )
         ),
         Action.Merge

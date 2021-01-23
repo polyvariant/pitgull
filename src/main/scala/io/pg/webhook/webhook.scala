@@ -61,6 +61,7 @@ object WebhookProcessor {
                   .flatMap(validActions[F, Mismatch, MergeRequestState, MergeRequestState](ProjectActions.compile(_, config)))
 
       nextMR = states.minByOption(_.mergeability)
+      _          <- Logger[F].info("Considering MR for action", Map("mr" -> nextMR.toString))
       nextAction <- nextMR
                       .flatTraverse { mr =>
                         val nextAction = mr.mergeability match {
@@ -96,7 +97,7 @@ object WebhookProcessor {
       _.evalTap(_.leftTraverse(log)).map(_.toOption).unNone
 
     val logMismatches: NonEmptyList[E] => F[Unit] = e =>
-      Logger[F].debug(
+      Logger[F].info(
         "Ignoring action because it didn't match rules",
         Map("rules" -> e.map(_.toString).mkString_(", "))
       )

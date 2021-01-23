@@ -30,10 +30,10 @@ object ProjectActions {
       case Merge(projectId, mergeRequestIid) =>
         Logger[F].info("Forcing approval befor merge", Map("action" -> action.toString)) *>
           Gitlab[F].forceApprove(projectId, mergeRequestIid)
-      case _ =>
+      case _                                 =>
         Logger[F].info("Approval forcing not required", Map("action" -> action.toString))
     }
-    
+
     val perform = action match {
       //todo: perform check is the MR still open?
       //or fall back in case it's not
