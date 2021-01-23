@@ -35,8 +35,8 @@ object ProjectConfigReader {
 
       val config: ProjectConfig = ProjectConfig(
         List(
-          // steward,
-          Rule.mergeAnything
+          steward
+          // Rule.mergeAnything
         )
       )
 
