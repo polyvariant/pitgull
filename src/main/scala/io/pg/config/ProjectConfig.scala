@@ -28,7 +28,8 @@ object ProjectConfigReader {
         Matcher.Many(
           List(
             Matcher.Author(TextMatcher.Matches("(scala_steward)|(michal.pawlik)|(j.kozlowski)".r)),
-            Matcher.Description(TextMatcher.Matches("(?s).*labels:.*semver-patch.*".r))
+            Matcher.Description(TextMatcher.Matches("(?s).*labels:.*semver-patch.*".r)),
+            Matcher.PipelineStatus("SUCCESS")
           )
         ),
         Action.Merge
