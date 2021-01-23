@@ -103,13 +103,13 @@ val pitgull =
     .settings(commonSettings)
     .settings(
       name := "pitgull",
-      dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
-      dockerCommands += ExecCmd(
-        "RUN",
-        "sh",
-        "-c",
-        "apk update && apk add curl bash"
-      ),
+      // dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10-alpine",
+      // dockerCommands += ExecCmd(
+      //   "RUN",
+      //   "sh",
+      //   "-c",
+      //   "apk update && apk add curl bash"
+      // ),
       // dockerCommands ++=
       //   Cmd("USER", "root") :: ExecCmd(
       //     "RUN",
