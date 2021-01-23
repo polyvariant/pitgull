@@ -87,11 +87,6 @@ object MergeRequestState {
     implicit val order: Order[Mergeability] = Order.by(List(CanMerge, NeedsRebase, HasConflicts).indexOf)
   }
 
-  private def trim(maxChars: Int)(s: String): String = {
-    val ellipsis = "." * 3
-    if (s.lengthIs > maxChars) s.take(maxChars - ellipsis.length) ++ ellipsis
-    else s
-  }
-
-  implicit val showTrimmed: Show[MergeRequestState] = MergeRequestState.description.modify(_.map(trim(maxChars = 80))).apply(_).toString
+  implicit val showTrimmed: Show[MergeRequestState] =
+    MergeRequestState.description.modify(_.map(TextUtils.trim(maxChars = 80))).apply(_).toString
 }

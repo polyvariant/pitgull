@@ -33,6 +33,9 @@ import io.circe.{Codec => CirceCodec}
 import io.circe.generic.extras.semiauto._
 import io.circe.generic.extras.Configuration
 import io.pg.gitlab.GitlabEndpoints.transport.MergeRequestApprovals
+import monocle.macros.Lenses
+import cats.Show
+import io.pg.TextUtils
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -47,6 +50,7 @@ object Gitlab {
   // VCS-specific MR information
   // Not specific to the method of fetching (no graphql model references etc.)
   // Fields only required according to reason (e.g. must have a numeric ID - we might loosen this later)
+  @Lenses
   final case class MergeRequestInfo(
     projectId: Long,
     mergeRequestIid: Long,
@@ -67,6 +71,8 @@ object Gitlab {
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
 
+    implicit val showTrimmed: Show[MergeRequestInfo] =
+      MergeRequestInfo.description.modify(_.map(TextUtils.trim(maxChars = 80))).apply(_).toString
   }
 
   def sttpInstance[F[_]: Logger: MonadError[*[_], Throwable]](
@@ -128,7 +134,7 @@ object Gitlab {
           .flatTap { result =>
             Logger[F].info(
               "Found merge requests",
-              Map("result" -> result.mkString)
+              Map("result" -> result.map(_.show).mkString)
             )
           }
 

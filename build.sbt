@@ -68,7 +68,7 @@ val commonSettings = List(
   skip in publish := true
 )
 
-val gitlab = project
+lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
@@ -82,8 +82,9 @@ val gitlab = project
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.7"
     )
   )
+  .dependsOn(core)
 
-val core = project.settings(commonSettings).settings(name += "-core")
+lazy val core = project.settings(commonSettings).settings(name += "-core")
 
 //workaround for docker not accepting + (the default separator in sbt-dynver)
 dynverSeparator in ThisBuild := "-"
@@ -96,7 +97,7 @@ val installDhallJson =
     "curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.34.0/dhall-json-1.7.1-x86_64-linux.tar.bz2 | tar -vxj -C /"
   )
 
-val pitgull =
+lazy val pitgull =
   project
     .in(file("."))
     .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging)
