@@ -32,6 +32,7 @@ import fs2.Stream
 import io.circe.{Codec => CirceCodec}
 import io.circe.generic.extras.semiauto._
 import io.circe.generic.extras.Configuration
+import io.pg.gitlab.GitlabEndpoints.transport.MergeRequestApprovals
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -187,20 +188,34 @@ object Gitlab {
         runInfallibleEndpoint(GitlabEndpoints.setMRRuleApprovalRequirement)
           .apply((projectId, mergeRequestIid, ruleId, amount))
 
+      private def getMrApprovals(projectId: Long, mergeRequestIid: Long): F[MergeRequestApprovals] =
+        runInfallibleEndpoint(GitlabEndpoints.getMergeRequestApprovals)
+          .apply((projectId, mergeRequestIid))
+
       private def setMrApprovals(projectId: Long, mergeRequestIid: Long, amount: Int): F[Unit] =
         runInfallibleEndpoint(GitlabEndpoints.setMergeRequestApprovals)
           .apply((projectId, mergeRequestIid, amount))
 
-      def forceApprove(projectId: Long, mergeRequestIid: Long): F[Unit] =
-        setMrApprovals(projectId, mergeRequestIid, 0) *>
-          Stream
-            .evals(listMRApprovalRules(projectId, mergeRequestIid))
-            .filter(_.isMutable)
-            .evalMap { rule =>
-              setMrRuleApprovals(projectId, mergeRequestIid, rule.id, 0)
-            }
-            .compile
-            .drain
+      def forceApprove(projectId: Long, mergeRequestIid: Long): F[Unit] = {
+        val clearDirectApprovals = Stream
+          .eval(getMrApprovals(projectId, mergeRequestIid))
+          .filter(_.approvalsRequired > 0)
+          .evalMap { _ =>
+            setMrApprovals(projectId, mergeRequestIid, 0)
+          }
+
+        val removeMutableApprovalRules = Stream
+          .evals(listMRApprovalRules(projectId, mergeRequestIid))
+          .filter(_.isMutable)
+          .evalMap { rule =>
+            setMrRuleApprovals(projectId, mergeRequestIid, rule.id, 0)
+          }
+
+        clearDirectApprovals ++
+          removeMutableApprovalRules
+      }
+        .compile
+        .drain
     }
   }
 
@@ -227,7 +242,15 @@ object GitlabEndpoints {
       .in("merge_requests" / path[Long]("merge_request_iid"))
       .in("rebase")
 
-  // Legacy method, still in use though
+  // Legacy methods, still in use though
+  val getMergeRequestApprovals: Endpoint[(Long, Long), Nothing, MergeRequestApprovals, Any] =
+    baseEndpoint
+      .get
+      .in("projects" / path[Long]("projectId"))
+      .in("merge_requests" / path[Long]("merge_request_iid"))
+      .in("approvals")
+      .out(jsonBody[MergeRequestApprovals])
+
   val setMergeRequestApprovals: Endpoint[(Long, Long, Int), Nothing, Unit, Any] =
     baseEndpoint
       .post
@@ -263,6 +286,12 @@ object GitlabEndpoints {
 
     object ApprovalRule {
       implicit val codec: CirceCodec[ApprovalRule] = deriveConfiguredCodec
+    }
+
+    final case class MergeRequestApprovals(approvalsRequired: Int)
+
+    object MergeRequestApprovals {
+      implicit val codec: CirceCodec[MergeRequestApprovals] = deriveConfiguredCodec
     }
 
   }
