@@ -61,7 +61,7 @@ object WebhookProcessor {
                   .flatMap(validActions[F, Mismatch, MergeRequestState, MergeRequestState](ProjectActions.compile(_, config)))
 
       nextMR = states.minByOption(_.mergeability)
-      _          <- Logger[F].info("Considering MR for action", Map("mr" -> nextMR.toString))
+      _          <- Logger[F].info("Considering MR for action", Map("mr" -> nextMR.show))
       nextAction <- nextMR
                       .flatTraverse { mr =>
                         val nextAction = mr.mergeability match {

@@ -134,7 +134,7 @@ object Gitlab {
           .flatTap { result =>
             Logger[F].info(
               "Found merge requests",
-              Map("result" -> result.map(_.show).mkString)
+              Map("result" -> result.show.mkString)
             )
           }
 
