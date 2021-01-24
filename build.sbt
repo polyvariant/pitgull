@@ -97,31 +97,17 @@ val installDhallJson =
     "curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.34.0/dhall-json-1.7.1-x86_64-linux.tar.bz2 | tar -vxj -C /"
   )
 
+val dockerBuild = taskKey[String]("Build docker image")
+
+val dockerPush = taskKey[String]("Build and publish docker image")
+
 lazy val pitgull =
   project
     .in(file("."))
-    .enablePlugins(BuildInfoPlugin, DockerPlugin, JavaAppPackaging)
+    .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
     .settings(commonSettings)
     .settings(
       name := "pitgull",
-      dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.8_10",
-      // dockerCommands += ExecCmd(
-      //   "RUN",
-      //   "sh",
-      //   "-c",
-      //   "apk update && apk add curl bash"
-      // ),
-      // dockerCommands ++=
-      //   Cmd("USER", "root") :: ExecCmd(
-      //     "RUN",
-      //     "sh",
-      //     "-c",
-      //     "apk update && apk add curl bash"
-      //   ) :: installDhallJson :: Nil,
-      Docker / packageName := "kubukoz/pitgull",
-      Docker / mappings += (
-        file("./example.dhall") -> "/opt/docker/example.dhall"
-      ),
       mainClass := Some("io.pg.ProjectConfigReader"),
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
@@ -140,7 +126,27 @@ lazy val pitgull =
         "com.github.valskalla" %% "odin-core" % "0.9.1",
         "com.github.valskalla" %% "odin-slf4j" % "0.9.1",
         "io.github.vigoo" %% "prox" % "0.5.2"
-      )
+      ),
+      dockerBuild := {
+        val target = stage.value
+
+        import scala.sys.process._
+        s"docker build --quiet --file Dockerfile $target".!!.trim
+      },
+      dockerPush := {
+        val pattern = "sha256\\:(.+)".r
+        val sha = dockerBuild.value match {
+          case pattern(hash) => hash
+        }
+
+        val tag = s"kubukoz/pitgull:${version.value}"
+
+        import scala.sys.process._
+        s"docker tag $sha $tag".!
+        s"docker push $tag".!
+
+        tag
+      }
     )
     .dependsOn(core, gitlab)
     .aggregate(core, gitlab)
