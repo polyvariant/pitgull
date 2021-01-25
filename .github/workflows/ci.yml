@@ -108,7 +108,6 @@ jobs:
 
       - uses: docker/login-action@v1
         with:
-          registry: registry.hub.docker.com
           username: kubukoz
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 

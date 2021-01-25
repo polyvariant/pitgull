@@ -36,7 +36,6 @@ ThisBuild / githubWorkflowPublishPreamble := Seq(
   WorkflowStep.Use(
     ref = UseRef.Public("docker", "login-action", "v1"),
     params = Map(
-      "registry" -> "registry.hub.docker.com",
       "username" -> "kubukoz",
       "password" -> "${{ secrets.DOCKER_HUB_TOKEN }}"
     )
