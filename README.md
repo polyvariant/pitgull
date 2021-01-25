@@ -16,7 +16,7 @@
 ### Related projects
 
 We're using https://github.com/kubukoz/caliban-gitlab/ for some communication with Gitlab,
-as well as https://github.com/softwaremill/tapir for the actions not available via the GraphQL API.
+as well as https://github.com/softwaremill/tapir + https://github.com/softwaremill/sttp for the actions not available via the GraphQL API.
 
 ### Docker
 
@@ -27,3 +27,7 @@ Checkout https://github.com/scala-steward-org/scala-steward/blob/master/docs/run
 You'll need to add a `pass.sh` file that prints your GitLab token to standard output when run (consult the Scala Steward docs to see how).
 
 After you're all set-up, run `docker-compose up` inside the `docker` directory (or `docker-compose -f docker/docker-compose.yml up` in the project directory).
+
+## Releasing
+
+Docker images are being pushed on every push to `main` and tags starting with `v`.
