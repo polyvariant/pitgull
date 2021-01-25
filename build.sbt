@@ -21,9 +21,29 @@ inThisBuild(
 
 val GraalVM11 = "graalvm-ce-java11@20.1.0"
 
+val Scala213 = "2.13.4"
+ThisBuild / scalaVersion := Scala213
 ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
 ThisBuild / githubWorkflowPublishTargetBranches := Nil
+
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.StartsWith(Ref.Branch("main")),
+  RefPredicate.StartsWith(Ref.Tag("main"))
+)
+
+ThisBuild / githubWorkflowPublishPreamble := Seq(
+  WorkflowStep.Use(
+    ref = UseRef.Public("docker", "login-action", "v1"),
+    params = Map(
+      "registry" -> "registry.hub.docker.com",
+      "username" -> "kubukoz",
+      "password" -> "${{ secrets.DOCKER_HUB_TOKEN }}"
+    )
+  )
+)
+
+ThisBuild / githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("docker:publish")))
 
 // todo: reenable missinglink
 //ThisBuild / githubWorkflowBuild := List(
@@ -47,10 +67,7 @@ val compilerPlugins = List(
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
-val Scala213 = "2.13.4"
-
 val commonSettings = List(
-  scalaVersion := Scala213,
   scalacOptions --= List("-Xfatal-warnings"),
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
