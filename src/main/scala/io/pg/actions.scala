@@ -3,7 +3,6 @@ package io.pg
 import cats.data.EitherNel
 import cats.implicits._
 import cats.tagless.autoContravariant
-import cats.tagless.finalAlg
 import io.pg.ProjectAction.Merge
 import io.pg.config.Matcher
 import io.pg.config.ProjectConfig
@@ -15,47 +14,85 @@ import io.pg.config.TextMatcher
 import cats.MonoidK
 import cats.Show
 import io.pg.ProjectAction.Rebase
+import io.pg.MergeRequestState.Mergeability.CanMerge
+import io.pg.MergeRequestState.Mergeability.NeedsRebase
+import io.pg.MergeRequestState.Mergeability.HasConflicts
+import cats.Applicative
 
-@finalAlg
 trait ProjectActions[F[_]] {
-  def execute(action: ProjectAction): F[Unit]
+  type Action
+  def resolve(mr: MergeRequestState): F[Option[Action]]
+  def execute(action: Action): F[Unit]
 }
 
 object ProjectActions {
+  def apply[F[_]](implicit F: ProjectActions[F]): F.type = F
 
-  def instance[F[_]: Gitlab: Logger: MonadThrow]: ProjectActions[F] = action => {
-    val logBefore = Logger[F].info("About to execute action", Map("action" -> action.toString))
+  def defaultResolve[F[_]: Applicative: Logger](mr: MergeRequestState): F[Option[ProjectAction]] = mr.mergeability match {
+    case CanMerge =>
+      ProjectAction
+        .Merge(projectId = mr.projectId, mergeRequestIid = mr.mergeRequestIid)
+        .some
+        .widen[ProjectAction]
+        .pure[F]
 
-    val approve = action match {
-      case Merge(projectId, mergeRequestIid) =>
-        Logger[F].info("Forcing approval befor merge", Map("action" -> action.toString)) *>
-          Gitlab[F].forceApprove(projectId, mergeRequestIid)
-      case _                                 =>
-        Logger[F].info("Approval forcing not required", Map("action" -> action.toString))
-    }
+    case NeedsRebase =>
+      ProjectAction
+        .Rebase(projectId = mr.projectId, mergeRequestIid = mr.mergeRequestIid)
+        .some
+        .widen[ProjectAction]
+        .pure[F]
 
-    val perform = action match {
-      //todo: perform check is the MR still open?
-      //or fall back in case it's not
-      //https://www.youtube.com/watch?v=vxKBHX9Datw
-      case Merge(projectId, mergeRequestIid) =>
-        Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
-
-      case Rebase(projectId, mergeRequestIid) =>
-        Gitlab[F].rebaseMergeRequest(projectId, mergeRequestIid)
-    }
-
-    logBefore *> approve *> perform.handleErrorWith { error =>
+    case HasConflicts =>
       Logger[F]
-        .error(
-          "Couldn't perform action",
-          Map(
-            //todo: consier granular fields
-            "action" -> action.toString
-          ),
-          error
+        .info(
+          "MR has conflicts, skipping",
+          Map("projectId" -> mr.projectId.show, "mergeRequestIid" -> mr.mergeRequestIid.show)
         )
+        .as(none)
+  }
+
+  def instance[F[_]: Gitlab: Logger: MonadThrow]: ProjectActions[F] = new ProjectActions[F] {
+
+    type Action = ProjectAction
+
+    def resolve(mr: MergeRequestState): F[Option[ProjectAction]] = defaultResolve[F](mr)
+
+    def execute(action: ProjectAction): F[Unit] = {
+      val logBefore = Logger[F].info("About to execute action", Map("action" -> action.toString))
+
+      val approve = action match {
+        case Merge(projectId, mergeRequestIid) =>
+          Logger[F].info("Forcing approval befor merge", Map("action" -> action.toString)) *>
+            Gitlab[F].forceApprove(projectId, mergeRequestIid)
+        case _                                 =>
+          Logger[F].info("Approval forcing not required", Map("action" -> action.toString))
+      }
+
+      val perform = action match {
+        //todo: perform check is the MR still open?
+        //or fall back in case it's not
+        //https://www.youtube.com/watch?v=vxKBHX9Datw
+        case Merge(projectId, mergeRequestIid) =>
+          Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
+
+        case Rebase(projectId, mergeRequestIid) =>
+          Gitlab[F].rebaseMergeRequest(projectId, mergeRequestIid)
+      }
+
+      logBefore *> approve *> perform.handleErrorWith { error =>
+        Logger[F]
+          .error(
+            "Couldn't perform action",
+            Map(
+              //todo: consier granular fields
+              "action" -> action.toString
+            ),
+            error
+          )
+      }
     }
+
   }
 
   @autoContravariant

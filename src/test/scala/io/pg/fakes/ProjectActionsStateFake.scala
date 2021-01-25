@@ -10,13 +10,14 @@ import io.pg.gitlab.webhook.Project
 import io.pg.ProjectAction.Merge
 import io.scalaland.chimney.dsl._
 import cats.implicits._
-import cats.FlatMap
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.MergeRequestState.Mergeability
 import io.pg.ProjectAction.Rebase
 import cats.data.Chain
+import cats.Monad
+import io.odin.Logger
 
 object ProjectActionsStateFake {
   sealed case class MergeRequestDescription(projectId: Long, mergeRequestIid: Long)
@@ -81,15 +82,18 @@ object ProjectActionsStateFake {
   type Data[F[_]] = Stateful[F, State]
   def Data[F[_]: Data]: Data[F] = implicitly[Data[F]]
 
-  def refInstance[F[_]: Sync]: F[ProjectActions[F] with StateResolver[F] with State.Modifiers[F]] =
+  def refInstance[F[_]: Sync: Logger]: F[ProjectActions[F] with StateResolver[F] with State.Modifiers[F]] =
     Ref[F].of(State.initial).map(FakeUtils.statefulRef(_)).map(implicit F => instance[F])
 
   /** This instance has both the capabilities of ProjectActions and StateResolver,
     * because they operate on the same state, and the state is sealed by convention.
     */
   def instance[
-    F[_]: Data: FlatMap
+    F[_]: Data: Monad: Logger
   ]: ProjectActions[F] with StateResolver[F] with State.Modifiers[F] = new ProjectActions[F] with StateResolver[F] with State.Modifiers[F] {
+
+    type Action = ProjectAction
+    def resolve(mr: MergeRequestState): F[Option[ProjectAction]] = ProjectActions.defaultResolve[F](mr)
 
     def execute(action: ProjectAction): F[Unit] = Data[F].modify {
       val actionChange = action match {
