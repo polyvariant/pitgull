@@ -40,7 +40,9 @@ object TextMatcher {
 }
 
 @ConfiguredJsonCodec()
-sealed trait Matcher extends Product with Serializable
+sealed trait Matcher extends Product with Serializable {
+  def and(another: Matcher): Matcher = Matcher.Many(List(this, another))
+}
 
 object Matcher {
   final case class Author(email: TextMatcher) extends Matcher

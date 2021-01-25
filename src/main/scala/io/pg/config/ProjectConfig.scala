@@ -39,13 +39,10 @@ object ProjectConfigReader {
 
       val anyLibraryPatch = steward(semver("patch"))
 
+      val fromWMS = Matcher.Description(TextMatcher.Matches("""(?s).*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
+
       val wmsLibraryMinor = steward(
-        Matcher.Many(
-          List(
-            semver("minor"),
-            Matcher.Description(TextMatcher.Matches("""(?s).*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
-          )
-        )
+        semver("minor").and(fromWMS)
       )
 
       val config: ProjectConfig = ProjectConfig(
