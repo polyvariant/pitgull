@@ -43,7 +43,7 @@ object ProjectConfigReader {
         Matcher.Many(
           List(
             semver("minor"),
-            Matcher.Description(TextMatcher.Matches(""".*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
+            Matcher.Description(TextMatcher.Matches("""(?s).*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
           )
         )
       )
