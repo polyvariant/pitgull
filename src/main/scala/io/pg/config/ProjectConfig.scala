@@ -22,23 +22,36 @@ object ProjectConfigReader {
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {
 
+      def semver(level: String) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*".r))
+
       //todo: dhall needs to be updated
-      val steward = Rule(
+      def steward(extra: Matcher) = Rule(
         "scala-steward",
         Matcher.Many(
           List(
             Matcher.Author(TextMatcher.Matches("(scala_steward)|(michal.pawlik)|(j.kozlowski)".r)),
-            Matcher.Description(TextMatcher.Matches("(?s).*labels:.*semver-patch.*".r)),
-            Matcher.PipelineStatus("SUCCESS")
+            Matcher.PipelineStatus("SUCCESS"),
+            extra
           )
         ),
         Action.Merge
       )
 
+      val anyLibraryPatch = steward(semver("patch"))
+
+      val wmsLibraryMinor = steward(
+        Matcher.Many(
+          List(
+            semver("minor"),
+            Matcher.Description(TextMatcher.Matches(""".*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
+          )
+        )
+      )
+
       val config: ProjectConfig = ProjectConfig(
         List(
-          steward
-          // Rule.mergeAnything
+          anyLibraryPatch,
+          wmsLibraryMinor
         )
       )
 
