@@ -16,6 +16,12 @@ let List/map =
 let JSON =
       https://prelude.dhall-lang.org/v16.0.0/JSON/package.dhall sha256:1b02c5ff4710f90ee3f8dc1a2565f1b52b45e5317e2df4775307e2ba0cadcf21
 
+let listOf =
+      λ(label : Text) →
+      λ(values : List JSON.Type) →
+        JSON.object
+          (toMap { kind = JSON.string label, values = JSON.array values })
+
 let toJsonFolds =
         { TextMatcher =
             λ(tm : TextMatcher) →
@@ -67,14 +73,8 @@ let toJsonFolds =
                             , status = JSON.string args.status
                             }
                         )
-                , Many =
-                    λ(values : List JSON.Type) →
-                      JSON.object
-                        ( toMap
-                            { kind = JSON.string "Many"
-                            , values = JSON.array values
-                            }
-                        )
+                , Many = listOf "Many"
+                , OneOf = listOf "OneOf"
                 }
         , Action =
             λ(action : Action) →

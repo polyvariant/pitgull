@@ -49,6 +49,7 @@ object Matcher {
   final case class Description(text: TextMatcher) extends Matcher
   final case class PipelineStatus(status: String) extends Matcher
   final case class Many(values: List[Matcher]) extends Matcher
+  final case class OneOf(values: List[Matcher]) extends Matcher
 }
 
 //todo: remove this type altogether and assume Merge for now?

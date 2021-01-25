@@ -18,6 +18,8 @@ import io.pg.MergeRequestState.Mergeability.CanMerge
 import io.pg.MergeRequestState.Mergeability.NeedsRebase
 import io.pg.MergeRequestState.Mergeability.HasConflicts
 import cats.Applicative
+import cats.data.NonEmptyList
+import scala.util.matching.Regex
 
 trait ProjectActions[F[_]] {
   type Action
@@ -98,6 +100,10 @@ object ProjectActions {
   @autoContravariant
   trait MatcherFunction[-In] {
     def matches(in: In): Matched[Unit]
+    def atPath(path: String): MatcherFunction[In] = mapFailures(_.map(_.atPath(path)))
+
+    def mapResult(f: Matched[Unit] => Matched[Unit]): MatcherFunction[In] = f.compose(matches).apply(_)
+    def mapFailures(f: NonEmptyList[Mismatch] => NonEmptyList[Mismatch]): MatcherFunction[In] = mapResult(_.leftMap(f))
   }
 
   object MatcherFunction {
@@ -118,9 +124,17 @@ object ProjectActions {
       _.pure[Matched].void
   }
 
-  final case class Mismatch(reason: String)
+  sealed trait Mismatch extends Product with Serializable {
+    def atPath(path: String): Mismatch = Mismatch.AtPath(path, this)
+  }
 
   object Mismatch {
+    final case class AtPath(path: String, mismatch: Mismatch) extends Mismatch
+    final case class ValueMismatch(expected: String, actual: String) extends Mismatch
+    final case class RegexMismatch(pattern: Regex, actual: String) extends Mismatch
+    final case class ManyFailed(incompleteMatches: List[NonEmptyList[Mismatch]]) extends Mismatch
+    case object ValueEmpty extends Mismatch
+
     implicit val show: Show[Mismatch] = Show.fromToString
   }
 
@@ -133,32 +147,43 @@ object ProjectActions {
           case MergeRequestInfo.Status.Success      => expectedStatus.toLowerCase === "success"
           case MergeRequestInfo.Status.Other(value) => expectedStatus === value
         },
-        value => Mismatch(s"""Status is not "$expectedStatus", actual status: "$value"""")
+        value => Mismatch.ValueMismatch(expectedStatus, value.toString)
       )
+      .atPath(".status")
       .contramap(_.status)
 
   val matchTextMatcher: TextMatcher => MatcherFunction[String] = {
     case TextMatcher.Equals(expected) =>
-      MatcherFunction.fromPredicate[String](
+      MatcherFunction.fromPredicate(
         _ === expected,
-        value => Mismatch(show"invalid value, expected $expected, got $value")
+        Mismatch.ValueMismatch(expected, _)
       )
     case TextMatcher.Matches(regex)   =>
-      MatcherFunction.fromPredicate[String](
+      MatcherFunction.fromPredicate(
         regex.matches,
-        value => Mismatch(show"invalid value, expected to match ${regex.toString}, got $value")
+        Mismatch.RegexMismatch(regex, _)
       )
   }
 
   def exists[A](base: MatcherFunction[A]): MatcherFunction[Option[A]] =
-    _.fold[Matched[Unit]](Mismatch("Option was empty").leftNel)(base.matches)
+    _.fold[Matched[Unit]](Mismatch.ValueEmpty.leftNel)(base.matches)
+
+  def oneOf[A](matchers: List[MatcherFunction[A]]): MatcherFunction[A] = input => {
+    matchers
+      .traverse(_.matches(input).swap)
+      .swap
+      .leftMap(Mismatch.ManyFailed)
+      .toEitherNel
+  }
 
   def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
     matchTextMatcher(matcher)
+      .atPath(".author")
       .contramap(_.authorUsername)
 
   def descriptionMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
     exists(matchTextMatcher(matcher))
+      .atPath(".description")
       .contramap(_.description)
 
   val compileMatcher: Matcher => MatcherFunction[MergeRequestState] = {
@@ -166,6 +191,7 @@ object ProjectActions {
     case Matcher.Description(text)      => descriptionMatches(text)
     case Matcher.PipelineStatus(status) => statusMatches(status)
     case Matcher.Many(values)           => values.foldMapK(compileMatcher)
+    case Matcher.OneOf(values)          => oneOf(values.map(compileMatcher))
   }
 
   def compile(

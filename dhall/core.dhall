@@ -33,11 +33,25 @@ let MatcherFold =
         , Description : { text : TextMatcher } → M
         , PipelineStatus : { status : Text } → M
         , Many : List M → M
+        , OneOf : List M → M
         }
 
 let Matcher
     : Type
     = ∀(M : Type) → MatcherFold M → M
+
+let listOf =
+      λ(elems : List Matcher) →
+      λ(M : Type) →
+      λ(path : MatcherFold M → List M → M) →
+      λ(RC : MatcherFold M) →
+        let foldChild
+            : Matcher → M
+            = λ(y : Matcher) → y M RC
+
+        let folded = List/map Matcher M foldChild elems
+
+        in  path RC folded
 
 let match =
         { Author =
@@ -58,19 +72,17 @@ let match =
         , Many =
             λ(elems : List Matcher) →
             λ(M : Type) →
-            λ(RC : MatcherFold M) →
-              let foldChild
-                  : Matcher → M
-                  = λ(y : Matcher) → y M RC
-
-              let folded = List/map Matcher M foldChild elems
-
-              in  RC.Many folded
+              listOf elems M (λ(RC : MatcherFold M) → RC.Many)
+        , OneOf =
+            λ(elems : List Matcher) →
+            λ(M : Type) →
+              listOf elems M (λ(RC : MatcherFold M) → RC.OneOf)
         }
       : { Author : { email : TextMatcher } → Matcher
         , Description : { text : TextMatcher } → Matcher
         , PipelineStatus : Text → Matcher
         , Many : List Matcher → Matcher
+        , OneOf : List Matcher → Matcher
         }
 
 let ActionFold = λ(M : Type) → { Merge : M }
