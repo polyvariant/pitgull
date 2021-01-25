@@ -50,7 +50,7 @@ object Application {
         .map(Channel.fromQueue)
         .resource
         .flatMap { eventChannel =>
-          val webhookChannel =
+          implicit val webhookChannel: Channel[F, WebhookEvent] =
             eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
 
           BlazeClientBuilder[F](ExecutionContext.global)
@@ -78,12 +78,15 @@ object Application {
               implicit val stateResolver: StateResolver[F] =
                 StateResolver.instance[F]
 
+              implicit val mergeRequests: MergeRequests[F] =
+                MergeRequests.instance[F]
+
               val webhookProcess = BackgroundProcess.fromProcessor(
                 webhookChannel
               )(Processor.simple(WebhookProcessor.instance[F]))
 
               val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
-                NonEmptyList.of(WebhookRouter.routes[F](webhookChannel)).flatten
+                NonEmptyList.of(WebhookRouter.routes[F]).flatten
 
               new Application[F](
                 routes = Http4sServerInterpreter.toRoutes(endpoints.toList).orNotFound,

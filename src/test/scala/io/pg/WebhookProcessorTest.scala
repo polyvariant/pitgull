@@ -33,8 +33,10 @@ object WebhookProcessorTest extends SimpleIOSuite {
     ProjectConfigReaderFake
       .refInstance[IO]
       .flatMap { implicit configReader =>
+        implicit val logger = io.odin.consoleLogger[IO]()
+
         ProjectActionsStateFake.refInstance[IO].map { implicit projects =>
-          implicit val logger = io.odin.consoleLogger[IO]()
+          implicit val mergeRequests: MergeRequests[IO] = MergeRequests.instance[IO]
 
           Resources(
             actions = projects,
