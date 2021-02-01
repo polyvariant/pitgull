@@ -151,7 +151,6 @@ lazy val pitgull =
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
-        "org.typelevel" %% "cats-mtl-core" % "0.7.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
         "com.github.valskalla" %% "odin-core" % "0.10.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.10.0",

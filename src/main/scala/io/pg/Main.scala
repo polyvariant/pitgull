@@ -26,7 +26,7 @@ import org.http4s.server.middleware
 
 object Main extends IOApp {
 
-  def mkLogger[F[_]: ConcurrentEffect: Timer: ContextShift] = {
+  def mkLogger[F[_]: ConcurrentEffect: Timer: ContextShift]: Resource[F, Logger[F]] = {
 
     // is withMinimalLevel even working??
     val console = io.odin.consoleLogger[F](formatter = Formatter.colorful).withMinimalLevel(Level.Info).pure[Resource[F, *]]
@@ -34,7 +34,6 @@ object Main extends IOApp {
     val file = io
       .odin
       .asyncRollingFileLogger[F](
-        // https://github.com/valskalla/odin/issues/229
         fileNamePattern = dateTime => show"/tmp/log/pitgull/pitgull-logs-${dateTime.toLocalDate}.txt",
         rolloverInterval = 1.day.some,
         maxFileSizeInBytes = (10L * 1024 * 1024 /* 10MB */ ).some,
@@ -42,8 +41,8 @@ object Main extends IOApp {
         formatter = Formatter.colorful,
         minLevel = Level.Debug
       )
-    //todo
-    console // |+| file
+
+    console |+| file
   }
     .evalTap { logger =>
       Sync[F].delay(OdinInterop.globalLogger.set(logger.mapK(Effect.toIOK).some))
@@ -79,7 +78,7 @@ object Main extends IOApp {
       _                            <- mkServer[F](config.http, config.meta, resources.routes)
       _                            <- resources.background.parTraverse_(_.run).background
       _                            <- logStarted(config.meta).resource_
-    } yield resources.background
+    } yield ()
 
   def run(args: List[String]): IO[ExitCode] =
     AppConfig
