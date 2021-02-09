@@ -51,7 +51,7 @@ ThisBuild / githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("docker:publish")
 
 Test / fork := true
 
-missinglinkExcludedDependencies in ThisBuild += moduleFilter(
+ThisBuild / missinglinkExcludedDependencies += moduleFilter(
   organization = "org.slf4j",
   name = "slf4j-api"
 )
@@ -81,7 +81,7 @@ val commonSettings = List(
     "com.disneystreaming" %% "weaver-scalacheck" % "0.5.1" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.TestFramework"),
-  skip in publish := true
+  publish / skip := true
 )
 
 lazy val gitlab = project
@@ -103,7 +103,7 @@ lazy val gitlab = project
 lazy val core = project.settings(commonSettings).settings(name += "-core")
 
 //workaround for docker not accepting + (the default separator in sbt-dynver)
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"
 
 val installDhallJson =
   ExecCmd(
