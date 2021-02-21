@@ -2,7 +2,7 @@ package io.pg
 
 import cats.effect.IO
 import ciris.Secret
-import sttp.client3._
+import sttp.model.Uri._
 import weaver.SimpleIOSuite
 
 object MainTest extends SimpleIOSuite {
