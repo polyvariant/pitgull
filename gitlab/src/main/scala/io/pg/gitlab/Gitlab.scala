@@ -80,18 +80,12 @@ object Gitlab {
     accessToken: Secret[String]
   )(
     implicit backend: SttpBackend[F, Any],
-    backend2: sttp.client.SttpBackend[F, Nothing, sttp.client.NothingT],
     SC: fs2.Stream.Compiler[F, F]
   ): Gitlab[F] = {
 
     def runRequest[O](request: Request[O, Any]): F[O] =
       //todo multiple possible header names...
       request.header("Private-Token", accessToken.value).send(backend).map(_.body)
-
-    //this is needed while caliban hasn't upgraded to sttp3
-    def runRequestSttp2[O](request: sttp.client.Request[O, Nothing]): F[O] =
-      //todo multiple possible header names...
-      request.header("Private-Token", accessToken.value).send[F]().map(_.body)
 
     import sttp.tapir.client.sttp._
 
@@ -106,7 +100,7 @@ object Gitlab {
       runEndpoint[I, Nothing, O](endpoint).nested.map(_.merge).value
 
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
-      runRequestSttp2(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
+      runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
 
     new Gitlab[F] {
       def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
