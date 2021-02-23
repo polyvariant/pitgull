@@ -89,7 +89,7 @@ lazy val gitlab = project
     commonSettings,
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "1.2.1",
-      "com.kubukoz" %% "caliban-gitlab" % "0.0.10",
+      "com.kubukoz" %% "caliban-gitlab" % "0.0.11",
       "io.circe" %% "circe-generic-extras" % "0.13.0",
       "io.circe" %% "circe-parser" % "0.13.0" % Test,
       "io.circe" %% "circe-literal" % "0.13.0" % Test,
@@ -143,7 +143,6 @@ lazy val pitgull =
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
         "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.12",
-        "com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.9",
         "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.1.3",
         "org.http4s" %% "http4s-blaze-server" % "0.21.19",
         "org.http4s" %% "http4s-blaze-client" % "0.21.19",
