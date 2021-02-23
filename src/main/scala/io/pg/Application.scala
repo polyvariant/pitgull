@@ -66,9 +66,6 @@ object Application {
               implicit val backend: SttpBackend[F, Fs2Streams[F]] =
                 Http4sBackend.usingClient[F](client, blocker)
 
-              implicit val backend2: sttp.client.SttpBackend[F, Nothing, Nothing] =
-                sttp.client.http4s.Http4sBackend.usingClient[F](client, blocker)
-
               implicit val gitlab: Gitlab[F] =
                 Gitlab.sttpInstance[F](config.git.apiUrl, config.git.apiToken)
 
