@@ -28,7 +28,6 @@ object Main extends IOApp {
 
   def mkLogger[F[_]: ConcurrentEffect: Timer: ContextShift]: Resource[F, Logger[F]] = {
 
-    // is withMinimalLevel even working??
     val console = io.odin.consoleLogger[F](formatter = Formatter.colorful).withMinimalLevel(Level.Info).pure[Resource[F, *]]
 
     val file = io
