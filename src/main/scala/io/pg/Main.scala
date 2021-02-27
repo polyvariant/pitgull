@@ -47,7 +47,10 @@ object Main extends IOApp {
       Sync[F].delay(OdinInterop.globalLogger.set(logger.mapK(Effect.toIOK).some))
     }
 
-  def mkServer[F[_]: Logger: ConcurrentEffect: Timer](http: HttpConfig, meta: MetaConfig, routes: HttpApp[F]) = {
+  def mkServer[F[_]: Logger: ConcurrentEffect: Timer](
+    config: AppConfig,
+    routes: HttpApp[F]
+  ) = {
     val app = middleware
       .Logger
       .httpApp(
@@ -58,8 +61,8 @@ object Main extends IOApp {
 
     BlazeServerBuilder[F](ExecutionContext.global)
       .withHttpApp(app)
-      .bindHttp(port = http.port, host = "0.0.0.0")
-      .withBanner(meta.banner.linesIterator.toList)
+      .bindHttp(port = config.http.port, host = "0.0.0.0")
+      .withBanner(config.meta.banner.linesIterator.toList)
       .resource
   }
 
@@ -74,7 +77,7 @@ object Main extends IOApp {
       implicit0(logger: Logger[F]) <- mkLogger[F]
       _                            <- logStarting(config.meta).resource_
       resources                    <- Application.resource[F](config)
-      _                            <- mkServer[F](config.http, config.meta, resources.routes)
+      _                            <- mkServer[F](config, resources.routes)
       _                            <- resources.background.parTraverse_(_.run).background
       _                            <- logStarted(config.meta).resource_
     } yield ()
