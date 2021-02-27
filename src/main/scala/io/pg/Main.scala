@@ -58,7 +58,6 @@ object Main extends IOApp {
       .httpApp(
         logHeaders = true,
         logBody = true,
-        redactHeadersWhen = config.middleware.sensitiveHeaders.contains,
         logAction = (Logger[F].debug(_: String)).some
       )(routes)
 
