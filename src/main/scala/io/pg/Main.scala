@@ -49,12 +49,18 @@ object Main extends IOApp {
       Sync[F].delay(OdinInterop.globalLogger.set(logger.mapK(Effect.toIOK).some))
     }
 
-  def mkServer[F[_]: Logger: ConcurrentEffect: Timer](http: HttpConfig, meta: MetaConfig, routes: HttpApp[F]) = {
+  def mkServer[F[_]: Logger: ConcurrentEffect: Timer](
+    http: HttpConfig,
+    meta: MetaConfig,
+    middlewareConfig: MiddlewareConfig,
+    routes: HttpApp[F]
+  ) = {
     val app = middleware
       .Logger
       .httpApp(
         logHeaders = true,
         logBody = true,
+        redactHeadersWhen = middlewareConfig.sensitiveHeaders.contains,
         logAction = (Logger[F].debug(_: String)).some
       )(routes)
 
@@ -76,7 +82,7 @@ object Main extends IOApp {
       implicit0(logger: Logger[F]) <- mkLogger[F]
       _                            <- logStarting(config.meta).resource_
       resources                    <- Application.resource[F](config)
-      _                            <- mkServer[F](config.http, config.meta, resources.routes)
+      _                            <- mkServer[F](config.http, config.meta, config.middleware, resources.routes)
       _                            <- resources.background.parTraverse_(_.run).background
       _                            <- logStarted(config.meta).resource_
     } yield resources.background

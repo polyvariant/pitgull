@@ -2,13 +2,17 @@ package io.pg
 
 import cats.syntax.all._
 import ciris.Secret
+import org.http4s.Headers
+import org.http4s.util.CaseInsensitiveString
+import org.http4s.syntax.all._
 import sttp.model.Uri
 
 final case class AppConfig(
   http: HttpConfig,
   meta: MetaConfig,
   git: Git,
-  queues: Queues
+  queues: Queues,
+  middleware: MiddlewareConfig
 )
 
 object AppConfig {
@@ -53,8 +57,11 @@ object AppConfig {
 
   private val queuesConfig: ConfigValue[Queues] = default(100).map(Queues)
 
+  private val middlewareConfig: ConfigValue[MiddlewareConfig] =
+    default(Headers.SensitiveHeaders + "Private-Token".ci).map(MiddlewareConfig)
+
   val appConfig: ConfigValue[AppConfig] =
-    (httpConfig, metaConfig, gitConfig, queuesConfig).parMapN(apply)
+    (httpConfig, metaConfig, gitConfig, queuesConfig, middlewareConfig).parMapN(apply)
 
 }
 
@@ -78,3 +85,5 @@ object Git {
 }
 
 final case class Queues(maxSize: Int)
+
+final case class MiddlewareConfig(sensitiveHeaders: Set[CaseInsensitiveString])

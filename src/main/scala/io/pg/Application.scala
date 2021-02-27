@@ -60,7 +60,7 @@ object Application {
                 .http4s
                 .client
                 .middleware
-                .Logger(logHeaders = true, logBody = false)
+                .Logger(logHeaders = true, logBody = false, redactHeadersWhen = config.middleware.sensitiveHeaders.contains)
             )
             .map { client =>
               implicit val backend: SttpBackend[F, Fs2Streams[F]] =

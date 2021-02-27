@@ -11,7 +11,8 @@ object MainTest extends SimpleIOSuite {
       http = HttpConfig(8080),
       meta = MetaConfig("-", BuildInfo.version, BuildInfo.scalaVersion),
       git = Git(Git.Host.Gitlab, uri"http://localhost", Secret("token")),
-      queues = Queues(10)
+      queues = Queues(10),
+      middleware = MiddlewareConfig(Set())
     )
 
     Main.serve(testConfig).use(IO.pure).as(success)
