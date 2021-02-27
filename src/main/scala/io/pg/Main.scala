@@ -50,9 +50,7 @@ object Main extends IOApp {
     }
 
   def mkServer[F[_]: Logger: ConcurrentEffect: Timer](
-    http: HttpConfig,
-    meta: MetaConfig,
-    middlewareConfig: MiddlewareConfig,
+    config: AppConfig,
     routes: HttpApp[F]
   ) = {
     val app = middleware
@@ -60,14 +58,14 @@ object Main extends IOApp {
       .httpApp(
         logHeaders = true,
         logBody = true,
-        redactHeadersWhen = middlewareConfig.sensitiveHeaders.contains,
+        redactHeadersWhen = config.middleware.sensitiveHeaders.contains,
         logAction = (Logger[F].debug(_: String)).some
       )(routes)
 
     BlazeServerBuilder[F](ExecutionContext.global)
       .withHttpApp(app)
-      .bindHttp(port = http.port, host = "0.0.0.0")
-      .withBanner(meta.banner.linesIterator.toList)
+      .bindHttp(port = config.http.port, host = "0.0.0.0")
+      .withBanner(config.meta.banner.linesIterator.toList)
       .resource
   }
 
@@ -82,7 +80,7 @@ object Main extends IOApp {
       implicit0(logger: Logger[F]) <- mkLogger[F]
       _                            <- logStarting(config.meta).resource_
       resources                    <- Application.resource[F](config)
-      _                            <- mkServer[F](config.http, config.meta, config.middleware, resources.routes)
+      _                            <- mkServer[F](config, resources.routes)
       _                            <- resources.background.parTraverse_(_.run).background
       _                            <- logStarted(config.meta).resource_
     } yield resources.background
