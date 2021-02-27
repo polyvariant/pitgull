@@ -8,4 +8,4 @@ target/
 .vscode/
 **/*.worksheet.sc
 docker/pass.sh
-**/.bsp/**
+**/.bsp
