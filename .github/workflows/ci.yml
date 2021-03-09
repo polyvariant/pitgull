@@ -51,8 +51,7 @@ jobs:
       - name: Check that workflows are up to date
         run: sbt ++${{ matrix.scala }} githubWorkflowCheck
 
-      - name: Build project
-        run: sbt ++${{ matrix.scala }} test
+      - run: sbt ++${{ matrix.scala }} test missinglinkCheck
 
       - name: Compress target directories
         run: tar cf targets.tar target gitlab/target core/target project/target
