@@ -45,9 +45,9 @@ ThisBuild / githubWorkflowPublishPreamble := Seq(
 ThisBuild / githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("docker:publish")))
 
 // todo: reenable missinglink
-//ThisBuild / githubWorkflowBuild := List(
-//  WorkflowStep.Sbt(List("test", "missinglinkCheck"))
-//)
+ThisBuild / githubWorkflowBuild := List(
+  WorkflowStep.Sbt(List("test", "missinglinkCheck"))
+)
 
 Test / fork := true
 
