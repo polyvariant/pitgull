@@ -71,14 +71,14 @@ val commonSettings = List(
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.4.2",
-    "org.typelevel" %% "cats-effect" % "2.3.3",
+    "org.typelevel" %% "cats-effect" % "3.0.0-RC2",
     "org.typelevel" %% "cats-tagless-macros" % "0.12",
-    "co.fs2" %% "fs2-core" % "2.5.3",
+    "co.fs2" %% "fs2-core" % "3.0.0-M9",
     "com.github.valskalla" %% "odin-core" % "0.11.0",
     "io.circe" %% "circe-core" % "0.13.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
-    "com.disneystreaming" %% "weaver-framework" % "0.5.1" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.5.1" % Test
+    "com.disneystreaming" %% "weaver-framework" % "0.7.0-M6" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.0-M6" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.TestFramework"),
   publish / skip := true
@@ -88,7 +88,7 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "1.2.1",
+      "is.cir" %% "ciris" % "2.0.0-RC1",
       "com.kubukoz" %% "caliban-gitlab" % "0.0.13",
       "io.circe" %% "circe-generic-extras" % "0.13.0",
       "io.circe" %% "circe-parser" % "0.13.0" % Test,
@@ -144,9 +144,9 @@ lazy val pitgull =
       libraryDependencies ++= List(
         "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.16",
         "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.1.7",
-        "org.http4s" %% "http4s-blaze-server" % "0.21.20",
-        "org.http4s" %% "http4s-blaze-client" % "0.21.20",
-        "is.cir" %% "ciris" % "1.2.1",
+        "org.http4s" %% "http4s-blaze-server" % "1.0.0-M16",
+        "org.http4s" %% "http4s-blaze-client" % "1.0.0-M16",
+        "is.cir" %% "ciris" % "2.0.0-RC1",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
