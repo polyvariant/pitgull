@@ -95,7 +95,7 @@ lazy val gitlab = project
       "io.circe" %% "circe-literal" % "0.13.0" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.18",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.18",
-      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.16"
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.18"
     )
   )
   .dependsOn(core)
