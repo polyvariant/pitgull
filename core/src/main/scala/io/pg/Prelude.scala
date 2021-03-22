@@ -11,7 +11,7 @@ object Prelude {
   implicit class EffectToResourceLiftSyntax[F[_], A](private val fa: F[A]) extends AnyVal {
 
     def resource(implicit F: Applicative[F]): Resource[F, A] =
-      Resource.liftF(fa)
+      Resource.eval(fa)
 
     def resource_(implicit F: Applicative[F]): Resource[F, Unit] =
       fa.void.resource
