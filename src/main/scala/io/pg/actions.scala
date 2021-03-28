@@ -134,6 +134,7 @@ object ProjectActions {
     final case class RegexMismatch(pattern: Regex, actual: String) extends Mismatch
     final case class ManyFailed(incompleteMatches: List[NonEmptyList[Mismatch]]) extends Mismatch
     case object ValueEmpty extends Mismatch
+    case object NegationFailed extends Mismatch
 
     implicit val show: Show[Mismatch] = Show.fromToString
   }
@@ -176,6 +177,10 @@ object ProjectActions {
       .toEitherNel
   }
 
+  def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input => {
+    matcher.matches(input).swap.leftMap(_ => Mismatch.NegationFailed).void.toEitherNel
+  }
+
   def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
     matchTextMatcher(matcher)
       .atPath(".author")
@@ -192,6 +197,7 @@ object ProjectActions {
     case Matcher.PipelineStatus(status) => statusMatches(status)
     case Matcher.Many(values)           => values.foldMapK(compileMatcher)
     case Matcher.OneOf(values)          => oneOf(values.map(compileMatcher))
+    case Matcher.Not(value)             => not(compileMatcher(value))
   }
 
   def compile(

@@ -34,6 +34,7 @@ let MatcherFold =
         , PipelineStatus : { status : Text } → M
         , Many : List M → M
         , OneOf : List M → M
+        , Not : M -> M
         }
 
 let Matcher
