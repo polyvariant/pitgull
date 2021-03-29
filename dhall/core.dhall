@@ -78,12 +78,17 @@ let match =
             λ(elems : List Matcher) →
             λ(M : Type) →
               listOf elems M (λ(RC : MatcherFold M) → RC.OneOf)
+        , Not =
+            λ(matcher : Matcher) →
+            λ(M : Type) →
+               elem M (λ(RC : MatcherFold M) → RC.Not)
         }
       : { Author : { email : TextMatcher } → Matcher
         , Description : { text : TextMatcher } → Matcher
         , PipelineStatus : Text → Matcher
         , Many : List Matcher → Matcher
         , OneOf : List Matcher → Matcher
+        , Not : Matcher → Matcher
         }
 
 let ActionFold = λ(M : Type) → { Merge : M }

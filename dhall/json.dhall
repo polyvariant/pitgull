@@ -75,6 +75,7 @@ let toJsonFolds =
                         )
                 , Many = listOf "Many"
                 , OneOf = listOf "OneOf"
+                , Not = "Not"
                 }
         , Action =
             λ(action : Action) →
