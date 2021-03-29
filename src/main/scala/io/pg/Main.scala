@@ -5,14 +5,12 @@ import scala.concurrent.duration._
 
 import cats.Parallel
 import cats.effect.ConcurrentEffect
-import cats.effect.ContextShift
 import cats.effect.Effect
 import cats.effect.ExitCode
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.Resource
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.effect.implicits._
 import cats.syntax.all._
 import io.chrisdavenport.cats.time.instances.all._
@@ -23,10 +21,11 @@ import io.pg.Prelude._
 import org.http4s.HttpApp
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware
+import cats.effect.Temporal
 
 object Main extends IOApp {
 
-  def mkLogger[F[_]: ConcurrentEffect: Timer: ContextShift]: Resource[F, Logger[F]] = {
+  def mkLogger[F[_]: ConcurrentEffect: Temporal: ContextShift]: Resource[F, Logger[F]] = {
 
     val console = io.odin.consoleLogger[F](formatter = Formatter.colorful).withMinimalLevel(Level.Info).pure[Resource[F, *]]
 
@@ -47,7 +46,7 @@ object Main extends IOApp {
       Sync[F].delay(OdinInterop.globalLogger.set(logger.mapK(Effect.toIOK).some))
     }
 
-  def mkServer[F[_]: Logger: ConcurrentEffect: Timer](
+  def mkServer[F[_]: Logger: ConcurrentEffect: Temporal](
     config: AppConfig,
     routes: HttpApp[F]
   ) = {
@@ -72,7 +71,7 @@ object Main extends IOApp {
   def logStarted[F[_]: Logger](meta: MetaConfig) =
     Logger[F].info("Started application", Map("version" -> meta.version, "scalaVersion" -> meta.scalaVersion))
 
-  def serve[F[_]: ConcurrentEffect: ContextShift: Timer: Parallel](config: AppConfig) =
+  def serve[F[_]: ConcurrentEffect: ContextShift: Temporal: Parallel](config: AppConfig) =
     for {
       implicit0(logger: Logger[F]) <- mkLogger[F]
       _                            <- logStarting(config.meta).resource_
