@@ -144,8 +144,8 @@ lazy val pitgull =
       libraryDependencies ++= List(
         "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.19",
         "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.2.0",
-        "org.http4s" %% "http4s-blaze-server" % "0.21.20",
-        "org.http4s" %% "http4s-blaze-client" % "0.21.20",
+        "org.http4s" %% "http4s-blaze-server" % "0.21.21",
+        "org.http4s" %% "http4s-blaze-client" % "0.21.21",
         "is.cir" %% "ciris" % "1.2.1",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
