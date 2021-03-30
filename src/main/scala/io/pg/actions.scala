@@ -197,7 +197,7 @@ object ProjectActions {
     case Matcher.PipelineStatus(status) => statusMatches(status)
     case Matcher.Many(values)           => values.foldMapK(compileMatcher)
     case Matcher.OneOf(values)          => oneOf(values.map(compileMatcher))
-    case Matcher.Not(value)             => not(compileMatcher(value))
+    case Matcher.Not(underlying)        => not(compileMatcher(underlying))
   }
 
   def compile(
