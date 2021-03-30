@@ -75,6 +75,10 @@ let toJsonFolds =
                         )
                 , Many = listOf "Many"
                 , OneOf = listOf "OneOf"
+                , Not =
+                    λ(underlying : JSON.Type) →
+                      JSON.object
+                        (toMap { kind = JSON.string "Not", underlying })
                 }
         , Action =
             λ(action : Action) →
