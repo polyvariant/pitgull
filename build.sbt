@@ -77,8 +77,8 @@ val commonSettings = List(
     "com.github.valskalla" %% "odin-core" % "0.11.0",
     "io.circe" %% "circe-core" % "0.13.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
-    "com.disneystreaming" %% "weaver-framework" % "0.5.1" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.5.1" % Test
+    "com.disneystreaming" %% "weaver-framework" % "0.7.0" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.0" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.TestFramework"),
   publish / skip := true
