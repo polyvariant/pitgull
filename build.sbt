@@ -72,8 +72,8 @@ val commonSettings = List(
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.5.0",
     "org.typelevel" %% "cats-effect" % "2.4.1",
-    "org.typelevel" %% "cats-tagless-macros" % "0.12",
-    "co.fs2" %% "fs2-core" % "3.0.1",
+    "org.typelevel" %% "cats-tagless-macros" % "0.13.0",
+    "co.fs2" %% "fs2-core" % "2.5.4",
     "com.github.valskalla" %% "odin-core" % "0.11.0",
     "io.circe" %% "circe-core" % "0.13.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
@@ -89,7 +89,7 @@ lazy val gitlab = project
     commonSettings,
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "1.2.1",
-      "com.kubukoz" %% "caliban-gitlab" % "0.0.13",
+      "com.kubukoz" %% "caliban-gitlab" % "0.0.14",
       "io.circe" %% "circe-generic-extras" % "0.13.0",
       "io.circe" %% "circe-parser" % "0.13.0" % Test,
       "io.circe" %% "circe-literal" % "0.13.0" % Test,
@@ -143,9 +143,9 @@ lazy val pitgull =
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
         "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.19",
-        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.2.0",
-        "org.http4s" %% "http4s-blaze-server" % "0.21.21",
-        "org.http4s" %% "http4s-blaze-client" % "0.21.21",
+        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.2.3",
+        "org.http4s" %% "http4s-blaze-server" % "0.21.22",
+        "org.http4s" %% "http4s-blaze-client" % "0.21.22",
         "is.cir" %% "ciris" % "1.2.1",
         "io.circe" %% "circe-generic-extras" % "0.13.0",
         "io.estatico" %% "newtype" % "0.4.4",
