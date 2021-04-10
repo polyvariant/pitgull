@@ -71,7 +71,7 @@ val commonSettings = List(
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.5.0",
-    "org.typelevel" %% "cats-effect" % "2.4.1",
+    "org.typelevel" %% "cats-effect" % "3.0.2",
     "org.typelevel" %% "cats-tagless-macros" % "0.13.0",
     "co.fs2" %% "fs2-core" % "2.5.4",
     "com.github.valskalla" %% "odin-core" % "0.11.0",
