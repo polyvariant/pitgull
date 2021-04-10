@@ -8,7 +8,7 @@ import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.Project
 import monocle.macros.Lenses
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 
 trait FakeState
 

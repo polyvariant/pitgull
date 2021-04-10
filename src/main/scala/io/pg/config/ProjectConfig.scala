@@ -1,9 +1,7 @@
 package io.pg.config
 
-import cats.effect.Blocker
 import cats.effect.ExitCode
 import cats.effect.Concurrent
-import cats.effect.ContextShift
 import cats.syntax.all._
 import java.nio.file.Paths
 import io.github.vigoo.prox._
@@ -55,9 +53,7 @@ object ProjectConfigReader {
       def readConfig(project: Project): F[ProjectConfig] = config.pure[F]
     }
 
-  def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](
-    blocker: Blocker
-  ): F[ProjectConfigReader[F]] = {
+  def dhallJsonStringConfig[F[_]: Concurrent: ContextShift]: F[ProjectConfigReader[F]] = {
     val dhallCommand = "dhall-to-json"
     //todo: not reading a local file
     val filePath = "./example.dhall"

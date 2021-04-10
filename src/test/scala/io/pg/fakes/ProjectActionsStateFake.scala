@@ -11,13 +11,13 @@ import io.pg.ProjectAction.Merge
 import io.scalaland.chimney.dsl._
 import cats.implicits._
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.MergeRequestState.Mergeability
 import io.pg.ProjectAction.Rebase
 import cats.data.Chain
 import cats.Monad
 import io.odin.Logger
+import cats.effect.Ref
 
 object ProjectActionsStateFake {
   sealed case class MergeRequestDescription(projectId: Long, mergeRequestIid: Long)
