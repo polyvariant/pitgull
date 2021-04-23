@@ -62,7 +62,7 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
 val compilerPlugins = List(
   crossPlugin("org.typelevel" % "kind-projector" % "0.11.3"),
   crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.8"),
-  crossPlugin("com.kubukoz" % "better-tostring" % "0.2.9"),
+  crossPlugin("com.kubukoz" % "better-tostring" % "0.2.10"),
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
@@ -73,7 +73,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-core" % "2.6.0",
     "org.typelevel" %% "cats-effect" % "2.4.1",
     "org.typelevel" %% "cats-tagless-macros" % "0.13.0",
-    "co.fs2" %% "fs2-core" % "2.5.4",
+    "co.fs2" %% "fs2-core" % "2.5.5",
     "com.github.valskalla" %% "odin-core" % "0.11.0",
     "io.circe" %% "circe-core" % "0.13.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
@@ -139,6 +139,7 @@ lazy val pitgull =
         file("./example.dhall") -> "/opt/docker/example.dhall"
       ),
       mainClass := Some("io.pg.ProjectConfigReader"),
+      buildInfoOptions += BuildInfoOption.ConstantValue,
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
