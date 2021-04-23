@@ -139,6 +139,7 @@ lazy val pitgull =
         file("./example.dhall") -> "/opt/docker/example.dhall"
       ),
       mainClass := Some("io.pg.ProjectConfigReader"),
+      buildInfoOptions += BuildInfoOption.ConstantValue,
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
