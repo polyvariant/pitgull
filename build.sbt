@@ -61,7 +61,7 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
 
 val compilerPlugins = List(
   crossPlugin("org.typelevel" % "kind-projector" % "0.13.0"),
-  crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.8"),
+  crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.9"),
   crossPlugin("com.kubukoz" % "better-tostring" % "0.3.2"),
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
