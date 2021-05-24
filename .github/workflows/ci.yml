@@ -9,9 +9,9 @@ name: Continuous Integration
 
 on:
   pull_request:
-    branches: ['*']
+    branches: ['**']
   push:
-    branches: ['*']
+    branches: ['**']
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,9 +49,9 @@ jobs:
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Check that workflows are up to date
-        run: sbt ++${{ matrix.scala }} githubWorkflowCheck
+        run: sbt --client '++${{ matrix.scala }}; githubWorkflowCheck'
 
-      - run: sbt ++${{ matrix.scala }} test missinglinkCheck
+      - run: sbt --client '++${{ matrix.scala }}; test; missinglinkCheck'
 
       - name: Compress target directories
         run: tar cf targets.tar target gitlab/target core/target project/target
@@ -110,4 +110,4 @@ jobs:
           username: kubukoz
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - run: 'sbt ++${{ matrix.scala }} docker:publish'
+      - run: 'sbt --client ''++${{ matrix.scala }}; docker:publish'''
