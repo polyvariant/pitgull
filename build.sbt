@@ -90,7 +90,7 @@ lazy val gitlab = project
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "1.2.1",
       "com.kubukoz" %% "caliban-gitlab" % "0.0.14",
-      "io.circe" %% "circe-generic-extras" % "0.13.0",
+      "io.circe" %% "circe-generic-extras" % "0.14.0",
       "io.circe" %% "circe-parser" % "0.13.0" % Test,
       "io.circe" %% "circe-literal" % "0.13.0" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.19",
@@ -148,7 +148,7 @@ lazy val pitgull =
         "org.http4s" %% "http4s-blaze-server" % "0.21.23",
         "org.http4s" %% "http4s-blaze-client" % "0.21.23",
         "is.cir" %% "ciris" % "1.2.1",
-        "io.circe" %% "circe-generic-extras" % "0.13.0",
+        "io.circe" %% "circe-generic-extras" % "0.14.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
