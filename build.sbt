@@ -75,7 +75,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
     "co.fs2" %% "fs2-core" % "2.5.6",
     "com.github.valskalla" %% "odin-core" % "0.11.0",
-    "io.circe" %% "circe-core" % "0.13.0",
+    "io.circe" %% "circe-core" % "0.14.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
     "com.disneystreaming" %% "weaver-framework" % "0.5.1" % Test,
     "com.disneystreaming" %% "weaver-scalacheck" % "0.5.1" % Test
@@ -91,8 +91,8 @@ lazy val gitlab = project
       "is.cir" %% "ciris" % "1.2.1",
       "com.kubukoz" %% "caliban-gitlab" % "0.0.14",
       "io.circe" %% "circe-generic-extras" % "0.13.0",
-      "io.circe" %% "circe-parser" % "0.13.0" % Test,
-      "io.circe" %% "circe-literal" % "0.13.0" % Test,
+      "io.circe" %% "circe-parser" % "0.14.0" % Test,
+      "io.circe" %% "circe-literal" % "0.14.0" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.19",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.19",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.19"
