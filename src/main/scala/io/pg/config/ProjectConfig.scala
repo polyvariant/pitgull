@@ -57,7 +57,7 @@ object ProjectConfigReader {
     val prox: ProxFS2[F] = implicitly
     import prox._
 
-    val dhallCommand = "dhall-to-json"
+    val nixCommand = "nix -"
     //todo: not reading a local file
     val filePath = "./example.dhall"
 
@@ -71,7 +71,7 @@ object ProjectConfigReader {
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
 
       def readConfig(project: Project): F[ProjectConfig] =
-        Process(dhallCommand)
+        Process(nixCommand)
           .`with`("TOKEN" -> "demo-token")
           .fromFile(Paths.get(filePath))
           .toFoldMonoid(fs2.text.utf8Decode[F])
@@ -82,12 +82,12 @@ object ProjectConfigReader {
     }
 
     val ensureCommandExists =
-      Process("bash", "-c" :: s"command -v $dhallCommand" :: Nil)
+      Process("bash", "-c" :: s"command -v nix" :: Nil)
         .drainOutput(_.drain)
         .run()
         .pipe(checkExitCode)
         .adaptError { case e =>
-          new Throwable(s"Command $dhallCommand not found", e)
+          new Throwable(s"Command $nixCommand not found", e)
         }
 
     ensureCommandExists.as(instance)

@@ -1,1 +1,1 @@
-import ./example.nix { status = "success"; author = "user1@gmail.com"; description = "hello werld"; }
+import ./wms.nix { status = "success"; author = "user1@gmail.com"; description = "hello werld"; }
