@@ -101,7 +101,7 @@ object Main extends IOApp.Simple {
               42L,
               42L,
               "scala_chad",
-              Some("test labels: test, semver-patch test"),
+              Some("test labels: test, semver-patch test\nfoobar"),
               Gitlab.MergeRequestInfo.Status.Success,
               MergeRequestState.Mergeability.CanMerge
             )

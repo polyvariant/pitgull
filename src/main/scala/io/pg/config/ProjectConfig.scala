@@ -25,6 +25,7 @@ import io.pg.config.Mismatch.Author
 import io.pg.config.Mismatch.Description
 import io.pg.config.Mismatch.NoneMatched
 import io.circe.generic.extras.Configuration
+import io.pg.nix.Nix
 
 import java.nio.file.Paths
 import scala.util.chaining._
@@ -65,16 +66,24 @@ object ProjectConfigReader {
   def nixJsonConfig[F[_]: Concurrent]: F[ProjectConfigReader[F]] = {
     val inputState = """{ status = "success"; author = "user1@gmail.com"; description = "hello werld"; }"""
 
-    def statusAsNix(s: Gitlab.MergeRequestInfo.Status): String = s match {
+    import Nix.syntax._
+
+    implicit val statusToNix: Nix.From[Gitlab.MergeRequestInfo.Status] = Nix.From[String].contramap {
       case Success      => "success"
       case Other(value) => value
     }
 
-    def asNix(s: MergeRequestState): String =
-      //todo escape strings etc.
-      s"""{ status = "${statusAsNix(s.status)}"; author = "${s.authorUsername}"; description = "${s.description.getOrElse("")}"; }"""
+    implicit val stateAsNix: Nix.From[MergeRequestState] = mrs =>
+      Nix.Record(
+        mrs.status.toNix.at("status") ++
+          mrs.authorUsername.toNix.at("author") ++
+          mrs.description.getOrElse("").toNix.at("description")
+      )
 
-    def args(state: MergeRequestState) = List("eval", s"(import /dev/stdin) ${asNix(state)}", "--json")
+    def args(state: MergeRequestState) = {
+      println(state.toNix.render)
+      List("eval", s"(import /dev/stdin) ${state.toNix.render}", "--json")
+    }
     val prox: ProxFS2[F] = ProxFS2[F](blocker)
     import prox.ProcessRunner
     import prox.JVMProcessInfo
