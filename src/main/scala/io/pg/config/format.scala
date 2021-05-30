@@ -66,7 +66,7 @@ object Action {
 final case class Rule(name: String, matcher: Matcher, action: Action)
 
 object Rule {
-  val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
+  val mergeAnything = Matcher.Many(Nil)
 }
 
 @ConfiguredJsonCodec()

@@ -75,9 +75,7 @@ object ProjectConfigReader {
 
     }
 
-  def nixJsonConfig[F[_]: Concurrent: ContextShift](
-    blocker: Blocker
-  ): F[ProjectConfigReader[F]] = {
+  def nixJsonConfig[F[_]: Concurrent]: F[ProjectConfigReader[F]] = {
     val inputState = """{ status = "success"; author = "user1@gmail.com"; description = "hello werld"; }"""
 
     def statusAsNix(s: Gitlab.MergeRequestInfo.Status): String = s match {
@@ -133,7 +131,7 @@ object ProjectConfigReader {
           Left(mismatches.map(convertMismatch))
       }
 
-      def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state => {
+      def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state =>
         Process("nix", args(state))
           .fromFile(Paths.get("./wms.nix"))
           .toFoldMonoid(fs2.text.utf8Decode[F])

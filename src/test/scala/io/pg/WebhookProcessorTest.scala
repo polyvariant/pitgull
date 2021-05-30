@@ -2,9 +2,17 @@ package io.pg
 
 import cats.effect.IO
 import cats.implicits._
+<<<<<<< HEAD
 import cats.effect.implicits._
 import io.pg.config.ProjectConfig
+=======
+import io.pg.MergeRequestState.Mergeability
+import io.pg.Prelude._
+import io.pg.config.Matcher
+>>>>>>> d3fd00f (Fix test compilation)
 import io.pg.config.ProjectConfigReader
+import io.pg.config.Rule
+import io.pg.config.TextMatcher
 import io.pg.fakes.ProjectActionsStateFake
 import io.pg.fakes.ProjectConfigReaderFake
 import io.pg.gitlab.webhook.Project
@@ -12,11 +20,6 @@ import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.webhook.WebhookProcessor
 import weaver.Expectations
 import weaver.SimpleIOSuite
-import io.pg.config.Rule
-import io.pg.config.Matcher
-import io.pg.config.Action
-import io.pg.config.TextMatcher
-import io.pg.MergeRequestState.Mergeability
 
 object WebhookProcessorTest extends SimpleIOSuite {
 
@@ -103,7 +106,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
     val perform = (process(WebhookEvent(project, "merge_request")) *> resolver.resolve(project), projectModifiers.getActionLog).tupled
 
     for {
-      _   <- projectConfigModifiers.register(projectId, ProjectConfig(List(Rule.mergeAnything)))
+      _   <- projectConfigModifiers.register(projectId, Rule.mergeAnything)
       mr1 <- projectModifiers.open(projectId, "anyone@example.com", None)
       mr2 <- projectModifiers.open(projectId, "anyone@example.com", None)
       _   <- projectModifiers.finishPipeline(projectId, mr1)
@@ -142,10 +145,10 @@ object WebhookProcessorTest extends SimpleIOSuite {
     val correctDomainRegex = ".*@example.com".r
 
     val matchAuthorUsernameDomain =
-      Rule("pipeline successful", Matcher.Author(TextMatcher.Matches(correctDomainRegex)), Action.Merge)
+      Matcher.Author(TextMatcher.Matches(correctDomainRegex))
 
     for {
-      _                         <- projectConfigModifiers.register(projectId, ProjectConfig(List(matchAuthorUsernameDomain)))
+      _                         <- projectConfigModifiers.register(projectId, matchAuthorUsernameDomain)
       mergeRequestId            <- projectModifiers.open(projectId, "anyone@example.com", None)
       _                         <- projectModifiers.finishPipeline(projectId, mergeRequestId)
       _                         <- process(WebhookEvent(project, "merge_request"))
