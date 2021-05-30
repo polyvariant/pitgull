@@ -5,7 +5,6 @@ import scala.util.chaining._
 import caliban.client.CalibanClientError.DecodingError
 import caliban.client.Operations.IsOperation
 import caliban.client.SelectionBuilder
-import cats.MonadError
 import cats.kernel.Eq
 import cats.syntax.all._
 import cats.tagless.finalAlg
@@ -36,6 +35,7 @@ import io.pg.gitlab.GitlabEndpoints.transport.MergeRequestApprovals
 import monocle.macros.Lenses
 import cats.Show
 import io.pg.TextUtils
+import cats.MonadThrow
 
 @finalAlg
 trait Gitlab[F[_]] {
@@ -75,7 +75,7 @@ object Gitlab {
       MergeRequestInfo.description.modify(_.map(TextUtils.trim(maxChars = 80))).apply(_).toString
   }
 
-  def sttpInstance[F[_]: Logger: MonadError[*[_], Throwable]](
+  def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
     accessToken: Secret[String]
   )(

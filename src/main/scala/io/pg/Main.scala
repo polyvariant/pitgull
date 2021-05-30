@@ -23,6 +23,16 @@ import io.pg.Prelude._
 import org.http4s.HttpApp
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware
+import io.pg.config.ProjectConfigReader
+import cats.effect.Blocker
+import io.pg.gitlab.webhook.Project
+import org.http4s.client.blaze.BlazeClientBuilder
+import java.nio.file.Paths
+import org.dhallj.core.Expr
+import org.dhallj.codec.Encoder
+import org.dhallj.codec.Decoder
+import java.util.Map.Entry
+import org.dhallj.parser.DhallParser
 
 object Main extends IOApp {
 
@@ -88,5 +98,80 @@ object Main extends IOApp {
       .resource[IO]
       .flatMap(serve[IO])
       .use(_ => IO.never)
+
+}
+
+object Demo extends IOApp.Simple {
+
+  def run: IO[Unit] = Blocker[IO].use { blocker =>
+    BlazeClientBuilder[IO](executionContext).resource.use { implicit c =>
+      import org.dhallj.syntax._
+      import org.dhallj.imports.syntax._
+      import org.dhallj.codec.syntax._
+
+      import scala.jdk.CollectionConverters._
+
+      def mapToEntryArray(map: Map[String, Expr]): Array[Entry[String, Expr]] = map.asJava.entrySet().asScala.toArray
+      def mapToRecord(map: Map[String, Expr]): Expr = Expr.makeRecordLiteral(mapToEntryArray(map))
+
+      sealed trait MergeRequestStatus extends Product with Serializable
+      object MergeRequestStatus {
+        case object Success extends MergeRequestStatus
+        case class Other(s: String) extends MergeRequestStatus
+        val dhallType: Expr = Expr.makeUnionType(
+          mapToEntryArray(
+            Map("Success" -> mapToRecord(Map.empty), "Other" -> mapToRecord(Map("s" -> Expr.Constants.TEXT)))
+          )
+        )
+
+        implicit val encoder: Encoder[MergeRequestStatus] = new Encoder[MergeRequestStatus] {
+          def encode(value: MergeRequestStatus, target: Option[Expr]): Expr = mapToRecord {
+            value match {
+              case Success  => Expr.record
+              case Other(s) => ???
+            }
+          }
+
+          def dhallType(value: Option[MergeRequestStatus], target: Option[Expr]): Expr = MergeRequestStatus.dhallType
+
+        }
+      }
+
+      case class MergeRequestInfo(status: MergeRequestStatus, authorUsername: String, description: String)
+
+      implicit val e: Encoder[MergeRequestInfo] = new Encoder[MergeRequestInfo] {
+        def encode(value: MergeRequestInfo, target: Option[Expr]): Expr = mapToRecord(
+          Map("status" -> value.status.asExpr)
+        )
+
+        def dhallType(value: Option[MergeRequestInfo], target: Option[Expr]): Expr = mapToRecord(
+          Map("status" -> MergeRequestStatus.dhallType, "authorUsername" -> Expr.Constants.TEXT, "description" -> Expr.Constants.TEXT)
+        )
+
+      }
+
+      case class Mismatch(message: String)
+      sealed trait Matched extends Product with Serializable
+      object Matched {
+        case object Ok extends Matched
+        case class NotOk(errors: List[Mismatch]) extends Matched
+      }
+      implicit val d: Decoder[Matched] = ???
+
+      fs2
+        .io
+        .file
+        .readAll[IO](Paths.get("./example2.dhall"), blocker, 4096)
+        .through(fs2.text.utf8Decode[IO])
+        .compile
+        .string
+        .flatMap(_.parseExpr.liftTo[IO])
+        .flatMap(_.resolveImports[IO])
+        .flatMap(_.typeCheck.liftTo[IO])
+        .map(_.normalize)
+        .map(_.as[MergeRequestInfo => Matched])
+        .flatMap(a => IO(println(a)))
+    }
+  }
 
 }
