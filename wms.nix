@@ -15,7 +15,6 @@ in
 pg.allOf [
   (pg.author.equals "scala_steward")
   (pg.status.equals pg.status.success)
-  (pg.description.matches ".+world")
   (
     pg.anyOf [
       patchUpdate

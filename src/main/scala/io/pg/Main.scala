@@ -23,6 +23,7 @@ import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
 import io.pg.config.ProjectConfigReader
+import io.pg.gitlab.Gitlab
 
 object Main extends IOApp.Simple {
 
@@ -92,7 +93,21 @@ object Main extends IOApp.Simple {
 
   def run: IO[Unit] =
     Blocker[IO].use { blocker =>
-      ProjectConfigReader.nixJsonConfig[IO](blocker).flatMap(_.readConfig(null)).flatMap(a => IO(println(a)))
+      ProjectConfigReader
+        .nixJsonConfig[IO](blocker)
+        .flatMap(
+          _.readConfig(null)(
+            MergeRequestState(
+              42L,
+              42L,
+              "scala_chad",
+              Some("test labels: test, semver-patch test"),
+              Gitlab.MergeRequestInfo.Status.Success,
+              MergeRequestState.Mergeability.CanMerge
+            )
+          )
+        )
+        .flatMap(a => IO(println(a)))
     }
 
 }

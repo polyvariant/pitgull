@@ -10,8 +10,6 @@ import cats.tagless.finalAlg
 import fs2.Pipe
 import io.odin.Logger
 import io.pg.MergeRequestState
-import io.pg.ProjectActions
-import io.pg.ProjectActions.Mismatch
 import io.pg.StateResolver
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.Project
@@ -28,10 +26,21 @@ object MergeRequests {
     implicit SC: fs2.Compiler[F, F]
   ): MergeRequests[F] = project =>
     for {
-      config <- ProjectConfigReader[F].readConfig(project)
-      states <- StateResolver[F]
-                  .resolve(project)
-                  .flatMap(validActions[F, Mismatch, MergeRequestState, MergeRequestState](ProjectActions.compile(_, config)))
+      states <- fs2
+                  .Stream
+                  .evals(
+                    StateResolver[F]
+                      .resolve(project)
+                  )
+                  .evalMap { mr =>
+                    ProjectConfigReader[F].readConfig(project).apply(mr).map(_.as(mr))
+                  }
+                  .debug()
+                  .collect { case Right(s) =>
+                    s
+                  }
+                  .compile
+                  .toList
     } yield states
 
   private def validActions[F[_]: Logger: Applicative, E: Show, A, B](

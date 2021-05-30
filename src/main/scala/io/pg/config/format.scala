@@ -12,7 +12,7 @@ import io.circe.DecodingFailure
 
 object circe {
   implicit val circeConfig: Configuration =
-    Configuration.default.withDiscriminator("kind")
+    Configuration.default.withDiscriminator("kind").withSnakeCaseConstructorNames
 
   private val decodeRegex: Decoder[Regex] = Decoder.instance {
     _.value

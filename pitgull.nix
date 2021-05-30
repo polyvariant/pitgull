@@ -9,10 +9,9 @@ let
     status = mkMismatch "status";
     author = mkMismatch "author";
     description = mkMismatch "description";
-    regex = mkMismatch "regex";
     text = {
       equal = mkMismatch "equal";
-      matches = pattern: { kind = "matches";inherit pattern; };
+      matches = pattern: { kind = "matches"; inherit pattern; };
     };
     noneOf = mkMismatch "noneOf";
   };
@@ -24,7 +23,7 @@ let
     ok = { kind = "ok"; };
     notOk = mismatch: notOkMany [ mismatch ];
     notOkMany = mismatches: {
-      kind = "notOk";
+      kind = "not_ok";
       inherit mismatches;
     };
   };
@@ -32,7 +31,7 @@ let
   allResults = matchers: input:
     let
       results = (map (a: a input) matchers);
-      failed = builtins.filter ({ kind, ... }: kind == "notOk") results;
+      failed = builtins.filter ({ kind, ... }: kind == "not_ok") results;
       passed = builtins.filter ({ kind, ... }: kind == "ok") results;
     in
       {
@@ -45,8 +44,14 @@ in
     success = "success";
     equals = expected: { status, ... }: ensureOr (status == expected) (mismatches.status expected);
   };
-  author = mkTextMatchers { path = { author, ... }: author; makeMismatch = mismatches.author; };
-  description = mkTextMatchers { path = { description, ... }: description; makeMismatch = mismatches.description; };
+  author = mkTextMatchers {
+    path = { author, ... }: author;
+    makeMismatch = mismatches.author;
+  };
+  description = mkTextMatchers {
+    path = { description, ... }: description;
+    makeMismatch = mismatches.description;
+  };
   allOf = matchers: input:
     let
       out = allResults matchers input;
