@@ -1,8 +1,8 @@
 let
   pg = import (
     builtins.fetchurl {
-      url = "https://raw.githubusercontent.com/polyvariant/pitgull/b51a6a3224af8a1f3e8c7242ddbfd0660a26cc7b/pitgull.nix";
-      sha256 = "0rwszx3w37i9ljw49ld1ismfc6ip78n80fdk4c0nvka1hbbavf4p";
+      url = "https://raw.githubusercontent.com/polyvariant/pitgull/60eff26a70d348d591b4fd2f1546846ee2cfcc76/pitgull.nix";
+      sha256 = "0rh588p2xwaa8brw41r8s8p2599p58abc6dd97vrgsddixbfvpqh";
     }
     # ./pitgull.nix
   );
