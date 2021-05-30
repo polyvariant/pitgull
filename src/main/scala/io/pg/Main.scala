@@ -5,8 +5,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 import cats.Parallel
-import cats.effect.ConcurrentEffect
-import cats.effect.ContextShift
 import cats.effect.Effect
 import cats.effect.IO
 import cats.effect.IOApp
@@ -24,7 +22,6 @@ import io.odin.formatter.Formatter
 import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
-import cats.effect.Blocker
 import io.pg.config.ProjectConfigReader
 
 object Main extends IOApp.Simple {

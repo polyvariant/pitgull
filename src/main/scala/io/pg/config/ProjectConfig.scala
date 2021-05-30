@@ -4,9 +4,14 @@ import cats.Applicative
 import cats.MonadThrow
 import cats.effect.ExitCode
 import cats.syntax.all._
+import java.nio.file.Paths
+import scala.util.chaining._
+import cats.Applicative
 import cats.tagless.finalAlg
 import io.github.vigoo.prox.ProxFS2
 import io.pg.gitlab.webhook.Project
+import cats.effect.Sync
+import io.github.vigoo.prox.ProxFS2
 
 import java.nio.file.Paths
 import scala.util.chaining._
@@ -53,13 +58,20 @@ object ProjectConfigReader {
       def readConfig(project: Project): F[ProjectConfig] = config.pure[F]
     }
 
-  def dhallJsonStringConfig[F[_]: ProxFS2: MonadThrow]: F[ProjectConfigReader[F]] = {
-    val prox: ProxFS2[F] = implicitly
-    import prox._
-
-    val nixCommand = "nix -"
+  def nixJsonConfig[F[_]: Concurrent: ContextShift](
+    blocker: Blocker
+  ): F[ProjectConfigReader[F]] = {
+    val input = """{ status = "success"; author = "user1@gmail.com"; description = "hello werld"; }"""
+    val args = List("eval", s"(import /dev/stdin) $input", "--json")
     //todo: not reading a local file
-    val filePath = "./example.dhall"
+    val filePath = "./wms.nix"
+
+    val prox: ProxFS2[F] = ProxFS2[F](blocker)
+    import prox.ProcessRunner
+    import prox.JVMProcessInfo
+    import prox.JVMProcessRunner
+    import prox.Process
+    import prox.ProcessResult
 
     def checkExitCode[O, E]: F[ProcessResult[O, E]] => F[ProcessResult[O, E]] =
       _.ensure(new Throwable("Invalid exit code"))(
@@ -72,12 +84,12 @@ object ProjectConfigReader {
 
       def readConfig(project: Project): F[ProjectConfig] =
         Process(nixCommand)
-          .`with`("TOKEN" -> "demo-token")
           .fromFile(Paths.get(filePath))
           .toFoldMonoid(fs2.text.utf8Decode[F])
           .run()
           .pipe(checkExitCode)
           .map(_.output)
+          .flatTap(out => Sync[F].delay(println(out)))
           .flatMap(io.circe.parser.decode[ProjectConfig](_).liftTo[F])
     }
 
@@ -87,7 +99,7 @@ object ProjectConfigReader {
         .run()
         .pipe(checkExitCode)
         .adaptError { case e =>
-          new Throwable(s"Command $nixCommand not found", e)
+          new Throwable(s"Command nix not found", e)
         }
 
     ensureCommandExists.as(instance)
