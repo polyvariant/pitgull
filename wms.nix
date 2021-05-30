@@ -1,10 +1,10 @@
 let
   pg = import (
-    # builtins.fetchurl {
-    #   url = "https://raw.githubusercontent.com/polyvariant/pitgull/60736f1588f2ea45b544e48f18d7685a91885f8c/pitgull.nix";
-    #   sha256 = "1hr5qd3wfkax33m52l49clagxg55jix4qx3ilpqyzyjsld5zyhv9";
-    # }
-    ./pitgull.nix
+    builtins.fetchurl {
+      url = "https://raw.githubusercontent.com/polyvariant/pitgull/b51a6a3224af8a1f3e8c7242ddbfd0660a26cc7b/pitgull.nix";
+      sha256 = "0rwszx3w37i9ljw49ld1ismfc6ip78n80fdk4c0nvka1hbbavf4p";
+    }
+    # ./pitgull.nix
   );
   semver = level: pg.description.matches ".*labels:.*semver-${level}.*";
   patchUpdate = (semver "patch");
