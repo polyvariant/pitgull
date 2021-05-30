@@ -3,11 +3,11 @@ let
 in
 pg.allOf [
   (pg.status.equals pg.status.success)
+  (pg.description.matches ".+world")
   (
     pg.anyOf [
       (pg.author.equals "user1@gmail.com")
       (pg.author.equals "user2@gmail.com")
     ]
   )
-  (pg.description.matches ".+world")
 ]
