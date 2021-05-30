@@ -21,6 +21,9 @@ import io.circe.Decoder
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.Codec
 import cats.data.NonEmptyList
+import io.pg.config.Mismatch.Author
+import io.pg.config.Mismatch.Description
+import io.pg.config.Mismatch.NoneOf
 
 import java.nio.file.Paths
 import scala.util.chaining._
@@ -101,13 +104,33 @@ object ProjectConfigReader {
 
     implicit val runner: ProcessRunner[JVMProcessInfo] = new JVMProcessRunner
 
-    import io.circe.syntax._
-    println((Result.NotOk(NonEmptyList.one(Mismatch.Author(TextRule.Equal("scala_steward")))): Result).asJson.noSpaces)
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
       import Result._
+
       implicit val decoder: Decoder[ProjectActions.Matched[Unit]] = Decoder[Result].map {
         case Ok                => Right(())
-        case NotOk(mismatches) => Left(??? /* todo */ )
+        case NotOk(mismatches) =>
+          def convertMismatch(m: Mismatch): ProjectActions.Mismatch = m match {
+            case Mismatch.Status(expected) => ProjectActions.Mismatch.ValueMismatch(expected.value, "???").atPath("status")
+            case Author(expected)          =>
+              expected match {
+                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, "???").atPath("author")
+                case TextRule.Matches(r) =>
+                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, "???").atPath("author")
+              }
+            case Description(expected)     =>
+              //copy-paste from author
+              expected match {
+                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, "???").atPath("description")
+                case TextRule.Matches(r) =>
+                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, "???").atPath("description")
+              }
+            case NoneOf(expected)          =>
+              //todo: unnecessary wrapping in List in this model
+              ProjectActions.Mismatch.ManyFailed(List(expected.map(convertMismatch)))
+          }
+
+          Left(mismatches.map(convertMismatch))
       }
 
       def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state => {
