@@ -40,38 +40,24 @@ object ProjectConfigReader {
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {
 
-      def semver(level: String) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*".r))
-
-      //todo: dhall needs to be updated
-      def steward(extra: Matcher) = Rule(
-        "scala-steward",
-        Matcher.Many(
-          List(
-            Matcher.Author(TextMatcher.Matches("(scala_steward)|(michal.pawlik)|(j.kozlowski)".r)),
-            Matcher.PipelineStatus("SUCCESS"),
-            extra
-          )
-        ),
-        Action.Merge
-      )
+      def semver(level: String) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*"))
 
       val anyLibraryPatch = semver("patch")
 
-      val fromWMS = Matcher.Description(TextMatcher.Matches("""(?s).*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
+      val fromWMS = Matcher.Description(TextMatcher.Matches("""(?s).*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*"""))
 
-      val wmsLibraryMinor =
-        semver("minor").and(fromWMS)
-
-      val config: ProjectConfig = ProjectConfig(
+      val config = Matcher.Many(
         List(
-          anyLibraryPatch,
-          wmsLibraryMinor
-        ).map(steward)
+          Matcher.Author(TextMatcher.Matches("(scala_steward)|(michal.pawlik)|(j.kozlowski)")),
+          Matcher.PipelineStatus("SUCCESS"),
+          (
+            semver("minor").and(fromWMS)
+          ).or(semver("patch"))
+        )
       )
 
       def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] =
-        //todo
-        s => config.rules.traverse(r => ProjectActions.compileMatcher(r.matcher).matches(s)).map(_.head).pure[F]
+        s => ProjectActions.compileMatcher(config).matches(s).pure[F]
 
     }
 
@@ -114,14 +100,14 @@ object ProjectConfigReader {
               expected match {
                 case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual).atPath("author")
                 case TextRule.Matches(r) =>
-                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, actual).atPath("author")
+                  ProjectActions.Mismatch.RegexMismatch(r, actual).atPath("author")
               }
             case Description(expected, actual)     =>
               //copy-paste from author
               expected match {
                 case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual).atPath("description")
                 case TextRule.Matches(r) =>
-                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, actual).atPath("description")
+                  ProjectActions.Mismatch.RegexMismatch(r, actual).atPath("description")
               }
             case Many(expected)                    =>
               //todo: unnecessary wrapping in List in this model

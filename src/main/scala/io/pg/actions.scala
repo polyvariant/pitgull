@@ -5,7 +5,6 @@ import cats.implicits._
 import cats.tagless.autoContravariant
 import io.pg.ProjectAction.Merge
 import io.pg.config.Matcher
-import io.pg.config.ProjectConfig
 import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import io.pg.gitlab.Gitlab.MergeRequestInfo
@@ -18,8 +17,6 @@ import io.pg.MergeRequestState.Mergeability.NeedsRebase
 import io.pg.MergeRequestState.Mergeability.HasConflicts
 import cats.Applicative
 import cats.data.NonEmptyList
-import scala.util.matching.Regex
-import cats.MonadThrow
 
 trait ProjectActions[F[_]] {
   type Action
@@ -131,7 +128,7 @@ object ProjectActions {
   object Mismatch {
     final case class AtPath(path: String, mismatch: Mismatch) extends Mismatch
     final case class ValueMismatch(expected: String, actual: String) extends Mismatch
-    final case class RegexMismatch(pattern: Regex, actual: String) extends Mismatch
+    final case class RegexMismatch(pattern: String, actual: String) extends Mismatch
     final case class ManyFailed(incompleteMatches: List[NonEmptyList[Mismatch]]) extends Mismatch
     case object ValueEmpty extends Mismatch
     case object NegationFailed extends Mismatch
@@ -161,7 +158,7 @@ object ProjectActions {
       )
     case TextMatcher.Matches(regex)   =>
       MatcherFunction.fromPredicate(
-        regex.matches,
+        regex.r.matches,
         Mismatch.RegexMismatch(regex, _)
       )
   }
@@ -169,17 +166,15 @@ object ProjectActions {
   def exists[A](base: MatcherFunction[A]): MatcherFunction[Option[A]] =
     _.fold[Matched[Unit]](Mismatch.ValueEmpty.leftNel)(base.matches)
 
-  def oneOf[A](matchers: List[MatcherFunction[A]]): MatcherFunction[A] = input => {
+  def oneOf[A](matchers: List[MatcherFunction[A]]): MatcherFunction[A] = input =>
     matchers
       .traverse(_.matches(input).swap)
       .swap
       .leftMap(Mismatch.ManyFailed)
       .toEitherNel
-  }
 
-  def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input => {
+  def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input =>
     matcher.matches(input).swap.leftMap(_ => Mismatch.NegationFailed).void.toEitherNel
-  }
 
   def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
     matchTextMatcher(matcher)
@@ -199,14 +194,6 @@ object ProjectActions {
     case Matcher.OneOf(values)          => oneOf(values.map(compileMatcher))
     case Matcher.Not(underlying)        => not(compileMatcher(underlying))
   }
-
-  def compile(
-    state: MergeRequestState,
-    project: ProjectConfig
-  ): List[EitherNel[Mismatch, MergeRequestState]] =
-    project.rules.map { rule =>
-      compileMatcher(rule.matcher).matches(state).as(state)
-    }
 
 }
 

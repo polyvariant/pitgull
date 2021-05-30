@@ -11,7 +11,6 @@ import io.pg.Prelude._
 import io.pg.config.Matcher
 >>>>>>> d3fd00f (Fix test compilation)
 import io.pg.config.ProjectConfigReader
-import io.pg.config.Rule
 import io.pg.config.TextMatcher
 import io.pg.fakes.ProjectActionsStateFake
 import io.pg.fakes.ProjectConfigReaderFake
@@ -106,7 +105,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
     val perform = (process(WebhookEvent(project, "merge_request")) *> resolver.resolve(project), projectModifiers.getActionLog).tupled
 
     for {
-      _   <- projectConfigModifiers.register(projectId, Rule.mergeAnything)
+      _   <- projectConfigModifiers.register(projectId, Matcher.always)
       mr1 <- projectModifiers.open(projectId, "anyone@example.com", None)
       mr2 <- projectModifiers.open(projectId, "anyone@example.com", None)
       _   <- projectModifiers.finishPipeline(projectId, mr1)
@@ -142,7 +141,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
 
     val project = Project(projectId)
 
-    val correctDomainRegex = ".*@example.com".r
+    val correctDomainRegex = ".*@example.com"
 
     val matchAuthorUsernameDomain =
       Matcher.Author(TextMatcher.Matches(correctDomainRegex))
