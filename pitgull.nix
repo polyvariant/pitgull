@@ -3,24 +3,44 @@ let
   inherit (pkgs) lib;
   inherit (builtins) map;
 
-  mkMismatch = kind: expected: { inherit kind expected; };
+  mkMismatch = kind: { expected, actual }: { inherit kind expected actual; };
 
   mismatches = {
     status = mkMismatch "status";
     author = mkMismatch "author";
     description = mkMismatch "description";
     text = {
-      equal = mkMismatch "equal";
-      matches = pattern: { kind = "matches"; inherit pattern; };
+      equal = { expected }: { kind = "equal";inherit expected; };
+      matches = { pattern }: { kind = "matches"; inherit pattern; };
     };
-    noneOf = mkMismatch "noneOf";
+    many = mismatches: { kind = "many"; inherit mismatches; };
   };
   mkTextMatchers = { path, makeMismatch }: {
-    equals = expected: input: ensureOr (path input == expected) (makeMismatch (mismatches.text.equal expected));
-    matches = regex: input: ensureOr (builtins.match regex (path input) != null) (makeMismatch (mismatches.text.matches regex));
+    equals = expected: input:
+      let
+        actual = path input;
+      in
+        ensureOr (actual == expected) (
+          makeMismatch {
+            expected = mismatches.text.equal { inherit expected; };
+            inherit actual;
+          }
+        );
+    matches = pattern: input:
+      let
+        actual = path input;
+      in
+        ensureOr (builtins.match pattern actual != null) (
+          makeMismatch {
+            expected = mismatches.text.matches { inherit pattern; };
+            inherit actual;
+          }
+        );
   };
   results = rec {
-    ok = { kind = "ok"; };
+    ok = {
+      kind = "ok";
+    };
     notOk = mismatch: notOkMany [ mismatch ];
     notOkMany = mismatches: {
       kind = "not_ok";
@@ -42,7 +62,7 @@ in
 {
   status = {
     success = "success";
-    equals = expected: { status, ... }: ensureOr (status == expected) (mismatches.status expected);
+    equals = expected: { status, ... }: ensureOr (status == expected) (mismatches.status { inherit expected; actual = status; });
   };
   author = mkTextMatchers {
     path = { author, ... }: author;
@@ -62,5 +82,5 @@ in
     let
       out = allResults matchers input;
     in
-      ensureOr (out.passedCount > 0) (mismatches.noneOf out.failed);
+      ensureOr (out.passedCount > 0) (mismatches.many out.failed);
 }

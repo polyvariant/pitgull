@@ -23,7 +23,7 @@ import io.circe.Codec
 import cats.data.NonEmptyList
 import io.pg.config.Mismatch.Author
 import io.pg.config.Mismatch.Description
-import io.pg.config.Mismatch.NoneOf
+import io.pg.config.Mismatch.Many
 
 import java.nio.file.Paths
 import scala.util.chaining._
@@ -111,21 +111,21 @@ object ProjectConfigReader {
         case Ok                => Right(())
         case NotOk(mismatches) =>
           def convertMismatch(m: Mismatch): ProjectActions.Mismatch = m match {
-            case Mismatch.Status(expected) => ProjectActions.Mismatch.ValueMismatch(expected.value, "???").atPath("status")
-            case Author(expected)          =>
+            case Mismatch.Status(expected, actual) => ProjectActions.Mismatch.ValueMismatch(expected.value, actual.value).atPath("status")
+            case Author(expected, actual)          =>
               expected match {
-                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, "???").atPath("author")
+                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual).atPath("author")
                 case TextRule.Matches(r) =>
-                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, "???").atPath("author")
+                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, actual).atPath("author")
               }
-            case Description(expected)     =>
+            case Description(expected, actual)     =>
               //copy-paste from author
               expected match {
-                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, "???").atPath("description")
+                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual).atPath("description")
                 case TextRule.Matches(r) =>
-                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, "???").atPath("description")
+                  ProjectActions.Mismatch.RegexMismatch(r.r /* todo: get rid of Regex type */, actual).atPath("description")
               }
-            case NoneOf(expected)          =>
+            case Many(expected)                    =>
               //todo: unnecessary wrapping in List in this model
               ProjectActions.Mismatch.ManyFailed(List(expected.map(convertMismatch)))
           }
@@ -173,10 +173,10 @@ object Result {
 sealed trait Mismatch extends Product with Serializable
 
 object Mismatch {
-  final case class Status(expected: io.pg.config.Status) extends Mismatch
-  final case class Author(expected: TextRule) extends Mismatch
-  final case class Description(expected: TextRule) extends Mismatch
-  final case class NoneOf(expected: NonEmptyList[Mismatch]) extends Mismatch
+  final case class Status(expected: io.pg.config.Status, actual: io.pg.config.Status) extends Mismatch
+  final case class Author(expected: TextRule, actual: String) extends Mismatch
+  final case class Description(expected: TextRule, actual: String) extends Mismatch
+  final case class Many(mismatches: NonEmptyList[Mismatch]) extends Mismatch
 }
 
 @ConfiguredJsonCodec()
