@@ -23,7 +23,8 @@ import io.circe.Codec
 import cats.data.NonEmptyList
 import io.pg.config.Mismatch.Author
 import io.pg.config.Mismatch.Description
-import io.pg.config.Mismatch.Many
+import io.pg.config.Mismatch.NoneMatched
+import io.circe.generic.extras.Configuration
 
 import java.nio.file.Paths
 import scala.util.chaining._
@@ -109,7 +110,7 @@ object ProjectConfigReader {
                 case TextRule.Matches(r) =>
                   ProjectActions.Mismatch.RegexMismatch(r, actual).atPath("description")
               }
-            case Many(expected)                    =>
+            case NoneMatched(expected)             =>
               //todo: unnecessary wrapping in List in this model
               ProjectActions.Mismatch.ManyFailed(List(expected.map(convertMismatch)))
           }
@@ -142,7 +143,12 @@ object ProjectConfigReader {
 
 }
 
-import io.pg.config.circe.circeConfig
+object circe {
+  implicit val circeConfig: Configuration =
+    Configuration.default.withDiscriminator("kind").withSnakeCaseConstructorNames
+}
+
+import circe.circeConfig
 
 @ConfiguredJsonCodec()
 sealed trait Result extends Product with Serializable
@@ -160,7 +166,7 @@ object Mismatch {
   final case class Status(expected: io.pg.config.Status, actual: io.pg.config.Status) extends Mismatch
   final case class Author(expected: TextRule, actual: String) extends Mismatch
   final case class Description(expected: TextRule, actual: String) extends Mismatch
-  final case class Many(mismatches: NonEmptyList[Mismatch]) extends Mismatch
+  final case class NoneMatched(mismatches: NonEmptyList[Mismatch]) extends Mismatch
 }
 
 @ConfiguredJsonCodec()

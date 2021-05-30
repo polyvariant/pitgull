@@ -1,12 +1,5 @@
 package io.pg.config
 
-import io.circe.generic.extras.Configuration
-
-object circe {
-  implicit val circeConfig: Configuration =
-    Configuration.default.withDiscriminator("kind").withSnakeCaseConstructorNames
-}
-
 sealed trait TextMatcher extends Product with Serializable
 
 object TextMatcher {

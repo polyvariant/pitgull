@@ -13,7 +13,7 @@ let
       equal = { expected }: { kind = "equal";inherit expected; };
       matches = { pattern }: { kind = "matches"; inherit pattern; };
     };
-    many = mismatches: { kind = "many"; inherit mismatches; };
+    noneMatched = mismatches: { kind = "none_matched"; inherit mismatches; };
   };
   mkTextMatchers = { path, makeMismatch }: {
     equals = expected: input:
@@ -82,5 +82,5 @@ in
     let
       out = allResults matchers input;
     in
-      ensureOr (out.passedCount > 0) (mismatches.many out.failed);
+      ensureOr (out.passedCount > 0) (mismatches.noneMatched out.failed);
 }
