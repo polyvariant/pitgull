@@ -36,19 +36,18 @@ object ProjectConfigReader {
         Action.Merge
       )
 
-      val anyLibraryPatch = steward(semver("patch"))
+      val anyLibraryPatch = semver("patch")
 
       val fromWMS = Matcher.Description(TextMatcher.Matches("""(?s).*((com\.ocado\.ospnow\.wms)|(com\.ocado\.gm\.wms))(?s).*""".r))
 
-      val wmsLibraryMinor = steward(
+      val wmsLibraryMinor =
         semver("minor").and(fromWMS)
-      )
 
       val config: ProjectConfig = ProjectConfig(
         List(
           anyLibraryPatch,
           wmsLibraryMinor
-        )
+        ).map(steward)
       )
 
       def readConfig(project: Project): F[ProjectConfig] = config.pure[F]

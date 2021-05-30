@@ -16,6 +16,10 @@ let
     };
     noneOf = mkMismatch "noneOf";
   };
+  mkTextMatchers = { path, makeMismatch }: {
+    equals = expected: input: ensureOr (path input == expected) (makeMismatch (mismatches.text.equal expected));
+    matches = regex: input: ensureOr (builtins.match regex (path input) != null) (makeMismatch (mismatches.text.matches regex));
+  };
   results = rec {
     ok = { kind = "ok"; };
     notOk = mismatch: notOkMany [ mismatch ];
@@ -41,12 +45,8 @@ in
     success = "success";
     equals = expected: { status, ... }: ensureOr (status == expected) (mismatches.status expected);
   };
-  author = {
-    equals = expected: { author, ... }: ensureOr (author == expected) (mismatches.author (mismatches.text.equal expected));
-  };
-  description = {
-    matches = regex: { description, ... }: ensureOr (builtins.match regex description != null) (mismatches.description (mismatches.text.matches regex));
-  };
+  author = mkTextMatchers { path = { author, ... }: author; makeMismatch = mismatches.author; };
+  description = mkTextMatchers { path = { description, ... }: description; makeMismatch = mismatches.description; };
   allOf = matchers: input:
     let
       out = allResults matchers input;

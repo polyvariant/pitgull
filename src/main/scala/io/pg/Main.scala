@@ -18,11 +18,7 @@ import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
-import cats.arrow.FunctionK
-
-object Main extends IOApp {
+object Main extends IOApp.Simple {
 
   def mkLogger[F[_]: Async](fToIO: F ~> IO): Resource[F, Logger[F]] = {
 
@@ -88,7 +84,7 @@ object Main extends IOApp {
       _                            <- logStarted(config.meta).toResource
     } yield ()
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run: IO[Unit] =
     AppConfig
       .appConfig
       .resource[IO]
