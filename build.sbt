@@ -100,6 +100,23 @@ lazy val gitlab = project
   )
   .dependsOn(core)
 
+lazy val bootstrap = project
+  .settings(
+    scalaVersion := "3.0.0",
+    libraryDependencies ++= List(
+      "org.typelevel" %% "cats-core" % "2.6.1",
+      "org.typelevel" %% "cats-effect" % "3.1.1",
+      "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
+    ),
+    testFrameworks += new TestFramework("weaver.framework.TestFramework"),
+    publish / skip := true,
+    Compile / mainClass := Some("org.polyvariant.Main"),
+    // scalacOptions ++= Seq("-rewrite", "-source", "future-migration")
+    scalacOptions --= Seq("-source", "future")
+  )
+  .dependsOn(core)
+  .enablePlugins(NativeImagePlugin)
+
 lazy val core = project.settings(commonSettings).settings(name += "-core")
 
 //workaround for docker not accepting + (the default separator in sbt-dynver)
