@@ -1,6 +1,6 @@
 let
-  pkgs = import <nixpkgs> {};
-  inherit (pkgs) lib;
+  # used only  for debugging - we don't need nixpkgs otherwise
+  lib = (import <nixpkgs> {}).lib;
   inherit (builtins) map;
 
   mkMismatch = kind: { expected, actual }: { inherit kind expected actual; };

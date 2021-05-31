@@ -4,7 +4,7 @@ let
     #   url = "https://raw.githubusercontent.com/polyvariant/pitgull/60eff26a70d348d591b4fd2f1546846ee2cfcc76/pitgull.nix";
     #   sha256 = "0rh588p2xwaa8brw41r8s8p2599p58abc6dd97vrgsddixbfvpqh";
     # }
-    ./pitgull.nix
+    ./nix/pitgull.nix
   );
   semver = level: pg.description.matches ".*labels:.*semver-${level}.*";
   patchUpdate = (semver "patch");
