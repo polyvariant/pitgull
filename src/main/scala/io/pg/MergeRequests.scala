@@ -26,27 +26,14 @@ object MergeRequests {
     implicit SC: fs2.Compiler[F, F]
   ): MergeRequests[F] = project =>
     for {
-      states <- fs2
-                  .Stream
-                  .evals(
-                    StateResolver[F]
-                      .resolve(project)
-                  )
-                  .evalMap { mr =>
-                    ProjectConfigReader[F].readConfig(project).apply(mr).map(_.as(mr))
-                  }
-                  .debug()
-                  .collect { case Right(s) =>
-                    s
-                  }
-                  .compile
-                  .toList
+      mrs    <- StateResolver[F].resolve(project)
+      states <- validActions(mrs)(mr => ProjectConfigReader[F].readConfig(project).apply(mr).map(_.as(mr)))
     } yield states
 
   private def validActions[F[_]: Logger: Applicative, E: Show, A, B](
-    compile: A => List[EitherNel[E, B]]
-  )(
     states: List[A]
+  )(
+    compile: A => F[EitherNel[E, B]]
   )(
     implicit SC: fs2.Compiler[F, F]
   ): F[List[B]] = {
@@ -62,7 +49,7 @@ object MergeRequests {
     fs2
       .Stream
       .emits(states)
-      .flatMap(compile(_).pipe(fs2.Stream.emits(_)))
+      .flatMap(compile(_).pipe(fs2.Stream.eval(_)))
       .through(tapLeftAndDrop(logMismatches))
       .compile
       .toList
