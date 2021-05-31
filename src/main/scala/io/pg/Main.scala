@@ -97,7 +97,7 @@ object Main extends IOApp.Simple {
       .flatMap(serve[IO])
       .use(_ => IO.never)
 
-  def runDemo: IO[Unit] =
+  private def runDemo: IO[Unit] =
     Blocker[IO].use { blocker =>
       ProjectConfigReader
         .nixJsonConfig[IO](blocker)
