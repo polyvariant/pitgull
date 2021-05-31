@@ -99,30 +99,24 @@ object ProjectConfigReader {
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
       import Result._
 
-      implicit val decoder: Decoder[ProjectActions.Matched[Unit]] = Decoder[Result].map {
-        case Ok                => Right(())
-        case NotOk(mismatches) =>
-          def convertMismatch(m: Mismatch): ProjectActions.Mismatch = m match {
-            case Mismatch.Status(expected, actual) => ProjectActions.Mismatch.ValueMismatch(expected.value, actual.value).atPath("status")
-            case Author(expected, actual)          =>
-              expected match {
-                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual).atPath("author")
-                case TextRule.Matches(r) =>
-                  ProjectActions.Mismatch.RegexMismatch(r, actual).atPath("author")
-              }
-            case Description(expected, actual)     =>
-              //copy-paste from author
-              expected match {
-                case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual).atPath("description")
-                case TextRule.Matches(r) =>
-                  ProjectActions.Mismatch.RegexMismatch(r, actual).atPath("description")
-              }
-            case NoneMatched(expected)             =>
-              //todo: unnecessary wrapping in List in this model
-              ProjectActions.Mismatch.ManyFailed(List(expected.map(convertMismatch)))
-          }
+      //todo: remove these and the existing scala DSL, use the in-nix model everywhere
+      def convertTextMismatch(actual: String): TextRule => ProjectActions.Mismatch = {
+        case TextRule.Equal(v)   => ProjectActions.Mismatch.ValueMismatch(v, actual)
+        case TextRule.Matches(r) => ProjectActions.Mismatch.RegexMismatch(r, actual)
+      }
 
-          Left(mismatches.map(convertMismatch))
+      def convertMismatch(m: Mismatch): ProjectActions.Mismatch = m match {
+        case Mismatch.Status(expected, actual) => ProjectActions.Mismatch.ValueMismatch(expected.value, actual.value).atPath("status")
+        case Author(expected, actual)          => convertTextMismatch(actual)(expected).atPath("author")
+        case Description(expected, actual)     => convertTextMismatch(actual)(expected).atPath("description")
+        case NoneMatched(expected)             =>
+          //todo: unnecessary wrapping in List in this model
+          ProjectActions.Mismatch.ManyFailed(List(expected.map(convertMismatch)))
+      }
+
+      val convert: Result => ProjectActions.Matched[Unit] = {
+        case Ok                => Right(())
+        case NotOk(mismatches) => Left(mismatches.map(convertMismatch))
       }
 
       def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state =>
@@ -132,7 +126,9 @@ object ProjectConfigReader {
           .pipe(checkExitCode)
           .map(_.output)
           .flatTap(out => Sync[F].delay(println(out)))
-          .flatMap(io.circe.parser.decode[ProjectConfig](_).liftTo[F])
+          .flatMap(io.circe.parser.decode[Result](_).liftTo[F])
+          .map(convert)
+      }
     }
 
     val ensureCommandExists =
