@@ -1,6 +1,7 @@
 package io.pg.nix
 
 import cats.tagless.autoContravariant
+import java.nio.file.{Path => JavaPath}
 
 // A minimal Nix expression AST for our needs
 sealed trait Nix extends Product with Serializable {
@@ -11,6 +12,7 @@ sealed trait Nix extends Product with Serializable {
 object Nix {
   final case class Record(entries: Map[RecordEntry, Nix]) extends Nix
   final case class Str(value: String) extends Nix
+  final case class Path(value: JavaPath) extends Nix
 
   @autoContravariant
   trait From[A] {
@@ -21,7 +23,7 @@ object Nix {
     def apply[A](implicit A: From[A]): From[A] = A
 
     implicit val stringToNix: From[String] = Str(_)
-
+    implicit val pathToNix: From[JavaPath] = Path(_)
   }
 
   // todo: some tests
@@ -38,6 +40,8 @@ object Nix {
 
         if (value.contains("\n")) doubleTick ++ value ++ doubleTick
         else quote ++ escape(value) ++ quote
+
+      case Path(p) => p.toString
     }
   }
 

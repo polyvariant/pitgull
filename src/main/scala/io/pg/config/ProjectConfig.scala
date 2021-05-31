@@ -128,7 +128,6 @@ object ProjectConfigReader {
 
       def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state =>
         Process("nix", args(state))
-          .fromFile(Paths.get("./wms.nix"))
           .toFoldMonoid(fs2.text.utf8Decode[F])
           .run()
           .pipe(checkExitCode)
