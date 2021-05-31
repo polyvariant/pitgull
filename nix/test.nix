@@ -15,18 +15,18 @@ in
 let
   allOfTests = {
     testAllOfEmptyIsOk = {
-      expr = pg.allOf [] {};
+      expr = pg.allOf [] null;
       expected = ok;
     };
 
     testAllOfOk = {
-      expr = pg.allOf [ alwaysSucceed alwaysSucceed alwaysSucceed ] {};
+      expr = pg.allOf [ alwaysSucceed alwaysSucceed alwaysSucceed ] null;
       expected = ok;
     };
 
     testAllOfOneBrokenNotOk = {
-      expr = pg.allOf [ alwaysSucceed (alwaysFail "1") alwaysSucceed ] {};
-      expected = alwaysFail "1" {};
+      expr = pg.allOf [ alwaysSucceed (alwaysFail "1") alwaysSucceed ] null;
+      expected = alwaysFail "1" null;
     };
 
     testAllOfSomeBrokenNotOk = {
@@ -37,29 +37,29 @@ let
         (alwaysFail "2")
         alwaysSucceed
         (alwaysFail "3")
-      ] {};
+      ] null;
       expected = pgi.results.notOkMany (builtins.map simpleFail [ "1" "2" "3" ]);
     };
   };
 
   anyOfTests = {
     testAnyOfEmptyIsFailed = {
-      expr = pg.anyOf [] {};
+      expr = pg.anyOf [] null;
       expected = notOk (pgi.mismatches.noneMatched []);
     };
 
     testAnyOfSingleSuccessIsOk = {
-      expr = pg.anyOf [ alwaysSucceed ] {};
+      expr = pg.anyOf [ alwaysSucceed ] null;
       expected = ok;
     };
 
     testAnyOfSomeSuccessesIsOk = {
-      expr = pg.anyOf [ (alwaysFail "1") alwaysSucceed (alwaysFail "2") ] {};
+      expr = pg.anyOf [ (alwaysFail "1") alwaysSucceed (alwaysFail "2") ] null;
       expected = ok;
     };
 
     testAnyOfAllFailuresIsFailed = {
-      expr = pg.anyOf [ (alwaysFail "1") (alwaysFail "2") (alwaysFail "3") ] {};
+      expr = pg.anyOf [ (alwaysFail "1") (alwaysFail "2") (alwaysFail "3") ] null;
       expected = notOk (
         pgi.mismatches.noneMatched (builtins.map simpleFail [ "1" "2" "3" ])
       );
