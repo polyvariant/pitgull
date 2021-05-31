@@ -114,7 +114,7 @@ lazy val bootstrap = project
     // scalacOptions ++= Seq("-rewrite", "-source", "future-migration")
     scalacOptions --= Seq("-source", "future")
   )
-  .dependsOn(core)
+  // .dependsOn(core)
   .enablePlugins(NativeImagePlugin)
 
 lazy val core = project.settings(commonSettings).settings(name += "-core")
