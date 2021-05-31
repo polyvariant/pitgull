@@ -91,6 +91,13 @@ object Main extends IOApp.Simple {
     } yield ()
 
   def run: IO[Unit] =
+    AppConfig
+      .appConfig
+      .resource[IO]
+      .flatMap(serve[IO])
+      .use(_ => IO.never)
+
+  def runDemo: IO[Unit] =
     Blocker[IO].use { blocker =>
       ProjectConfigReader
         .nixJsonConfig[IO](blocker)

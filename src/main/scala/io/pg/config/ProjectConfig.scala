@@ -8,7 +8,6 @@ import cats.effect.Blocker
 import cats.effect.Concurrent
 import cats.effect.ContextShift
 import cats.effect.ExitCode
-import cats.effect.Sync
 import cats.syntax.all._
 import cats.tagless.finalAlg
 import io.github.vigoo.prox.ProxFS2

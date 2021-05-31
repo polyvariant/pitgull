@@ -14,7 +14,7 @@ let
   ];
 in
 pg.allOf [
-  (pg.author.equals "scala_steward")
+  (pg.anyOf [ (pg.author.equals "scala_steward") (pg.author.equals "kubukoz") ])
   (pg.status.equals pg.status.success)
   (
     pg.anyOf [

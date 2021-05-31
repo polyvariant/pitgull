@@ -37,9 +37,7 @@ object Application {
 
   def resource[F[_]: Logger: Async](
     config: AppConfig
-  ): Resource[F, Application[F]] = {
-    implicit val projectConfigReader = ProjectConfigReader.test[F]
-
+  ): Resource[F, Application[F]] = ProjectConfigReader.nixJsonConfig[F].resource.flatMap { implicit pcr =>
     Queue
       .bounded[F, Event](config.queues.maxSize)
       .map(Channel.fromQueue(_))
