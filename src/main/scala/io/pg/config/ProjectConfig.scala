@@ -30,7 +30,7 @@ import scala.util.chaining._
 
 @finalAlg
 trait ProjectConfigReader[F[_]] {
-  //ideally this will have F inside, or something
+  //ideally this will have F outside, or something
   //todo rename
   def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]]
 }
