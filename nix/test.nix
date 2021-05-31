@@ -10,24 +10,26 @@ let
   simpleFail = msg: pgi.mismatches.status { expected = "impossible ${msg}"; actual = "also not possible ${msg}"; };
   alwaysFail = msg: _: notOk (simpleFail msg);
   alwaysSucceed = _: ok;
+  undefined = throw "undefined - this shouldn't be evaluated ever! Tests are probably broken if you see this while running them.";
 in
 
 let
   allOfTests = {
     testAllOfEmptyIsOk = {
-      expr = pg.allOf [] null;
+      expr = pg.allOf [] undefined;
       expected = ok;
     };
 
     testAllOfOk = {
-      expr = pg.allOf [ alwaysSucceed alwaysSucceed alwaysSucceed ] null;
+      expr = pg.allOf [ alwaysSucceed alwaysSucceed alwaysSucceed ] undefined;
       expected = ok;
     };
 
     testAllOfOneBrokenNotOk = {
-      expr = pg.allOf [ alwaysSucceed (alwaysFail "1") alwaysSucceed ] null;
-      expected = alwaysFail "1" null;
+      expr = pg.allOf [ alwaysSucceed (alwaysFail "1") alwaysSucceed ] undefined;
+      expected = alwaysFail "1" undefined;
     };
+
 
     testAllOfSomeBrokenNotOk = {
       expr = pg.allOf [
@@ -37,29 +39,29 @@ let
         (alwaysFail "2")
         alwaysSucceed
         (alwaysFail "3")
-      ] null;
+      ] undefined;
       expected = pgi.results.notOkMany (builtins.map simpleFail [ "1" "2" "3" ]);
     };
   };
 
   anyOfTests = {
     testAnyOfEmptyIsFailed = {
-      expr = pg.anyOf [] null;
+      expr = pg.anyOf [] undefined;
       expected = notOk (pgi.mismatches.noneMatched []);
     };
 
     testAnyOfSingleSuccessIsOk = {
-      expr = pg.anyOf [ alwaysSucceed ] null;
+      expr = pg.anyOf [ alwaysSucceed ] undefined;
       expected = ok;
     };
 
     testAnyOfSomeSuccessesIsOk = {
-      expr = pg.anyOf [ (alwaysFail "1") alwaysSucceed (alwaysFail "2") ] null;
+      expr = pg.anyOf [ (alwaysFail "1") alwaysSucceed (alwaysFail "2") ] undefined;
       expected = ok;
     };
 
     testAnyOfAllFailuresIsFailed = {
-      expr = pg.anyOf [ (alwaysFail "1") (alwaysFail "2") (alwaysFail "3") ] null;
+      expr = pg.anyOf [ (alwaysFail "1") (alwaysFail "2") (alwaysFail "3") ] undefined;
       expected = notOk (
         pgi.mismatches.noneMatched (builtins.map simpleFail [ "1" "2" "3" ])
       );
