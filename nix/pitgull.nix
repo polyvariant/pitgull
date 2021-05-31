@@ -83,4 +83,6 @@ in
       out = allResults matchers input;
     in
       ensureOr (out.passedCount > 0) (mismatches.noneMatched out.failed);
+
+  internal = { inherit results mismatches; };
 }
