@@ -1,11 +1,12 @@
 package io.pg
 
+import cats.Applicative
+import cats.MonoidK
+import cats.Show
 import cats.data.EitherNel
+import cats.data.NonEmptyList
 import cats.implicits._
 import cats.tagless.autoContravariant
-import io.pg.ProjectAction.Merge
-import io.pg.config.Matcher
-import io.pg.gitlab.Gitlab
 import io.odin.Logger
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.config.TextMatcher
@@ -13,10 +14,14 @@ import cats.MonoidK
 import cats.Show
 import io.pg.ProjectAction.Rebase
 import io.pg.MergeRequestState.Mergeability.CanMerge
-import io.pg.MergeRequestState.Mergeability.NeedsRebase
 import io.pg.MergeRequestState.Mergeability.HasConflicts
-import cats.Applicative
-import cats.data.NonEmptyList
+import io.pg.MergeRequestState.Mergeability.NeedsRebase
+import io.pg.Prelude.MonadThrow
+import io.pg.ProjectAction.Merge
+import io.pg.ProjectAction.Rebase
+import io.pg.config.Matcher
+import io.pg.config.TextMatcher
+import io.pg.gitlab.Gitlab
 
 trait ProjectActions[F[_]] {
   type Action
@@ -140,10 +145,10 @@ object ProjectActions {
 
   def statusMatches(expectedStatus: String): MatcherFunction[MergeRequestState] =
     MatcherFunction
-      .fromPredicate[MergeRequestInfo.Status](
+      .fromPredicate[MergeRequestState.Status](
         {
-          case MergeRequestInfo.Status.Success      => expectedStatus.toLowerCase === "success"
-          case MergeRequestInfo.Status.Other(value) => expectedStatus === value
+          case MergeRequestState.Status.Success      => expectedStatus.toLowerCase === "success"
+          case MergeRequestState.Status.Other(value) => expectedStatus === value
         },
         value => Mismatch.ValueMismatch(expectedStatus, value.toString)
       )

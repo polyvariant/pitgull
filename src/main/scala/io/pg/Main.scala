@@ -23,7 +23,6 @@ import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
 import io.pg.config.ProjectConfigReader
-import io.pg.gitlab.Gitlab
 
 object Main extends IOApp.Simple {
 
@@ -102,7 +101,7 @@ object Main extends IOApp.Simple {
               42L,
               "scala_chad",
               Some("test labels: test, semver-patch test\nfoobar"),
-              Gitlab.MergeRequestInfo.Status.Success,
+              MergeRequestState.Status.Success,
               MergeRequestState.Mergeability.CanMerge
             )
           )

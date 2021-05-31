@@ -1,6 +1,6 @@
 package io.pg.nix
 
-import cats.Contravariant
+import cats.tagless.autoContravariant
 
 // A minimal Nix expression AST for our needs
 sealed trait Nix extends Product with Serializable {
@@ -12,6 +12,7 @@ object Nix {
   final case class Record(entries: Map[RecordEntry, Nix]) extends Nix
   final case class Str(value: String) extends Nix
 
+  @autoContravariant
   trait From[A] {
     def toNix(a: A): Nix
   }
@@ -20,10 +21,6 @@ object Nix {
     def apply[A](implicit A: From[A]): From[A] = A
 
     implicit val stringToNix: From[String] = Str(_)
-
-    implicit val contravariant: Contravariant[From] = new Contravariant[From] {
-      def contramap[A, B](fa: From[A])(f: B => A): From[B] = b => fa.toNix(f(b))
-    }
 
   }
 

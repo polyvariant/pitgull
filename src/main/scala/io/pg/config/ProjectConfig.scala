@@ -3,28 +3,28 @@ package io.pg.config
 import cats.Applicative
 import cats.MonadThrow
 import cats.effect.ExitCode
+import cats.data.NonEmptyList
+import cats.effect.Blocker
+import cats.effect.Concurrent
+import cats.effect.ContextShift
+import cats.effect.ExitCode
+import cats.effect.Sync
 import cats.syntax.all._
-import java.nio.file.Paths
-import scala.util.chaining._
-import cats.Applicative
 import cats.tagless.finalAlg
 import io.github.vigoo.prox.ProxFS2
 import io.pg.gitlab.webhook.Project
 import cats.effect.Sync
+import io.circe.Codec
+import io.circe.Decoder
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.ConfiguredJsonCodec
 import io.github.vigoo.prox.ProxFS2
 import io.pg.MergeRequestState
 import io.pg.ProjectActions
-import io.pg.gitlab.Gitlab
-import io.pg.gitlab.Gitlab.MergeRequestInfo.Status.Success
-import io.pg.gitlab.Gitlab.MergeRequestInfo.Status.Other
-import io.circe.Decoder
-import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.Codec
-import cats.data.NonEmptyList
 import io.pg.config.Mismatch.Author
 import io.pg.config.Mismatch.Description
 import io.pg.config.Mismatch.NoneMatched
-import io.circe.generic.extras.Configuration
+import io.pg.gitlab.webhook.Project
 import io.pg.nix.Nix
 
 import java.nio.file.Paths
@@ -84,6 +84,7 @@ object ProjectConfigReader {
       println(state.toNix.render)
       List("eval", s"(import /dev/stdin) ${state.toNix.render}", "--json")
     }
+
     val prox: ProxFS2[F] = ProxFS2[F](blocker)
     import prox.ProcessRunner
     import prox.JVMProcessInfo
