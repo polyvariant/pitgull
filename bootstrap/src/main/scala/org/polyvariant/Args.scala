@@ -13,6 +13,8 @@ object Args {
       case text :: tail                 => parseNext(tail, previousResult ++ Map(text -> null))
     }
 
+
+  // TODO: Consider switching to https://ben.kirw.in/decline/
   def parse(args: List[String]): Map[String, String] =
     parseNext(args.toList, Map())
 
