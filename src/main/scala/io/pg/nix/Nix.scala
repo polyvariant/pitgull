@@ -1,6 +1,7 @@
 package io.pg.nix
 
 import cats.tagless.autoContravariant
+
 import java.nio.file.{Path => JavaPath}
 
 // A minimal Nix expression AST for our needs
@@ -26,12 +27,11 @@ object Nix {
     implicit val pathToNix: From[JavaPath] = Path(_)
   }
 
-  // todo: some tests
   def render(expr: Nix): String = {
     def renderEntry(e: RecordEntry): String = e.key
 
     expr match {
-      case Record(entries) => s"""{${entries.map { case (k, v) => s"${renderEntry(k)} = ${render(v)}" }.mkString(" ", "; ", "; ")}}"""
+      case Record(entries) => s"""{ ${entries.map { case (k, v) => s"${renderEntry(k)} = ${render(v)}; " }.mkString}}"""
       case Str(value)      =>
         val doubleTick = "''"
         val quote = "\""
@@ -41,7 +41,8 @@ object Nix {
         if (value.contains("\n")) doubleTick ++ value ++ doubleTick
         else quote ++ escape(value) ++ quote
 
-      case Path(p) => p.toString
+      case Path(p) if p.isAbsolute => p.toString
+      case Path(p)                 => "./" + p.toString
     }
   }
 
