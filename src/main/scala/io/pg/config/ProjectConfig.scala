@@ -1,16 +1,15 @@
 package io.pg.config
 
-import cats.effect.Blocker
-import cats.effect.ExitCode
-import cats.effect.Concurrent
-import cats.effect.ContextShift
-import cats.syntax.all._
-import java.nio.file.Paths
-import io.github.vigoo.prox._
-import scala.util.chaining._
 import cats.Applicative
+import cats.MonadThrow
+import cats.effect.ExitCode
+import cats.syntax.all._
 import cats.tagless.finalAlg
+import io.github.vigoo.prox.ProxFS2
 import io.pg.gitlab.webhook.Project
+
+import java.nio.file.Paths
+import scala.util.chaining._
 
 @finalAlg
 trait ProjectConfigReader[F[_]] {
@@ -55,9 +54,10 @@ object ProjectConfigReader {
       def readConfig(project: Project): F[ProjectConfig] = config.pure[F]
     }
 
-  def dhallJsonStringConfig[F[_]: Concurrent: ContextShift](
-    blocker: Blocker
-  ): F[ProjectConfigReader[F]] = {
+  def dhallJsonStringConfig[F[_]: ProxFS2: MonadThrow]: F[ProjectConfigReader[F]] = {
+    val prox: ProxFS2[F] = implicitly
+    import prox.{contextShift => _, blocker => _, concurrent => _, _}
+
     val dhallCommand = "dhall-to-json"
     //todo: not reading a local file
     val filePath = "./example.dhall"
@@ -67,27 +67,25 @@ object ProjectConfigReader {
         _.exitCode == ExitCode.Success
       )
 
-    implicit val runner: ProcessRunner[F] = new JVMProcessRunner
+    implicit val runner: ProcessRunner[JVMProcessInfo] = new JVMProcessRunner
+
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
 
-      def readConfig(project: Project): F[ProjectConfig] = {
-        val input = fs2.io.file.readAll[F](Paths.get(filePath), blocker, 4096)
-
-        Process[F](dhallCommand)
+      def readConfig(project: Project): F[ProjectConfig] =
+        Process(dhallCommand)
           .`with`("TOKEN" -> "demo-token")
-          .fromStream(input, flushChunks = true)
+          .fromFile(Paths.get(filePath))
           .toFoldMonoid(fs2.text.utf8Decode[F])
-          .run(blocker)
+          .run()
           .pipe(checkExitCode)
           .map(_.output)
           .flatMap(io.circe.parser.decode[ProjectConfig](_).liftTo[F])
-      }
     }
 
     val ensureCommandExists =
-      Process[F]("bash", "-c" :: s"command -v $dhallCommand" :: Nil)
+      Process("bash", "-c" :: s"command -v $dhallCommand" :: Nil)
         .drainOutput(_.drain)
-        .run(blocker)
+        .run()
         .pipe(checkExitCode)
         .adaptError { case e =>
           new Throwable(s"Command $dhallCommand not found", e)
