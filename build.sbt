@@ -71,7 +71,7 @@ val commonSettings = List(
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.6.1",
-    "org.typelevel" %% "cats-effect" % "2.4.1",
+    "org.typelevel" %% "cats-effect" % "2.5.1",
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
     "co.fs2" %% "fs2-core" % "2.5.6",
     "com.github.valskalla" %% "odin-core" % "0.11.0",
@@ -143,8 +143,9 @@ lazy val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.17.19",
         "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.2.3",
+        "org.http4s" %% "http4s-dsl" % "0.21.24",
+        "org.http4s" %% "http4s-circe" % "0.21.24",
         "org.http4s" %% "http4s-blaze-server" % "0.21.24",
         "org.http4s" %% "http4s-blaze-client" % "0.21.24",
         "is.cir" %% "ciris" % "1.2.1",

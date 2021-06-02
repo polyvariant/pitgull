@@ -1,8 +1,8 @@
 package io.pg.webhook
 
-import cats.Functor
+import cats.Defer
+import cats.Monad
 import cats.MonadError
-import cats.data.NonEmptyList
 import cats.implicits._
 import io.odin.Logger
 import io.pg.MergeRequests
@@ -12,31 +12,30 @@ import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging.Publisher
 import io.pg.transport
 import io.scalaland.chimney.dsl._
-import sttp.tapir.server.ServerEndpoint
+import org.http4s.HttpRoutes
+import org.http4s.circe.CirceEntityCodec._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
 
 object WebhookRouter {
 
-  object endpoints {
-    import sttp.tapir._
-    import sttp.tapir.json.circe._
-    import sttp.tapir.generic.auto._
-
-    private val webhookEndpoint = infallibleEndpoint.in("webhook")
-
-    val webhook =
-      webhookEndpoint.post.in(jsonBody[WebhookEvent])
-
-    val preview =
-      webhookEndpoint.get.in("preview" / path[Long]("projectId").map(Project(_))(_.id)).out(jsonBody[List[transport.MergeRequestState]])
-  }
-
-  def routes[F[_]: MergeRequests: Functor](
+  def routes[F[_]: MergeRequests: JsonDecoder: Defer: Monad](
     implicit eventPublisher: Publisher[F, WebhookEvent]
-  ): NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
-    NonEmptyList.of(
-      endpoints.webhook.serverLogicRecoverErrors(eventPublisher.publish),
-      endpoints.preview.serverLogicRecoverErrors(MergeRequests[F].build(_).nested.map(_.transformInto[transport.MergeRequestState]).value)
-    )
+  ): HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F] {}
+    import dsl._
+
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "webhook" =>
+        req.asJsonDecode[WebhookEvent].flatMap(eventPublisher.publish) *> Ok()
+
+      case GET -> Root / "preview" / LongVar(projectId) =>
+        val proj = Project(projectId)
+
+        MergeRequests[F].build(proj).nested.map(_.transformInto[transport.MergeRequestState]).value.flatMap(Ok(_))
+    }
+
+  }
 
 }
 
