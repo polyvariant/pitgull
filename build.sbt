@@ -143,7 +143,7 @@ lazy val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.2.3",
+        "com.softwaremill.sttp.client3" %% "http4s-ce2-backend" % "3.3.5",
         "org.http4s" %% "http4s-dsl" % "0.21.24",
         "org.http4s" %% "http4s-circe" % "0.21.24",
         "org.http4s" %% "http4s-blaze-server" % "0.21.24",
