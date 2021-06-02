@@ -2,7 +2,7 @@ package io.pg
 
 import cats.effect.IO
 import cats.implicits._
-import io.pg.Prelude._
+import cats.effect.implicits._
 import io.pg.config.ProjectConfig
 import io.pg.config.ProjectConfigReader
 import io.pg.fakes.ProjectActionsStateFake
@@ -48,7 +48,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
           )
         }
       }
-      .resource
+      .toResource
 
   def testWithResources(name: String)(use: Resources[IO] => IO[Expectations]) =
     test(name)(mkResources.use(use))

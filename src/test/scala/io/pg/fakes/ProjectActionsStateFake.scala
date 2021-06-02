@@ -1,23 +1,22 @@
 package io.pg.fakes
 
+import cats.Monad
+import cats.data.Chain
+import cats.effect.Ref
+import cats.implicits._
 import cats.mtl.Stateful
-import monocle.macros.Lenses
+import io.odin.Logger
+import io.pg.MergeRequestState
+import io.pg.MergeRequestState.Mergeability
+import io.pg.ProjectAction
+import io.pg.ProjectAction.Merge
+import io.pg.ProjectAction.Rebase
 import io.pg.ProjectActions
 import io.pg.StateResolver
-import io.pg.ProjectAction
-import io.pg.MergeRequestState
-import io.pg.gitlab.webhook.Project
-import io.pg.ProjectAction.Merge
-import io.scalaland.chimney.dsl._
-import cats.implicits._
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import io.pg.gitlab.Gitlab.MergeRequestInfo
-import io.pg.MergeRequestState.Mergeability
-import io.pg.ProjectAction.Rebase
-import cats.data.Chain
-import cats.Monad
-import io.odin.Logger
+import io.pg.gitlab.webhook.Project
+import io.scalaland.chimney.dsl._
+import monocle.macros.Lenses
 
 object ProjectActionsStateFake {
   sealed case class MergeRequestDescription(projectId: Long, mergeRequestIid: Long)
@@ -82,7 +81,7 @@ object ProjectActionsStateFake {
   type Data[F[_]] = Stateful[F, State]
   def Data[F[_]: Data]: Data[F] = implicitly[Data[F]]
 
-  def refInstance[F[_]: Sync: Logger]: F[ProjectActions[F] with StateResolver[F] with State.Modifiers[F]] =
+  def refInstance[F[_]: Ref.Make: Logger: Monad]: F[ProjectActions[F] with StateResolver[F] with State.Modifiers[F]] =
     Ref[F].of(State.initial).map(FakeUtils.statefulRef(_)).map(implicit F => instance[F])
 
   /** This instance has both the capabilities of ProjectActions and StateResolver,

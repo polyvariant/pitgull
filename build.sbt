@@ -56,6 +56,13 @@ ThisBuild / missinglinkExcludedDependencies += moduleFilter(
   name = "slf4j-api"
 )
 
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "io.circe" %% "circe-core" % "early-semver",
+  "io.circe" %% "circe-generic-extras" % "early-semver",
+  "io.circe" %% "circe-literal" % "early-semver",
+  "io.circe" %% "circe-parser" % "early-semver"
+)
+
 def crossPlugin(x: sbt.librarymanagement.ModuleID) =
   compilerPlugin(x.cross(CrossVersion.full))
 
@@ -71,16 +78,16 @@ val commonSettings = List(
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.6.1",
-    "org.typelevel" %% "cats-effect" % "2.5.1",
+    "org.typelevel" %% "cats-effect" % "3.1.1",
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
-    "co.fs2" %% "fs2-core" % "2.5.6",
-    "com.github.valskalla" %% "odin-core" % "0.11.0",
-    "io.circe" %% "circe-core" % "0.13.0",
+    "co.fs2" %% "fs2-core" % "3.0.4",
+    "com.github.valskalla" %% "odin-core" % "0.11.0+7-4b29a367-SNAPSHOT",
+    "io.circe" %% "circe-core" % "0.14.1",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
-    "com.disneystreaming" %% "weaver-framework" % "0.5.1" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.5.1" % Test
+    "com.disneystreaming" %% "weaver-cats" % "0.7.3" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.3" % Test
   ) ++ compilerPlugins,
-  testFrameworks += new TestFramework("weaver.framework.TestFramework"),
+  testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
   publish / skip := true
 )
 
@@ -88,14 +95,14 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "1.2.1",
-      "com.kubukoz" %% "caliban-gitlab" % "0.0.14",
-      "io.circe" %% "circe-generic-extras" % "0.13.0",
-      "io.circe" %% "circe-parser" % "0.13.0" % Test,
-      "io.circe" %% "circe-literal" % "0.13.0" % Test,
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.19",
-      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.17.19",
-      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.17.19"
+      "is.cir" %% "ciris" % "2.0.1",
+      "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
+      "io.circe" %% "circe-generic-extras" % "0.14.1",
+      "io.circe" %% "circe-parser" % "0.14.1" % Test,
+      "io.circe" %% "circe-literal" % "0.14.1" % Test,
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.18.0-M15",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.18.0-M15",
+      "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.18.0-M15"
     )
   )
   .dependsOn(core)
@@ -181,19 +188,19 @@ lazy val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.client3" %% "http4s-ce2-backend" % "3.3.6",
-        "org.http4s" %% "http4s-dsl" % "0.21.24",
-        "org.http4s" %% "http4s-circe" % "0.21.24",
-        "org.http4s" %% "http4s-blaze-server" % "0.21.24",
-        "org.http4s" %% "http4s-blaze-client" % "0.21.24",
-        "is.cir" %% "ciris" % "1.2.1",
-        "io.circe" %% "circe-generic-extras" % "0.13.0",
+        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.6",
+        "org.http4s" %% "http4s-dsl" % "0.23.0-RC1",
+        "org.http4s" %% "http4s-circe" % "0.23.0-RC1",
+        "org.http4s" %% "http4s-blaze-server" % "0.23.0-RC1",
+        "org.http4s" %% "http4s-blaze-client" % "0.23.0-RC1",
+        "is.cir" %% "ciris" % "2.0.1",
+        "io.circe" %% "circe-generic-extras" % "0.14.0",
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
-        "com.github.valskalla" %% "odin-core" % "0.11.0",
-        "com.github.valskalla" %% "odin-slf4j" % "0.11.0",
-        "io.github.vigoo" %% "prox-fs2" % "0.7.1"
+        "com.github.valskalla" %% "odin-core" % "0.11.0+7-4b29a367-SNAPSHOT",
+        "com.github.valskalla" %% "odin-slf4j" % "0.11.0+7-4b29a367-SNAPSHOT",
+        "io.github.vigoo" %% "prox-fs2-3" % "0.7.1"
       )
     )
     .dependsOn(core, gitlab)

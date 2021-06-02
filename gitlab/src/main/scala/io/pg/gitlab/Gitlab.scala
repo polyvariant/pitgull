@@ -21,7 +21,7 @@ import io.pg.gitlab.graphql.PipelineStatusEnum
 import io.pg.gitlab.graphql.Project
 import io.pg.gitlab.graphql.ProjectConnection
 import io.pg.gitlab.graphql.Query
-import io.pg.gitlab.graphql.User
+import io.pg.gitlab.graphql.UserCore
 import sttp.client3.Request
 import sttp.client3.SttpBackend
 import sttp.model.Uri
@@ -80,7 +80,7 @@ object Gitlab {
     accessToken: Secret[String]
   )(
     implicit backend: SttpBackend[F, Any],
-    SC: fs2.Stream.Compiler[F, F]
+    SC: fs2.Compiler[F, F]
   ): Gitlab[F] = {
 
     def runRequest[O](request: Request[O, Any]): F[O] =
@@ -139,7 +139,7 @@ object Gitlab {
         MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
           MergeRequest.headPipeline(Pipeline.status.map(convertPipelineStatus)) ~
           MergeRequest
-            .author(User.username)
+            .author(UserCore.username)
             .mapEither(_.toRight(DecodingError("MR has no author"))) ~
           MergeRequest.description ~
           MergeRequest.shouldBeRebased ~

@@ -15,13 +15,13 @@ object BackgroundProcess {
 
   final case class DrainStream[F[_], G[_]](
     stream: fs2.Stream[F, Nothing],
-    C: fs2.Stream.Compiler[F, G]
+    C: fs2.Compiler[F, G]
   ) extends BackgroundProcess[G]
 
   def fromStream[F[_], G[_]](
     stream: fs2.Stream[F, _]
   )(
-    implicit C: fs2.Stream.Compiler[F, G]
+    implicit C: fs2.Compiler[F, G]
   ): BackgroundProcess[G] =
     new DrainStream(stream.drain, C)
 
@@ -30,7 +30,7 @@ object BackgroundProcess {
   )(
     processor: Processor[F, A]
   )(
-    implicit C: fs2.Stream.Compiler[F, F]
+    implicit C: fs2.Compiler[F, F]
   ): BackgroundProcess[F] =
     fromStream(channel.consume.through(processor.process))
 

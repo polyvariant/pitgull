@@ -8,7 +8,6 @@ import io.pg.config.Matcher
 import io.pg.config.ProjectConfig
 import io.pg.gitlab.Gitlab
 import io.odin.Logger
-import io.pg.Prelude.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.config.TextMatcher
 import cats.MonoidK
@@ -20,6 +19,7 @@ import io.pg.MergeRequestState.Mergeability.HasConflicts
 import cats.Applicative
 import cats.data.NonEmptyList
 import scala.util.matching.Regex
+import cats.MonadThrow
 
 trait ProjectActions[F[_]] {
   type Action

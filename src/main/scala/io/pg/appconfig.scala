@@ -3,9 +3,8 @@ package io.pg
 import cats.syntax.all._
 import ciris.Secret
 import org.http4s.Headers
-import org.http4s.util.CaseInsensitiveString
-import org.http4s.syntax.all._
 import sttp.model.Uri
+import org.typelevel.ci.CIString
 
 final case class AppConfig(
   http: HttpConfig,
@@ -31,10 +30,10 @@ object AppConfig {
 
   import ciris._
 
-  val httpConfig: ConfigValue[HttpConfig] =
+  val httpConfig: ConfigValue[ciris.Effect, HttpConfig] =
     env("HTTP_PORT").as[Int].default(8080).map(HttpConfig(_))
 
-  val metaConfig: ConfigValue[MetaConfig] =
+  val metaConfig: ConfigValue[ciris.Effect, MetaConfig] =
     (
       default(bannerString),
       default(BuildInfo.version),
@@ -48,19 +47,19 @@ object AppConfig {
         .leftMap(e => ConfigError(s"Invalid URI ($value at $key), error: $e"))
     }
 
-  val gitConfig: ConfigValue[Git] =
+  val gitConfig: ConfigValue[ciris.Effect, Git] =
     (
       default(Git.Host.Gitlab),
       env("GIT_API_URL").as[Uri],
       env("GIT_API_TOKEN").secret
     ).mapN(Git.apply)
 
-  private val queuesConfig: ConfigValue[Queues] = default(100).map(Queues)
+  private val queuesConfig: ConfigValue[ciris.Effect, Queues] = default(100).map(Queues)
 
-  private val middlewareConfig: ConfigValue[MiddlewareConfig] =
-    default(Headers.SensitiveHeaders + "Private-Token".ci).map(MiddlewareConfig)
+  private val middlewareConfig: ConfigValue[ciris.Effect, MiddlewareConfig] =
+    default(Headers.SensitiveHeaders + CIString("Private-Token")).map(MiddlewareConfig)
 
-  val appConfig: ConfigValue[AppConfig] =
+  val appConfig: ConfigValue[ciris.Effect, AppConfig] =
     (httpConfig, metaConfig, gitConfig, queuesConfig, middlewareConfig).parMapN(apply)
 
 }
@@ -86,4 +85,4 @@ object Git {
 
 final case class Queues(maxSize: Int)
 
-final case class MiddlewareConfig(sensitiveHeaders: Set[CaseInsensitiveString])
+final case class MiddlewareConfig(sensitiveHeaders: Set[CIString])

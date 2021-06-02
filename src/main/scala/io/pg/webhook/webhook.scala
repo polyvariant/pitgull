@@ -1,6 +1,5 @@
 package io.pg.webhook
 
-import cats.Defer
 import cats.Monad
 import cats.MonadError
 import cats.implicits._
@@ -19,7 +18,7 @@ import org.http4s.dsl.Http4sDsl
 
 object WebhookRouter {
 
-  def routes[F[_]: MergeRequests: JsonDecoder: Defer: Monad](
+  def routes[F[_]: MergeRequests: JsonDecoder: Monad](
     implicit eventPublisher: Publisher[F, WebhookEvent]
   ): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
