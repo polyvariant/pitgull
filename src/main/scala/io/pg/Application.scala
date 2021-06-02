@@ -1,9 +1,7 @@
 package io.pg
 
 import cats.data.NonEmptyList
-import cats.effect.Blocker
 import cats.effect.ConcurrentEffect
-import cats.effect.ContextShift
 import cats.effect.Resource
 import cats.syntax.all._
 import fs2.concurrent.Queue
@@ -43,7 +41,7 @@ object Application {
   ): Resource[F, Application[F]] = {
     implicit val projectConfigReader = ProjectConfigReader.test[F]
 
-    Blocker[F].flatMap { blocker =>
+    Resource.unit[F].flatMap { blocker =>
       Queue
         .bounded[F, Event](config.queues.maxSize)
         .map(Channel.fromQueue)
