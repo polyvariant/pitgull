@@ -1,30 +1,29 @@
 package io.pg
 
-import cats.syntax.all._
-import org.http4s.implicits._
-import org.http4s.HttpApp
-import cats.effect.Resource
-import cats.effect.ContextShift
-import io.pg.webhook._
 import cats.data.NonEmptyList
-import sttp.tapir.server.ServerEndpoint
+import cats.effect.Blocker
+import cats.effect.ConcurrentEffect
+import cats.effect.ContextShift
+import cats.effect.Resource
+import cats.syntax.all._
 import fs2.concurrent.Queue
-import Prelude._
-import io.pg.gitlab.webhook.WebhookEvent
-import io.pg.messaging._
-import io.pg.background.BackgroundProcess
 import io.odin.Logger
+import io.pg.background.BackgroundProcess
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.Gitlab
-import cats.effect.Blocker
-import sttp.client3.http4s.Http4sBackend
-import cats.effect.ConcurrentEffect
+import io.pg.gitlab.webhook.WebhookEvent
+import io.pg.messaging._
+import io.pg.webhook._
+import org.http4s.HttpApp
 import org.http4s.client.blaze.BlazeClientBuilder
-import scala.concurrent.ExecutionContext
-import sttp.client3.SttpBackend
-import sttp.tapir.server.http4s.Http4sServerInterpreter
-import cats.effect.Timer
+import org.http4s.implicits._
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.SttpBackend
+import sttp.client3.http4s.Http4sBackend
+
+import scala.concurrent.ExecutionContext
+
+import Prelude._
 
 sealed trait Event extends Product with Serializable
 
@@ -39,7 +38,7 @@ final class Application[F[_]](
 
 object Application {
 
-  def resource[F[_]: ConcurrentEffect: ContextShift: Timer: Logger](
+  def resource[F[_]: ConcurrentEffect: ContextShift: Logger](
     config: AppConfig
   ): Resource[F, Application[F]] = {
     implicit val projectConfigReader = ProjectConfigReader.test[F]
@@ -82,11 +81,8 @@ object Application {
                 webhookChannel
               )(Processor.simple(WebhookProcessor.instance[F]))
 
-              val endpoints: NonEmptyList[ServerEndpoint[_, _, _, Any, F]] =
-                NonEmptyList.of(WebhookRouter.routes[F]).flatten
-
               new Application[F](
-                routes = Http4sServerInterpreter.toRoutes(endpoints.toList).orNotFound,
+                routes = WebhookRouter.routes[F].orNotFound,
                 background = NonEmptyList.one(webhookProcess)
               )
             }
