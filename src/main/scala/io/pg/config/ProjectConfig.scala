@@ -1,20 +1,13 @@
 package io.pg.config
 
 import cats.Applicative
-import cats.MonadThrow
-import cats.effect.ExitCode
-import cats.data.NonEmptyList
 import cats.effect.Blocker
 import cats.effect.Concurrent
 import cats.effect.ContextShift
 import cats.effect.ExitCode
+import cats.effect.Sync
 import cats.syntax.all._
 import cats.tagless.finalAlg
-import io.github.vigoo.prox.ProxFS2
-import io.pg.gitlab.webhook.Project
-import cats.effect.Sync
-import io.circe.Codec
-import io.circe.Decoder
 import io.github.vigoo.prox.ProxFS2
 import io.pg.MergeRequestState
 import io.pg.ProjectActions
