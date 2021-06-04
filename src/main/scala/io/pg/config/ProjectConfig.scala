@@ -75,7 +75,8 @@ object ProjectConfigReader {
 
       val theArg =
         Nix
-          .Select("builtins", "fetchurl")
+          .builtins
+          .fetchurl
           .applied(
             Nix.obj(
               "url" := "http://localhost:8081/wms.nix",
@@ -86,11 +87,7 @@ object ProjectConfigReader {
           .imported
           .applied(state.toNix)
 
-      List(
-        "eval",
-        theArg.render,
-        "--json"
-      )
+      List("eval", theArg.render, "--json")
     }
 
     val prox: ProxFS2[F] = ProxFS2[F](blocker)

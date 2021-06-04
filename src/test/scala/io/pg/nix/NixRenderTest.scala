@@ -51,7 +51,23 @@ object NixRenderTest extends SimpleIOSuite {
   }
 
   test("select on symbol") {
-    expect(Nix.Select("builtins", "fetchurl").render == "builtins.fetchurl")
+    expect(Nix.Name("builtins").select("fetchurl").render == "builtins.fetchurl")
+  }
+
+  test("select on object") {
+    expect(Nix.obj("k" := Nix.Name("v")).select("k").render == "{ k = v; }.k")
+  }
+
+  test("select on import") {
+    expect(Nix.Name("path").imported.select("k").render == "(import path).k")
+  }
+
+  test("import on select") {
+    expect(Nix.Name("path").select("k").imported.render == "import path.k")
+  }
+
+  test("select on apply") {
+    expect(Nix.Name("fun").applied(Nix.Name("arg")).select("v").render == "(fun arg).v")
   }
 
   test("apply") {
@@ -67,6 +83,13 @@ object NixRenderTest extends SimpleIOSuite {
     expect(Nix.Name("fun1").applied(Nix.Name("fun2").applied(Nix.Name("arg"))).render == "fun1 (fun2 arg)")
   }
 
+  test("apply on select") {
+    expect(Nix.Name("selectee").select("selection").applied(Nix.Name("arg")).render == "selectee.selection arg")
+  }
+  test("apply with select") {
+    expect(Nix.Name("fun").applied(Nix.Name("selectee").select("selection")).render == "fun selectee.selection")
+  }
+
   test("symbol application with object") {
     expect(Nix.Name("function").applied(Nix.obj("k" := Nix.Name("v"))).render == "function { k = v; }")
   }
@@ -75,11 +98,11 @@ object NixRenderTest extends SimpleIOSuite {
     expect(Nix.Path(Paths.get("./local")).imported.render == "import ./local")
   }
 
-  test("left associated import function application") {
+  test("left associated function import") {
     expect(Nix.Name("function").applied(Nix.Name("arg")).imported.render == "import (function arg)")
   }
 
-  test("right associated import function application") {
+  test("right associated function import") {
     expect(Nix.Name("importee").imported.applied(Nix.Name("arg")).render == "(import importee) arg")
   }
 

@@ -10,6 +10,7 @@ sealed trait Nix extends Product with Serializable {
   def at(key: String): Map[RecordEntry, Nix] = Map(RecordEntry(key) -> this)
   def imported: Nix.Import = Nix.Import(this)
   def applied(arg: Nix): Nix.Apply = Nix.Apply(this, arg)
+  def select(key: String): Nix.Select = Nix.Select(this, key)
 
   def render: String = Nix.render(this)
 }
@@ -18,7 +19,7 @@ object Nix {
   final case class Import(source: Nix) extends Nix
   final case class Record(entries: Map[RecordEntry, Nix]) extends Nix
   final case class Name(value: String) extends Nix
-  final case class Select(selectee: String, selector: String) extends Nix
+  final case class Select(selectee: Nix, selector: String) extends Nix
   final case class Str(value: String) extends Nix
   final case class Path(value: JavaPath) extends Nix
   final case class Apply(function: Nix, parameter: Nix) extends Nix
@@ -34,6 +35,10 @@ object Nix {
     implicit val stringToNix: From[String] = Str(_)
     implicit val pathToNix: From[JavaPath] = Path(_)
     implicit val self: From[Nix] = identity(_)
+  }
+
+  object builtins {
+    val fetchurl: Select = Name("builtins").select("fetchurl")
   }
 
   def obj(entries: (RecordEntry, Nix)*): Record = Record(entries.toMap)
@@ -56,8 +61,15 @@ object Nix {
       case Path(p) if p.isAbsolute                 => p.normalize.toString
       case Path(p)                                 => "./" + p.normalize.toString
       case Name(n)                                 => n
-      case Select(selectee, selector)              => s"$selectee.$selector"
-      case Apply(function, arg)                    =>
+      case Select(selectee, selector)              =>
+        val selecteeNeedsParens = selectee match {
+          case Import(_) | Apply(_, _) => true
+          case _                       => false
+        }
+
+        s"${parenthesizeOptional(selectee.render, selecteeNeedsParens)}.$selector"
+
+      case Apply(function, arg) =>
         val functionNeedsParens = function match {
           case Import(_) => true
           case _         => false
