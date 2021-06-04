@@ -1,6 +1,10 @@
 package io.pg.nix
 
+import cats.Applicative
+import cats.MonadThrow
 import cats.tagless.autoContravariant
+import org.http4s.Uri
+import org.http4s.client.Client
 
 // A minimal Nix expression AST for our needs
 sealed trait Nix extends Product with Serializable {
@@ -19,6 +23,12 @@ object Nix {
   final case class Select(selectee: Nix, selector: String) extends Nix
   final case class Str(value: String) extends Nix
   final case class Apply(function: Nix, parameter: Nix) extends Nix
+  final case class Function(param: Name, body: Nix) extends Nix
+  final case class ApplyBinaryOperator(lhs: Nix, rhs: Nix, op: Operator) extends Nix
+  //this could be an enum or sth
+  final case class Operator(value: String) extends Nix
+
+  val plus = Operator("+")
 
   @autoContravariant
   trait From[-A] {
@@ -34,6 +44,111 @@ object Nix {
 
   object builtins {
     val fetchurl: Select = Name("builtins").select("fetchurl")
+  }
+
+  import cats.implicits._
+
+  def fail(msg: String) = throw new Exception(msg)
+
+  def parse[F[_]: Applicative](s: String): F[Nix] = {
+    val x = Nix.Name("x")
+    s.trim match {
+      case "x: x + x" => Nix.Function(x, Nix.ApplyBinaryOperator(x, x, plus)).pure[F].widen
+      case _          => fail(s"parser only supports a simple case. Actual input first 10 chars: ${s.take(10)}")
+    }
+  }
+
+  final case class VirtualPath(content: String)
+
+  def interpret[F[_]: MonadThrow](expr: Nix)(implicit client: Client[F], C: fs2.Compiler[F, F]): F[Any] = {
+    def fetchurl(arg: Nix): F[String] = {
+      println(s"inside fetchUrl with args $arg")
+      // todo: use sha
+      val url = arg match {
+        case Record(entries) => entries(RecordEntry("url")).asInstanceOf[Nix.Str].value
+        case e               => fail(s"I don't wanna evaluate this rn: $e")
+      }
+
+      Uri
+        .fromString(url)
+        .liftTo[F]
+        .flatMap { uri =>
+          client.get[String](uri)(_.bodyText.compile.string)
+        }
+    }
+    def eval(expr: Nix, symbols: Map[Name, Nix]): F[Any] = {
+      println(s"entered eval of $expr")
+
+      def resolveImport(expr: Nix): F[Nix] = {
+        println(s"attempting to resolve $expr")
+
+        eval(expr, symbols).flatMap {
+          //could also be a path but yknow
+          //actually, a fetched file is probably just a /nix/store path
+          case vp: VirtualPath =>
+            // .flatMap(parse[F]).flatMap(eval(_, Map.empty))
+            println(s"evalated to virtual path containing $vp")
+            parse[F](vp.content).widen
+          case e               => fail(s"evaluated to unexpected kind of thing: $e")
+        }
+      }
+
+      def resolveAsFunction(f: Nix): F[Nix => F[Any]] = {
+        println("entered resolveAsFunction")
+        f match {
+          case Function(param, body)      =>
+            ((input: Nix) => eval(body, symbols ++ Map(param -> input))).pure[F]
+          case Import(source)             =>
+            resolveImport(source).map { result =>
+              println("resolved import of " + source + s" to $result")
+              (input => eval(result.applied(input), Map.empty /* symbols should be known for input but idk */ ))
+            }
+          case Select(selectee, selector) =>
+            eval(selectee, symbols).flatMap { evald =>
+              println(s"evaluated selectee as $evald")
+
+              //hell yeah type erasure
+              if (
+                selector == "fetchurl" && evald.isInstanceOf[Map[_, _]] && evald
+                  .asInstanceOf[Map[String, String]]
+                  .get("fetchurl")
+                  .contains("fetchurl-internal")
+              ) ((arg: Nix) => fetchurl(arg).map(VirtualPath(_)).widen[Any]).pure[F]
+              else fail(s"unknown selector: $selector")
+            }
+
+        }
+      }
+
+      expr match {
+        case Nix.ApplyBinaryOperator(lhs, rhs, op) =>
+          op match {
+            case `plus` =>
+              (eval(lhs, symbols).map(_.asInstanceOf[String]), eval(rhs, symbols).map(_.asInstanceOf[String])).mapN(_ + _)
+            case _      => fail(s"unknown operator: $op")
+          }
+
+        case Import(source)             => resolveImport(source).widen
+        case Record(entries)            =>
+          entries
+            .toList
+            .traverse { case (k, v) =>
+              eval(v, symbols).tupleLeft(k.key)
+            }
+            .map(_.toMap)
+        case n @ Name(value)            =>
+          if (value == "builtins") Map("fetchurl" -> "fetchurl-internal").pure[F].widen
+          else if (symbols.contains(n)) eval(symbols(n), Map.empty).widen
+          else fail("unknown name: " + value)
+        case Select(selectee, selector) => fail("select")
+        case Str(value)                 => value.pure[F].widen
+        case Apply(function, parameter) => resolveAsFunction(function).flatMap(_.apply(parameter))
+        case Function(_, _)             =>
+          fail("can't eval raw function")
+      }
+    }
+
+    eval(expr, Map.empty)
   }
 
   def obj(entries: (RecordEntry, Nix)*): Record = Record(entries.toMap)

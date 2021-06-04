@@ -20,6 +20,9 @@ import org.http4s.server.middleware
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import io.github.vigoo.prox.ProxFS2
+import io.pg.config.ProjectConfigReader
+import org.http4s.blaze.client.BlazeClientBuilder
+import io.pg.nix.Nix
 
 object Main extends IOApp.Simple {
 
@@ -88,8 +91,7 @@ object Main extends IOApp.Simple {
     } yield ()
 
   def run: IO[Unit] =
-    runDemo
-
+    runDemo2
   // AppConfig
   //   .appConfig
   //   .resource[IO]
@@ -114,5 +116,41 @@ object Main extends IOApp.Simple {
         )
       )
       .flatMap(a => IO(println(a)))
+
+  private def runDemo2: IO[Unit] =
+    BlazeClientBuilder[IO](runtime.compute).resource.use { implicit client =>
+      import Nix.syntax._
+      Nix
+        .interpret[IO](
+          /*  Nix
+              .builtins
+              .fetchurl
+              .applied(
+                Nix.obj(
+                  "url" := "http://localhost:8081/wms.nix",
+                  "sha256" := "0h25j0jsf5bhhpwx819my0j9m6rvqkdhlzz1haj59fc9maniwhgj"
+                )
+              )
+              .imported
+              .applied(
+                MergeRequestState(
+                  42L,
+                  42L,
+                  "scala_chad",
+                  Some("test labels: test, semver-patch test\nfoobar"),
+                  MergeRequestState.Status.Success,
+                  MergeRequestState.Mergeability.CanMerge
+                ).toNix
+              ) */
+          Nix
+            .builtins
+            .fetchurl
+            .applied(Nix.obj("url" := "http://localhost:8081/simple.nix"))
+            .imported
+            .applied(Nix.Str("foo"))
+        )
+        .flatMap(a => IO(println(a)))
+
+    }
 
 }
