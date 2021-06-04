@@ -2,9 +2,6 @@ package io.pg.nix
 
 import cats.tagless.autoContravariant
 
-import java.nio.file.{Path => JavaPath}
-import java.nio.file.Paths
-
 // A minimal Nix expression AST for our needs
 sealed trait Nix extends Product with Serializable {
   def at(key: String): Map[RecordEntry, Nix] = Map(RecordEntry(key) -> this)
@@ -21,7 +18,6 @@ object Nix {
   final case class Name(value: String) extends Nix
   final case class Select(selectee: Nix, selector: String) extends Nix
   final case class Str(value: String) extends Nix
-  final case class Path(value: JavaPath) extends Nix
   final case class Apply(function: Nix, parameter: Nix) extends Nix
 
   @autoContravariant
@@ -33,7 +29,6 @@ object Nix {
     def apply[A](implicit A: From[A]): From[A] = A
 
     implicit val stringToNix: From[String] = Str(_)
-    implicit val pathToNix: From[JavaPath] = Path(_)
     implicit val self: From[Nix] = identity(_)
   }
 
@@ -57,11 +52,8 @@ object Nix {
         if (value.contains("\n")) doubleTick ++ value ++ doubleTick
         else quote ++ escape(value) ++ quote
 
-      case Path(p) if p.normalize == Paths.get("") => "./."
-      case Path(p) if p.isAbsolute                 => p.normalize.toString
-      case Path(p)                                 => "./" + p.normalize.toString
-      case Name(n)                                 => n
-      case Select(selectee, selector)              =>
+      case Name(n)                    => n
+      case Select(selectee, selector) =>
         val selecteeNeedsParens = selectee match {
           case Import(_) | Apply(_, _) => true
           case _                       => false

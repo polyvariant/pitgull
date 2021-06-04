@@ -34,22 +34,6 @@ object NixRenderTest extends SimpleIOSuite {
     expect(input.render == """{ obj = { nested = "value2"; }; }""")
   }
 
-  test("relative path: .") {
-    expect(Nix.Path(Paths.get(".")).render == "./.")
-  }
-
-  test("relative path: ..") {
-    expect(Nix.Path(Paths.get("..")).render == "./..")
-  }
-
-  test("relative path: file in directory") {
-    expect(Nix.Path(Paths.get("file")).render == "./file")
-  }
-
-  test("absolute path") {
-    expect(Nix.Path(Paths.get("/file")).render == "/file")
-  }
-
   test("select on symbol") {
     expect(Nix.Name("builtins").select("fetchurl").render == "builtins.fetchurl")
   }
@@ -92,10 +76,6 @@ object NixRenderTest extends SimpleIOSuite {
 
   test("symbol application with object") {
     expect(Nix.Name("function").applied(Nix.obj("k" := Nix.Name("v"))).render == "function { k = v; }")
-  }
-
-  test("import path") {
-    expect(Nix.Path(Paths.get("./local")).imported.render == "import ./local")
   }
 
   test("left associated function import") {
