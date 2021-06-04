@@ -70,9 +70,27 @@ object ProjectConfigReader {
           mrs.description.getOrElse("").toNix.at("description")
       )
 
-    def args(state: MergeRequestState) = {
-      println(state.toNix.render)
-      List("eval", s"(import /dev/stdin) ${state.toNix.render}", "--json")
+    def args(state: MergeRequestState): List[String] = {
+      import Nix.syntax._
+
+      val theArg =
+        Nix
+          .Select("builtins", "fetchurl")
+          .applied(
+            Nix.obj(
+              "url" := "http://localhost:8081/wms.nix",
+              //todo: prefetch-url to determine this sha
+              "sha256" := "036x1g6b8j8mlp3ndyjwdsrn71v8bx3lsnqiri1ydrv49wrkvp9m"
+            )
+          )
+          .imported
+          .applied(state.toNix)
+
+      List(
+        "eval",
+        theArg.render,
+        "--json"
+      )
     }
 
     val prox: ProxFS2[F] = ProxFS2[F](blocker)
@@ -115,13 +133,13 @@ object ProjectConfigReader {
       def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state =>
         Process("nix", args(state))
           .toFoldMonoid(fs2.text.utf8Decode[F])
+          .fromStream(fs2.io.file.readAll[F](Paths.get("./wms.nix"), blocker, 4096), flushChunks = false)
           .run()
           .pipe(checkExitCode)
           .map(_.output)
           .flatTap(out => Sync[F].delay(println(out)))
           .flatMap(io.circe.parser.decode[Result](_).liftTo[F])
           .map(convert)
-      }
     }
 
     val ensureCommandExists =

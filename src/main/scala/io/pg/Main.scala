@@ -91,11 +91,12 @@ object Main extends IOApp.Simple {
     } yield ()
 
   def run: IO[Unit] =
-    AppConfig
-      .appConfig
-      .resource[IO]
-      .flatMap(serve[IO])
-      .use(_ => IO.never)
+    runDemo
+  // AppConfig
+  //   .appConfig
+  //   .resource[IO]
+  //   .flatMap(serve[IO])
+  //   .use(_ => IO.never)
 
   private def runDemo: IO[Unit] =
     Blocker[IO].use { blocker =>

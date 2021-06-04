@@ -3,20 +3,28 @@ package io.pg.nix
 import cats.tagless.autoContravariant
 
 import java.nio.file.{Path => JavaPath}
+import java.nio.file.Paths
 
 // A minimal Nix expression AST for our needs
 sealed trait Nix extends Product with Serializable {
   def at(key: String): Map[RecordEntry, Nix] = Map(RecordEntry(key) -> this)
+  def imported: Nix.Import = Nix.Import(this)
+  def applied(arg: Nix): Nix.Apply = Nix.Apply(this, arg)
+
   def render: String = Nix.render(this)
 }
 
 object Nix {
+  final case class Import(source: Nix) extends Nix
   final case class Record(entries: Map[RecordEntry, Nix]) extends Nix
+  final case class Name(value: String) extends Nix
+  final case class Select(selectee: String, selector: String) extends Nix
   final case class Str(value: String) extends Nix
   final case class Path(value: JavaPath) extends Nix
+  final case class Apply(function: Nix, parameter: Nix) extends Nix
 
   @autoContravariant
-  trait From[A] {
+  trait From[-A] {
     def toNix(a: A): Nix
   }
 
@@ -25,7 +33,10 @@ object Nix {
 
     implicit val stringToNix: From[String] = Str(_)
     implicit val pathToNix: From[JavaPath] = Path(_)
+    implicit val self: From[Nix] = identity(_)
   }
+
+  def obj(entries: (RecordEntry, Nix)*): Record = Record(entries.toMap)
 
   def render(expr: Nix): String = {
     def renderEntry(e: RecordEntry): String = e.key
@@ -41,15 +52,42 @@ object Nix {
         if (value.contains("\n")) doubleTick ++ value ++ doubleTick
         else quote ++ escape(value) ++ quote
 
-      case Path(p) if p.isAbsolute => p.toString
-      case Path(p)                 => "./" + p.toString
+      case Path(p) if p.normalize == Paths.get("") => "./."
+      case Path(p) if p.isAbsolute                 => p.normalize.toString
+      case Path(p)                                 => "./" + p.normalize.toString
+      case Name(n)                                 => n
+      case Select(selectee, selector)              => s"$selectee.$selector"
+      case Apply(function, arg)                    =>
+        val functionNeedsParens = function match {
+          case Import(_) => true
+          case _         => false
+        }
+
+        val maybeWrapFunction = parenthesizeOptional(function.render, functionNeedsParens)
+        val maybeWrapArg = parenthesizeOptional(arg.render, needsParensGeneric(arg))
+
+        s"$maybeWrapFunction $maybeWrapArg"
+
+      case Import(source) =>
+        s"import ${parenthesizeOptional(source.render, needsParensGeneric(source))}"
     }
   }
+
+  private val needsParensGeneric: Nix => Boolean = {
+    case Import(_) | Apply(_, _) => true
+    case _                       => false
+  }
+
+  private def parenthesizeOptional(s: String, shouldParenthesize: Boolean): String = if (shouldParenthesize) s"($s)" else s
 
   object syntax {
 
     implicit final class AnyToNix[A](private val self: A) extends AnyVal {
       def toNix(implicit F: From[A]): Nix = F.toNix(self)
+    }
+
+    implicit final class StringToNixKey(private val key: String) extends AnyVal {
+      def :=[A: From](value: A): (RecordEntry, Nix) = RecordEntry(key) -> value.toNix
     }
 
   }
