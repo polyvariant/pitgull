@@ -19,6 +19,8 @@ import io.pg.nix.Nix
 
 import java.nio.file.Paths
 import scala.util.chaining._
+import org.http4s.Uri
+import org.http4s.syntax.literals._
 
 @finalAlg
 trait ProjectConfigReader[F[_]] {
@@ -96,13 +98,43 @@ object ProjectConfigReader {
     import prox.JVMProcessRunner
     import prox.Process
     import prox.ProcessResult
+    implicit val runner: ProcessRunner[JVMProcessInfo] = new JVMProcessRunner
+
+    // returns sha256 of prefetched file
+    def prefetch(url: Uri): F[String] = Process("nix-prefetch-url", List(url.renderString))
+      .toFoldMonoid(fs2.text.utf8Decode[F])
+      .drainError(_.drain)
+      .run()
+      .pipe(checkExitCode)
+      .map(_.output.trim)
+
+    def args(state: MergeRequestState): F[List[String]] = {
+      val url = uri"http://localhost:8081/wms.nix"
+      import Nix.syntax._
+
+      prefetch(url).map { sha256 =>
+        val theArg =
+          Nix
+            .builtins
+            .fetchurl
+            .applied(
+              Nix.obj(
+                "url" := url.renderString,
+                //todo: prefetch-url to determine this sha
+                "sha256" := sha256
+              )
+            )
+            .imported
+            .applied(state.toNix)
+
+        List("eval", theArg.render, "--json")
+      }
+    }
 
     def checkExitCode[O, E]: F[ProcessResult[O, E]] => F[ProcessResult[O, E]] =
       _.ensure(new Throwable("Invalid exit code"))(
         _.exitCode == ExitCode.Success
       )
-
-    implicit val runner: ProcessRunner[JVMProcessInfo] = new JVMProcessRunner
 
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
       import Result._
@@ -128,27 +160,31 @@ object ProjectConfigReader {
       }
 
       def readConfig(project: Project): MergeRequestState => F[ProjectActions.Matched[Unit]] = state =>
-        Process("nix", args(state))
-          .toFoldMonoid(fs2.text.utf8Decode[F])
-          .fromStream(fs2.io.file.readAll[F](Paths.get("./wms.nix"), blocker, 4096), flushChunks = false)
-          .run()
+        args(state)
+          .flatMap { argz =>
+            Process("nix", argz)
+              .toFoldMonoid(fs2.text.utf8Decode[F])
+              .fromStream(fs2.io.file.readAll[F](Paths.get("./wms.nix"), blocker, 4096), flushChunks = false)
+              .run()
+          }
           .pipe(checkExitCode)
           .map(_.output)
           .flatTap(out => Sync[F].delay(println(out)))
           .flatMap(io.circe.parser.decode[Result](_).liftTo[F])
           .map(convert)
+
+      val ensureCommandExists =
+        Process("bash", "-c" :: s"command -v nix" :: Nil)
+          .drainOutput(_.drain)
+          .run()
+          .pipe(checkExitCode)
+          .adaptError { case e =>
+            new Throwable(s"Command nix not found", e)
+          }
+
+      ensureCommandExists.as(instance)
     }
 
-    val ensureCommandExists =
-      Process("bash", "-c" :: s"command -v nix" :: Nil)
-        .drainOutput(_.drain)
-        .run()
-        .pipe(checkExitCode)
-        .adaptError { case e =>
-          new Throwable(s"Command nix not found", e)
-        }
-
-    ensureCommandExists.as(instance)
   }
 
 }
