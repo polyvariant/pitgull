@@ -58,7 +58,6 @@ object NixRenderTest extends SimpleIOSuite {
     expect(Nix.Name("function").applied(Nix.Name("myurl")).render == "function myurl")
   }
 
-  // these are probably the other way around
   test("left associated apply") {
     expect(Nix.Name("f").applied(Nix.Name("arg1")).applied(Nix.Name("arg2")).render == "f arg1 arg2")
   }
@@ -79,11 +78,11 @@ object NixRenderTest extends SimpleIOSuite {
   }
 
   test("left associated function import") {
-    expect(Nix.Name("function").applied(Nix.Name("arg")).imported.render == "import (function arg)")
+    expect(Nix.Name("importee").imported.applied(Nix.Name("arg")).render == "(import importee) arg")
   }
 
   test("right associated function import") {
-    expect(Nix.Name("importee").imported.applied(Nix.Name("arg")).render == "(import importee) arg")
+    expect(Nix.Name("function").applied(Nix.Name("arg")).imported.render == "import (function arg)")
   }
 
   test("nested import") {
