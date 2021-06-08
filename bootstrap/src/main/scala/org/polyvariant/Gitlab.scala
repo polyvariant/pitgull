@@ -2,7 +2,6 @@ package org.polyvariant
 
 import cats.implicits.*
 
-
 import scala.util.chaining._
 import io.pg.gitlab.graphql.*
 import sttp.model.Uri
@@ -20,10 +19,13 @@ import io.pg.gitlab.graphql.Query
 import io.pg.gitlab.graphql.UserCore
 import cats.MonadError
 import caliban.client.Operations.IsOperation
+import sttp.model.Method
 
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[Gitlab.MergeRequestInfo]]
+  def closeMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit]
 }
+
 object Gitlab {
 
   def sttpInstance[F[_]: Logger](
@@ -36,24 +38,45 @@ object Gitlab {
   ): Gitlab[F] = {
     def runRequest[O](request: Request[O, Any]): F[O] =
       request.header("Private-Token", accessToken).send(backend).pure[F].map(_.body) // FIXME - change to async backend
-    
+
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
-    
 
     new Gitlab[F] {
       def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
-        Logger[F].info(s"Looking up merge requests for project: $projectId") *> 
-        mergeRequestsQuery(projectId)
-          .mapEither(_.toRight(DecodingError("Project not found")))
-          .pipe(runGraphQLQuery(_))
-          .flatTap { result =>
-            Logger[F].info(s"Found merge requests. Size: ${result.size}")
-          }
+        Logger[F].info(s"Looking up merge requests for project: $projectId") *>
+          mergeRequestsQuery(projectId)
+            .mapEither(_.toRight(DecodingError("Project not found")))
+            .pipe(runGraphQLQuery(_))
+            .flatTap { result =>
+              Logger[F].info(s"Found merge requests. Size: ${result.size}")
+            }
+
+      def closeMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit] = for {
+        _ <- Logger[F].debug(s"Request to: ${baseUri.addPath(Seq("projects",projectId.toString,"merge_requests",mergeRequestId.toString))}")
+        result <- runRequest(
+          basicRequest.put(
+            baseUri
+              .addPath(
+                Seq(
+                  "api",
+                  "v4",
+                  "projects",
+                  projectId.toString,
+                  "merge_requests",
+                  mergeRequestId.toString
+                )
+              )
+          )          
+          .body("""{"state_event": "close"}""")
+          .contentType("application/json")
+        )
+        _ <- Logger[F].info(result.toString)
+      } yield ()
     }
 
   }
-  
+
   final case class MergeRequestInfo(
     projectId: Long,
     mergeRequestIid: Long,
@@ -91,9 +114,9 @@ object Gitlab {
     description = description,
     needsRebase = needsRebase,
     hasConflicts = hasConflicts
-  )        
+  )
 
-  private def mergeRequestsQuery(projectId: Long) = 
+  private def mergeRequestsQuery(projectId: Long) =
     Query
       .projects(ids = List(show"gid://gitlab/Project/$projectId").some)(
         ProjectConnection
@@ -108,4 +131,5 @@ object Gitlab {
           )
           .map(flattenTheEarth)
       )
+
 }
