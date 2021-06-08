@@ -1,5 +1,5 @@
-import com.typesafe.sbt.packager.docker.ExecCmd
 import com.typesafe.sbt.packager.docker.Cmd
+import com.typesafe.sbt.packager.docker.ExecCmd
 
 inThisBuild(
   List(
@@ -107,6 +107,8 @@ lazy val bootstrap = project
       "org.typelevel" %% "cats-core" % "2.6.1",
       "org.typelevel" %% "cats-effect" % "3.1.1",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
+      "com.softwaremill.sttp.client3" %% "core" % "3.3.6",
+      // "com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.6"
     ),
     testFrameworks += new TestFramework("weaver.framework.TestFramework"),
     publish / skip := true,
