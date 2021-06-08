@@ -33,7 +33,6 @@ object Gitlab {
     accessToken: String
   )(
     using backend: SttpBackend[Identity, Any], // FIXME: all cats-effect compatible backends rely on Netty, while netty breaks native-image build
-    // using backend: SttpBackend[F, Any],
     ME: MonadError[F, Throwable]
   ): Gitlab[F] = {
     def runRequest[O](request: Request[O, Any]): F[O] =
@@ -67,11 +66,10 @@ object Gitlab {
                   mergeRequestId.toString
                 )
               )
-          )          
+          )
           .body("""{"state_event": "close"}""")
           .contentType("application/json")
         )
-        _ <- Logger[F].info(result.toString)
       } yield ()
     }
 

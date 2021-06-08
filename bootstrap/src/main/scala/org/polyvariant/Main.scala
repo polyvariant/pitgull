@@ -36,11 +36,11 @@ object Main extends IOApp {
       _   <- Logger[F].info("Done processing merge requests")
     } yield ()
 
-  override def run(args: List[String]): IO[ExitCode] =
+  override def run(args: List[String]): IO[ExitCode] = {
     given logger: Logger[IO] = Logger.wrappedPrint[IO]
     program[IO](args) *>
       IO.pure(ExitCode.Success)
-
+  }
 
   final case class Config(
     gitlabUri: Uri,
