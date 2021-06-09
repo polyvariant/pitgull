@@ -112,7 +112,8 @@ lazy val bootstrap = project
     testFrameworks += new TestFramework("weaver.framework.TestFramework"),
     publish / skip := true,
     Compile / mainClass := Some("org.polyvariant.Main"),
-    scalacOptions --= Seq("-source", "future")
+    scalacOptions --= Seq("-source", "future"),
+    githubWorkflowArtifactUpload := false
   )
   .enablePlugins(NativeImagePlugin)
 
