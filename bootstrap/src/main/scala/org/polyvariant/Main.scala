@@ -34,6 +34,10 @@ object Main extends IOApp {
       _   <- Logger[F].info(s"Will delete merge requests: ${botMrs.map(_.mergeRequestIid)}")
       _   <- botMrs.traverse(mr => gitlab.deleteMergeRequest(config.project, mr.mergeRequestIid))
       _   <- Logger[F].info("Done processing merge requests")
+      _   <- Logger[F].info("Creating webhook")
+      _   <- gitlab.createWebhook(config.project, config.pitgullWebhookUrl)
+      _   <- Logger[F].info("Webhook created")
+      _   <- Logger[F].success("Bootstrap finished")
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] = {
@@ -46,10 +50,11 @@ object Main extends IOApp {
     gitlabUri: Uri,
     token: String,
     project: Long,
-    botUser: String
+    botUser: String,
+    pitgullWebhookUrl: Uri
   )
   object Config {
     def fromArgs(args: Map[String, String]): Config = // FIXME: this is unsafe
-      Config(Uri.unsafeParse(args("url")), args("token"), args("project").toLong, args("bot"))
+      Config(Uri.unsafeParse(args("url")), args("token"), args("project").toLong, args("bot"), Uri.unsafeParse(args("webhook")))
   }
 }

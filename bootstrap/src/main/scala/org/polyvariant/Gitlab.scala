@@ -85,7 +85,7 @@ object Gitlab {
                 )
               )
           )
-          .body("""{"merge_requests_events": true, "pipeline_events": true, "note_events": true}""")
+          .body(s"""{"merge_requests_events": true, "pipeline_events": true, "note_events": true, "url": "$pitgullUrl"}""")
           .contentType("application/json")
         )
       } yield ()
