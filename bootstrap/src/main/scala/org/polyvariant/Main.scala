@@ -14,7 +14,7 @@ object Main extends IOApp {
 
   private def printMergeRequests[F[_]: Logger: Applicative](mergeRequests: List[MergeRequestInfo]): F[Unit] = 
     mergeRequests.traverse { mr =>
-      Logger[F].info(s"[${mr.mergeRequestIid}] ${mr.description.getOrElse("Missing description")}")
+      Logger[F].info(s"ID: ${mr.mergeRequestIid} by: ${mr.authorUsername}")
     }.void
 
   private def qualifyMergeRequests(botUserName: String, mergeRequests: List[MergeRequestInfo]): List[MergeRequestInfo] = 
@@ -31,8 +31,8 @@ object Main extends IOApp {
       _   <- Logger[F].info(s"Merge requests found: ${mrs.length}")
       _   <- printMergeRequests(mrs)
       botMrs = qualifyMergeRequests(config.botUser, mrs)
-      _   <- Logger[F].info(s"Will close merge requests: ${botMrs.map(_.mergeRequestIid)}")
-      _   <- botMrs.traverse(mr => gitlab.closeMergeRequest(config.project, mr.mergeRequestIid))
+      _   <- Logger[F].info(s"Will delete merge requests: ${botMrs.map(_.mergeRequestIid)}")
+      _   <- botMrs.traverse(mr => gitlab.deleteMergeRequest(config.project, mr.mergeRequestIid))
       _   <- Logger[F].info("Done processing merge requests")
     } yield ()
 

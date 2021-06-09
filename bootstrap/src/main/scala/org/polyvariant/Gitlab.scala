@@ -20,20 +20,21 @@ import io.pg.gitlab.graphql.UserCore
 import cats.MonadError
 import caliban.client.Operations.IsOperation
 import sttp.model.Method
+import cats.MonadThrow
 
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[Gitlab.MergeRequestInfo]]
-  def closeMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit]
+  def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit]
+  def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit]
 }
 
 object Gitlab {
 
-  def sttpInstance[F[_]: Logger](
+  def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
     accessToken: String
   )(
-    using backend: SttpBackend[Identity, Any], // FIXME: all cats-effect compatible backends rely on Netty, while netty breaks native-image build
-    ME: MonadError[F, Throwable]
+    using backend: SttpBackend[Identity, Any] // FIXME: all cats-effect compatible backends rely on Netty, while netty breaks native-image build
   ): Gitlab[F] = {
     def runRequest[O](request: Request[O, Any]): F[O] =
       request.header("Private-Token", accessToken).send(backend).pure[F].map(_.body) // FIXME - change to async backend
@@ -51,10 +52,10 @@ object Gitlab {
               Logger[F].info(s"Found merge requests. Size: ${result.size}")
             }
 
-      def closeMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit] = for {
-        _ <- Logger[F].debug(s"Request to: ${baseUri.addPath(Seq("projects",projectId.toString,"merge_requests",mergeRequestId.toString))}")
+      def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit] = for {
+        _ <- Logger[F].debug(s"Request to remove $mergeRequestId")
         result <- runRequest(
-          basicRequest.put(
+          basicRequest.delete(
             baseUri
               .addPath(
                 Seq(
@@ -67,7 +68,25 @@ object Gitlab {
                 )
               )
           )
-          .body("""{"state_event": "close"}""")
+        )
+      } yield ()
+      
+      def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit] = for {
+        _ <- Logger[F].debug(s"Creating webhook to $pitgullUrl")
+        result <- runRequest(
+          basicRequest.post(
+            baseUri
+              .addPath(
+                Seq(
+                  "api",
+                  "v4",
+                  "projects",
+                  projectId.toString,
+                  "hooks"
+                )
+              )
+          )
+          .body("""{"merge_requests_events": true, "pipeline_events": true, "note_events": true}""")
           .contentType("application/json")
         )
       } yield ()
