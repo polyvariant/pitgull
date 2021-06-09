@@ -56,21 +56,6 @@ ThisBuild / missinglinkExcludedDependencies += moduleFilter(
   name = "slf4j-api"
 )
 
-ThisBuild / githubWorkflowBuild ++= Seq(
-  WorkflowStep.Run(
-    List("sbt bootstrap/nativeImage"),
-    name = Some("Build native image")
-  ),
-  WorkflowStep.Use(
-    UseRef.Public("actions", "upload-artifact", "v2"),
-    name = Some(s"Upload binary"),
-    params = Map(
-      "name" -> s"pitgull-bootstrap-$${{ matrix.os }}",
-      "path" -> "./bootstrap/target/native-image/bootstrap"
-    )
-  )
-)
-
 def crossPlugin(x: sbt.librarymanagement.ModuleID) =
   compilerPlugin(x.cross(CrossVersion.full))
 

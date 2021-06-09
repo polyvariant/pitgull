@@ -53,15 +53,6 @@ jobs:
 
       - run: sbt --client '++${{ matrix.scala }}; test; missinglinkCheck'
 
-      - name: Build native image
-        run: sbt bootstrap/nativeImage
-
-      - name: Upload binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: pitgull-bootstrap-${{ matrix.os }}
-          path: ./bootstrap/target/native-image/bootstrap
-
       - name: Compress target directories
         run: tar cf targets.tar target gitlab/target core/target project/target
 
