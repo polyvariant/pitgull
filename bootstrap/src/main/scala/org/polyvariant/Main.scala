@@ -17,7 +17,7 @@ object Main extends IOApp {
       Logger[F].info(s"ID: ${mr.mergeRequestIid} by: ${mr.authorUsername}")
     }.void
 
-  private def qualifyMergeRequests(botUserName: String, mergeRequests: List[MergeRequestInfo]): List[MergeRequestInfo] = 
+  private def qualifyMergeRequestsForDeletion(botUserName: String, mergeRequests: List[MergeRequestInfo]): List[MergeRequestInfo] = 
     mergeRequests.filter(_.authorUsername == botUserName)
 
   private def program[F[_]: Logger: Async](args: List[String]): F[Unit] =
@@ -30,14 +30,14 @@ object Main extends IOApp {
       mrs <- gitlab.mergeRequests(config.project)
       _   <- Logger[F].info(s"Merge requests found: ${mrs.length}")
       _   <- printMergeRequests(mrs)
-      botMrs = qualifyMergeRequests(config.botUser, mrs)
+      botMrs = qualifyMergeRequestsForDeletion(config.botUser, mrs)
       _   <- Logger[F].info(s"Will delete merge requests: ${botMrs.map(_.mergeRequestIid)}")
       _   <- botMrs.traverse(mr => gitlab.deleteMergeRequest(config.project, mr.mergeRequestIid))
       _   <- Logger[F].info("Done processing merge requests")
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] = {
-    given logger: Logger[IO] = Logger.wrappedPrint[IO]
+    given Logger[IO] = Logger.wrappedPrint[IO]
     program[IO](args) *>
       IO.pure(ExitCode.Success)
   }

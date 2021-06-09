@@ -17,7 +17,6 @@ import io.pg.gitlab.graphql.Project
 import io.pg.gitlab.graphql.ProjectConnection
 import io.pg.gitlab.graphql.Query
 import io.pg.gitlab.graphql.UserCore
-import cats.MonadError
 import caliban.client.Operations.IsOperation
 import sttp.model.Method
 import cats.MonadThrow
