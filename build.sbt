@@ -123,6 +123,21 @@ lazy val bootstrap = project
   )
   .enablePlugins(NativeImagePlugin)
 
+ThisBuild / githubWorkflowBuild ++= Seq(
+  WorkflowStep.Run(
+    List("sbt bootstrap/nativeImage"),
+    name = Some("Build native image")
+  ),
+  WorkflowStep.Use(
+    UseRef.Public("actions", "upload-artifact", "v2"),
+    name = Some(s"Upload binary"),
+    params = Map(
+      "name" -> s"pitgull-bootstrap-$${{ matrix.os }}",
+      "path" -> "./bootstrap/target/native-image/bootstrap"
+    )
+  )
+)
+
 lazy val core = project.settings(commonSettings).settings(name += "-core")
 
 //workaround for docker not accepting + (the default separator in sbt-dynver)
