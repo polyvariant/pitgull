@@ -10,6 +10,7 @@ import org.polyvariant.Gitlab.MergeRequestInfo
 import cats.Applicative
 import sttp.monad.MonadError
 import cats.MonadThrow
+import org.polyvariant.Config.ArgumentsParsingException
 
 object Main extends IOApp {
 
@@ -26,10 +27,10 @@ object Main extends IOApp {
 
   private def program[F[_]: Logger: Console: Async: MonadThrow](args: List[String]): F[Unit] =
     given backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+    val parsedArgs = Args.parse(args)
     for {
+      config       <- Config.fromArgs(parsedArgs)
       _            <- Logger[F].info("Starting pitgull bootstrap!")
-      parsedArgs = Args.parse(args)
-      config = Config.fromArgs(parsedArgs)
       gitlab = Gitlab.sttpInstance[F](config.gitlabUri, config.token)
       mrs          <- gitlab.mergeRequests(config.project)
       _            <- Logger[F].info(s"Merge requests found: ${mrs.length}")
@@ -49,19 +50,13 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     given Logger[IO] = Logger.wrappedPrint[IO]
     given Console[IO] = Console.instance[IO]
-    program[IO](args) *>
+    program[IO](args).recoverWith{
+      case Config.ArgumentsParsingException => 
+        Logger[IO].info(Config.usage)
+      case e: Exception => 
+        Logger[IO].error(s"Unexpected error ocurred: $e")
+    } *>
       IO.pure(ExitCode.Success)
   }
 
-  final case class Config(
-    gitlabUri: Uri,
-    token: String,
-    project: Long,
-    botUser: String,
-    pitgullWebhookUrl: Uri
-  )
-  object Config {
-    def fromArgs(args: Map[String, String]): Config = // FIXME: this is unsafe
-      Config(Uri.unsafeParse(args("url")), args("token"), args("project").toLong, args("bot"), Uri.unsafeParse(args("webhook")))
-  }
 }
