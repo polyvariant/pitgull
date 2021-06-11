@@ -107,13 +107,19 @@ lazy val bootstrap = project
       "org.typelevel" %% "cats-core" % "2.6.1",
       "org.typelevel" %% "cats-effect" % "3.1.1",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      "com.softwaremill.sttp.client3" %% "core" % "3.3.6"
+      "com.softwaremill.sttp.client3" %% "core" % "3.3.6",
+      crossPlugin("com.kubukoz" % "better-tostring" % "0.3.3")
     ),
-    testFrameworks += new TestFramework("weaver.framework.TestFramework"),
     publish / skip := true,
-    Compile / mainClass := Some("org.polyvariant.Main"),
-    scalacOptions --= Seq("-source", "future"),
-    githubWorkflowArtifactUpload := false
+    // Compile / mainClass := Some("org.polyvariant.Main"),
+    githubWorkflowArtifactUpload := false,
+    nativeImageVersion := "21.1.0",
+    nativeImageOptions ++= Seq(
+      s"-H:ReflectionConfigurationFiles=${(Compile / resourceDirectory).value / "reflect-config.json"}",
+      "--enable-url-protocols=https",
+      "-H:+ReportExceptionStackTraces",
+      "--no-fallback"
+    )
   )
   .enablePlugins(NativeImagePlugin)
 
