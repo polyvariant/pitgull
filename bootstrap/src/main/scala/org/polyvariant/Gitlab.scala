@@ -33,10 +33,10 @@ object Gitlab {
     baseUri: Uri,
     accessToken: String
   )(
-    using backend: SttpBackend[Identity, Any] // FIXME: all cats-effect compatible backends rely on Netty, while netty breaks native-image build
+    using backend: SttpBackend[Identity, Any] // FIXME: https://github.com/polyvariant/pitgull/issues/265
   ): Gitlab[F] = {
     def runRequest[O](request: Request[O, Any]): F[O] =
-      request.header("Private-Token", accessToken).send(backend).pure[F].map(_.body) // FIXME - change to async backend
+      request.header("Private-Token", accessToken).send(backend).pure[F].map(_.body) // FIXME - change in https://github.com/polyvariant/pitgull/issues/265
 
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
