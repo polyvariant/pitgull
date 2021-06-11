@@ -14,7 +14,7 @@ object Args {
     }
 
 
-  // TODO: Consider switching to https://ben.kirw.in/decline/
+  // TODO: Consider switching to https://ben.kirw.in/decline/ after https://github.com/bkirwi/decline/pull/293
   def parse(args: List[String]): Map[String, String] =
     parseNext(args.toList, Map())
 
