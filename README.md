@@ -8,14 +8,14 @@
 ## Integrating with Pitgull
 
 Along with Pitgull, we provide a `pitgull-bootstrap` command line utility. This program prepares your GitLab project for integration with Pitgull by deleting existing Scala Steward merge requests and setting up a webhook for triggering Pitgull.
-
+```
 CLI Arguments:
  --url - your gitlab url like https://gitlab.com/
  --token - your gitlab personal token, needs to have full access to project
  --project - project ID, can be found on project main page
  --bot - user name of Scala Steward bot user
  --webhook - Pitgull target url like https://pitgull.example.com/webhook
-
+```
 ### Why delete existing merge requests?
 
 Pitgull will only take action when it's triggered by a webhook. By deleting merge requests we make sure no Scala Steward MR gets unnoticed. If we'd only close them, Scala Steward wouldn't update them, so no webhook would be triggerd.
