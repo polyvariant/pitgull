@@ -1,5 +1,5 @@
 package org.slf4j.impl;
-/*
+
 public class StaticLoggerBinder extends io.pg.OdinInterop {
   public static String REQUESTED_API_VERSION = "1.7";
 
@@ -8,4 +8,4 @@ public class StaticLoggerBinder extends io.pg.OdinInterop {
     return _instance;
   }
 }
- */
+
