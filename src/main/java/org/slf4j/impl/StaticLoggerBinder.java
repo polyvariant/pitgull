@@ -8,3 +8,4 @@ public class StaticLoggerBinder extends io.pg.OdinInterop {
     return _instance;
   }
 }
+

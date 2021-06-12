@@ -1,16 +1,18 @@
 package io.pg
 
-import java.util.concurrent.atomic.AtomicReference
-
-import cats.effect.Clock
-import cats.effect.Effect
 import cats.effect.IO
+import cats.effect.kernel.Sync
+import cats.effect.std.Dispatcher
+import cats.effect.unsafe.implicits._
 import io.odin.Logger
 import io.odin.slf4j.OdinLoggerBinder
 
+import java.util.concurrent.atomic.AtomicReference
+
 class OdinInterop extends OdinLoggerBinder[IO] {
-  implicit val F: Effect[IO] = IO.ioEffect
-  implicit val clock: Clock[IO] = Clock.create[IO]
+  implicit val F: Sync[IO] = IO.asyncForIO
+
+  implicit val dispatcher: Dispatcher[IO] = Dispatcher[IO].allocated.unsafeRunSync()._1
 
   val loggers: PartialFunction[String, Logger[IO]] = {
     val theLogger: String => Option[Logger[IO]] = _ => OdinInterop.globalLogger.get()
@@ -21,5 +23,5 @@ class OdinInterop extends OdinLoggerBinder[IO] {
 }
 
 object OdinInterop {
-  val globalLogger = new AtomicReference[Option[Logger[IO]]](None)
+  val globalLogger: AtomicReference[Option[Logger[IO]]] = new AtomicReference[Option[Logger[IO]]](None)
 }

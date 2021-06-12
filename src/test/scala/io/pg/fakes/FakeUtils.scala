@@ -2,7 +2,7 @@ package io.pg.fakes
 
 import cats.Monad
 import cats.mtl.Stateful
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 
 object FakeUtils {
 

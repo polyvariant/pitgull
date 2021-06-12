@@ -1,6 +1,6 @@
 package io.pg
 
-import cats.effect.IO
+import cats.arrow.FunctionK
 import ciris.Secret
 import sttp.model.Uri._
 import weaver.SimpleIOSuite
@@ -15,6 +15,6 @@ object MainTest extends SimpleIOSuite {
       middleware = MiddlewareConfig(Set())
     )
 
-    Main.serve(testConfig).use(IO.pure).as(success)
+    Main.serve(FunctionK.id)(testConfig).use_.as(success)
   }
 }

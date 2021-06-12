@@ -25,7 +25,7 @@ object MergeRequests {
   import scala.util.chaining._
 
   def instance[F[_]: ProjectConfigReader: StateResolver: Monad: Logger](
-    implicit SC: fs2.Stream.Compiler[F, F]
+    implicit SC: fs2.Compiler[F, F]
   ): MergeRequests[F] = project =>
     for {
       config <- ProjectConfigReader[F].readConfig(project)
@@ -39,7 +39,7 @@ object MergeRequests {
   )(
     states: List[A]
   )(
-    implicit SC: fs2.Stream.Compiler[F, F]
+    implicit SC: fs2.Compiler[F, F]
   ): F[List[B]] = {
     def tapLeftAndDrop[L, R](log: L => F[Unit]): Pipe[F, Either[L, R], R] =
       _.evalTap(_.leftTraverse(log)).map(_.toOption).unNone

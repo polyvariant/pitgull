@@ -1,11 +1,12 @@
 package io.pg.messaging
 
-import fs2.concurrent.Queue
+import cats.effect.std.Queue
 import scala.reflect.ClassTag
 import cats.tagless.autoInvariant
 import cats.syntax.all._
 import cats.ApplicativeError
 import io.odin.Logger
+import cats.Functor
 
 trait Publisher[F[_], -A] {
   def publish(a: A): F[Unit]
@@ -41,10 +42,10 @@ trait Channel[F[_], A] extends Publisher[F, A] { self =>
 
 object Channel {
 
-  def fromQueue[F[_], A](q: Queue[F, A]): Channel[F, A] =
+  def fromQueue[F[_]: Functor, A](q: Queue[F, A]): Channel[F, A] =
     new Channel[F, A] {
-      def publish(a: A): F[Unit] = q.enqueue1(a)
-      val consume: fs2.Stream[F, A] = q.dequeue
+      def publish(a: A): F[Unit] = q.offer(a)
+      val consume: fs2.Stream[F, A] = fs2.Stream.fromQueueUnterminated(q)
     }
 
   implicit class ChannelOpticsSyntax[F[_], A](val ch: Channel[F, A]) extends AnyVal {

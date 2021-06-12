@@ -56,7 +56,7 @@ object ProjectConfigReader {
 
   def dhallJsonStringConfig[F[_]: ProxFS2: MonadThrow]: F[ProjectConfigReader[F]] = {
     val prox: ProxFS2[F] = implicitly
-    import prox.{contextShift => _, blocker => _, concurrent => _, _}
+    import prox._
 
     val dhallCommand = "dhall-to-json"
     //todo: not reading a local file

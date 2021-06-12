@@ -20,7 +20,7 @@ trait StateResolver[F[_]] {
 object StateResolver {
 
   def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]](
-    implicit SC: fs2.Stream.Compiler[F, F]
+    implicit SC: fs2.Compiler[F, F]
   ): StateResolver[F] =
     new StateResolver[F] {
 
