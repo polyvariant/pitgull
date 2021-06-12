@@ -16,6 +16,12 @@ CLI Arguments:
  --bot - user name of Scala Steward bot user
  --webhook - Pitgull target url like https://pitgull.example.com/webhook
 
+### Why delete existing merge requests?
+
+Pitgull will only take action when it's triggered by a webhook. By deleting merge requests we make sure no Scala Steward MR gets unnoticed. If we'd only close them, Scala Steward wouldn't update them, so no webhook would be triggerd.
+
+Additionally, if you have some legacy merge requests for single library, this program makes sure to clean them up. When Scala Steward notices that some dependency is out of date and MR is missing - it will recreate it, so no worries about skipping any updates.
+
 ## Development
 
 ### Useful commands/links
