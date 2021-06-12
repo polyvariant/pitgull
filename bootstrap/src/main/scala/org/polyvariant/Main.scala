@@ -37,10 +37,13 @@ object Main extends IOApp {
       _      <- Logger[F].info(s"Merge requests found: ${mrs.length}")
       _      <- printMergeRequests(mrs)
       botMrs = qualifyMergeRequestsForDeletion(config.botUser, mrs)
-      _      <- Logger[F].info(s"Will delete merge requests: ${botMrs.map(_.mergeRequestIid)}")
+      _      <- Logger[F].info(s"Will delete merge requests: ${botMrs.map(_.mergeRequestIid).mkString(", ")}")
       _      <- Logger[F].info("Do you want to proceed? y/Y")
       _      <- MonadThrow[F]
-                  .ifM(readConsent)(ifTrue = MonadThrow[F].pure(()), ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion")))
+                  .ifM(readConsent)(
+                    ifTrue = MonadThrow[F].pure(()),
+                    ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion"))
+                  )
       _      <- botMrs.traverse(mr => gitlab.deleteMergeRequest(config.project, mr.mergeRequestIid))
       _      <- Logger[F].info("Done processing merge requests")
       _      <- Logger[F].info("Creating webhook")

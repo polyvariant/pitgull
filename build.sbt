@@ -197,4 +197,4 @@ lazy val pitgull =
       )
     )
     .dependsOn(core, gitlab)
-    .aggregate(core, gitlab)
+    .aggregate(core, gitlab, bootstrap)

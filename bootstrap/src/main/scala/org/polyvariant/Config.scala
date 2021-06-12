@@ -12,10 +12,12 @@ final case class Config(
   botUser: String,
   pitgullWebhookUrl: Uri
 )
+
 object Config {
-  def fromArgs[F[_]: MonadThrow](args: Map[String, String]): F[Config] = 
-    MonadThrow[F].fromTry {
-      Try {
+
+  def fromArgs[F[_]: MonadThrow](args: Map[String, String]): F[Config] =
+    MonadThrow[F]
+      .catchNonFatal {
         Config(
           Uri.unsafeParse(args("url")),
           args("token"),
@@ -23,10 +25,11 @@ object Config {
           args("bot"),
           Uri.unsafeParse(args("webhook"))
         )
-      }.recoverWith {
-        case _ => Try{throw ArgumentsParsingException}
       }
-    }
+      .recoverWith { case _ =>
+        MonadThrow[F].raiseError(ArgumentsParsingException)
+      }
+
   val usage = """
   |This program prepares your gitlab project for integration with Pitgull
   |by deleting existing Scala Steward mere requests and setting up
@@ -39,5 +42,6 @@ object Config {
   | --bot - user name of Scala Steward bot user
   | --webhook - Pitgull target url like https://pitgull.example.com/webhook
   """.stripMargin
+
   case object ArgumentsParsingException extends Exception("Failed to parse CLI arguments")
 }
