@@ -20,10 +20,11 @@ import org.http4s.server.middleware
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import cats.arrow.FunctionK
 
 object Main extends IOApp {
 
-  def mkLogger[F[_]: Async]: Resource[F, Logger[F]] = {
+  def mkLogger[F[_]: Async](fToIO: F ~> IO): Resource[F, Logger[F]] = {
 
     val console = io.odin.consoleLogger[F](formatter = Formatter.colorful).withMinimalLevel(Level.Info).pure[Resource[F, *]]
 
@@ -41,22 +42,15 @@ object Main extends IOApp {
     console |+| file
   }
     .evalTap { logger =>
-      Dispatcher[F].use { dispatcher =>
-        Sync[F].delay(
-          OdinInterop
-            .globalLogger
-            .set(
-              logger
-                .mapK(new (F ~> IO) {
-                  def apply[A](fa: F[A]): IO[A] = IO.defer {
-                    val (future, cancel) = dispatcher.unsafeToFutureCancelable(fa)
-                    IO.fromFuture(IO(future)).onCancel(IO.fromFuture(IO(cancel())))
-                  }
-                })
-                .some
-            )
-        )
-      }
+      Sync[F].delay(
+        OdinInterop
+          .globalLogger
+          .set(
+            logger
+              .mapK(fToIO)
+              .some
+          )
+      )
     }
 
   def mkServer[F[_]: Logger: Async](
@@ -84,9 +78,9 @@ object Main extends IOApp {
   def logStarted[F[_]: Logger](meta: MetaConfig) =
     Logger[F].info("Started application", Map("version" -> meta.version, "scalaVersion" -> meta.scalaVersion))
 
-  def serve[F[_]: Async](config: AppConfig) =
+  def serve[F[_]: Async](fToIO: F ~> IO)(config: AppConfig) =
     for {
-      implicit0(logger: Logger[F]) <- mkLogger[F]
+      implicit0(logger: Logger[F]) <- mkLogger[F](fToIO)
       _                            <- logStarting(config.meta).toResource
       resources                    <- Application.resource[F](config)
       _                            <- mkServer[F](config, resources.routes)
@@ -98,7 +92,7 @@ object Main extends IOApp {
     AppConfig
       .appConfig
       .resource[IO]
-      .flatMap(serve[IO])
+      .flatMap(serve[IO](FunctionK.id))
       .use(_ => IO.never)
 
 }
