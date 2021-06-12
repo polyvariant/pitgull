@@ -1,5 +1,5 @@
-import com.typesafe.sbt.packager.docker.ExecCmd
 import com.typesafe.sbt.packager.docker.Cmd
+import com.typesafe.sbt.packager.docker.ExecCmd
 
 inThisBuild(
   List(
@@ -100,6 +100,44 @@ lazy val gitlab = project
   )
   .dependsOn(core)
 
+lazy val bootstrap = project
+  .settings(
+    scalaVersion := "3.0.0",
+    libraryDependencies ++= List(
+      "org.typelevel" %% "cats-core" % "2.6.1",
+      "org.typelevel" %% "cats-effect" % "3.1.1",
+      "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
+      "com.softwaremill.sttp.client3" %% "core" % "3.3.6",
+      crossPlugin("com.kubukoz" % "better-tostring" % "0.3.3")
+    ),
+    publish / skip := true,
+    // Compile / mainClass := Some("org.polyvariant.Main"),
+    githubWorkflowArtifactUpload := false,
+    nativeImageVersion := "21.1.0",
+    nativeImageOptions ++= Seq(
+      s"-H:ReflectionConfigurationFiles=${(Compile / resourceDirectory).value / "reflect-config.json"}",
+      "--enable-url-protocols=https",
+      "-H:+ReportExceptionStackTraces",
+      "--no-fallback"
+    )
+  )
+  .enablePlugins(NativeImagePlugin)
+
+ThisBuild / githubWorkflowBuild ++= Seq(
+  WorkflowStep.Run(
+    List("sbt bootstrap/nativeImage"),
+    name = Some("Build native image")
+  ),
+  WorkflowStep.Use(
+    UseRef.Public("actions", "upload-artifact", "v2"),
+    name = Some(s"Upload binary"),
+    params = Map(
+      "name" -> s"pitgull-bootstrap-$${{ matrix.os }}",
+      "path" -> "./bootstrap/target/native-image/bootstrap"
+    )
+  )
+)
+
 lazy val core = project.settings(commonSettings).settings(name += "-core")
 
 //workaround for docker not accepting + (the default separator in sbt-dynver)
@@ -159,4 +197,4 @@ lazy val pitgull =
       )
     )
     .dependsOn(core, gitlab)
-    .aggregate(core, gitlab)
+    .aggregate(core, gitlab, bootstrap)
