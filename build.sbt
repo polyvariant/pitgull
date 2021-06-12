@@ -81,7 +81,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-effect" % "3.1.1",
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
     "co.fs2" %% "fs2-core" % "3.0.4",
-    "com.github.valskalla" %% "odin-core" % "0.11.0+7-4b29a367-SNAPSHOT",
+    "io.github.irevive" %% "odin-core" % "0.12.0-M3",
     "io.circe" %% "circe-core" % "0.14.1",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
     "com.disneystreaming" %% "weaver-cats" % "0.7.3" % Test,
@@ -198,8 +198,8 @@ lazy val pitgull =
         "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
-        "com.github.valskalla" %% "odin-core" % "0.11.0+7-4b29a367-SNAPSHOT",
-        "com.github.valskalla" %% "odin-slf4j" % "0.11.0+7-4b29a367-SNAPSHOT",
+        "io.github.irevive" %% "odin-core" % "0.12.0-M3",
+        "io.github.irevive" %% "odin-slf4j" % "0.12.0-M3",
         "io.github.vigoo" %% "prox-fs2-3" % "0.7.1"
       )
     )
