@@ -7,7 +7,7 @@
 
 ## Integrating with Pitgull
 
-Along with Pitgull, we provide `pitgull-bootstrap` command line utility. This program prepares your gitlab project for integration with Pitgull by deleting existing Scala Steward mere requests and setting up a webhook for triggering Pitgull.
+Along with Pitgull, we provide a `pitgull-bootstrap` command line utility. This program prepares your GitLab project for integration with Pitgull by deleting existing Scala Steward merge requests and setting up a webhook for triggering Pitgull.
 
 CLI Arguments:
  --url - your gitlab url like https://gitlab.com/
