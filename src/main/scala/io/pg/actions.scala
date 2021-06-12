@@ -1,6 +1,7 @@
 package io.pg
 
 import cats.Applicative
+import cats.MonadThrow
 import cats.MonoidK
 import cats.Show
 import cats.data.EitherNel
@@ -8,15 +9,9 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import cats.tagless.autoContravariant
 import io.odin.Logger
-import io.pg.gitlab.Gitlab.MergeRequestInfo
-import io.pg.config.TextMatcher
-import cats.MonoidK
-import cats.Show
-import io.pg.ProjectAction.Rebase
 import io.pg.MergeRequestState.Mergeability.CanMerge
 import io.pg.MergeRequestState.Mergeability.HasConflicts
 import io.pg.MergeRequestState.Mergeability.NeedsRebase
-import io.pg.Prelude.MonadThrow
 import io.pg.ProjectAction.Merge
 import io.pg.ProjectAction.Rebase
 import io.pg.config.Matcher

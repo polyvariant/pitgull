@@ -1,15 +1,10 @@
 package io.pg
 
 import cats.effect.IO
-import cats.implicits._
-<<<<<<< HEAD
 import cats.effect.implicits._
-import io.pg.config.ProjectConfig
-=======
+import cats.implicits._
 import io.pg.MergeRequestState.Mergeability
-import io.pg.Prelude._
 import io.pg.config.Matcher
->>>>>>> d3fd00f (Fix test compilation)
 import io.pg.config.ProjectConfigReader
 import io.pg.config.TextMatcher
 import io.pg.fakes.ProjectActionsStateFake

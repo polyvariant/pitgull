@@ -1,26 +1,26 @@
 package io.pg.config
 
 import cats.Applicative
-import cats.effect.Blocker
-import cats.effect.Concurrent
-import cats.effect.ContextShift
 import cats.effect.ExitCode
 import cats.effect.Sync
+import cats.effect.kernel.Concurrent
 import cats.syntax.all._
 import cats.tagless.finalAlg
+import fs2.io.file.Files
 import io.github.vigoo.prox.ProxFS2
 import io.pg.MergeRequestState
+import io.pg.MergeRequestState.Status._
 import io.pg.ProjectActions
 import io.pg.config.Mismatch.Author
 import io.pg.config.Mismatch.Description
 import io.pg.config.Mismatch.NoneMatched
 import io.pg.gitlab.webhook.Project
 import io.pg.nix.Nix
+import org.http4s.Uri
+import org.http4s.syntax.literals._
 
 import java.nio.file.Paths
 import scala.util.chaining._
-import org.http4s.Uri
-import org.http4s.syntax.literals._
 
 @finalAlg
 trait ProjectConfigReader[F[_]] {
@@ -55,12 +55,15 @@ object ProjectConfigReader {
 
     }
 
-  def nixJsonConfig[F[_]: Concurrent]: F[ProjectConfigReader[F]] = {
+  def nixJsonConfig[F[_]: Concurrent: ProxFS2: Files]: F[ProjectConfigReader[F]] = {
+    val prox: ProxFS2[F] = implicitly[ProxFS2[F]]
+    import prox._
+
     val inputState = """{ status = "success"; author = "user1@gmail.com"; description = "hello werld"; }"""
 
     import Nix.syntax._
 
-    implicit val statusToNix: Nix.From[Gitlab.MergeRequestInfo.Status] = Nix.From[String].contramap {
+    implicit val statusToNix: Nix.From[MergeRequestState.Status] = Nix.From[String].contramap {
       case Success      => "success"
       case Other(value) => value
     }
@@ -72,32 +75,6 @@ object ProjectConfigReader {
           mrs.description.getOrElse("").toNix.at("description")
       )
 
-    def args(state: MergeRequestState): List[String] = {
-      import Nix.syntax._
-
-      val theArg =
-        Nix
-          .builtins
-          .fetchurl
-          .applied(
-            Nix.obj(
-              "url" := "http://localhost:8081/wms.nix",
-              //todo: prefetch-url to determine this sha
-              "sha256" := "036x1g6b8j8mlp3ndyjwdsrn71v8bx3lsnqiri1ydrv49wrkvp9m"
-            )
-          )
-          .imported
-          .applied(state.toNix)
-
-      List("eval", theArg.render, "--json")
-    }
-
-    val prox: ProxFS2[F] = ProxFS2[F](blocker)
-    import prox.ProcessRunner
-    import prox.JVMProcessInfo
-    import prox.JVMProcessRunner
-    import prox.Process
-    import prox.ProcessResult
     implicit val runner: ProcessRunner[JVMProcessInfo] = new JVMProcessRunner
 
     // returns sha256 of prefetched file
@@ -164,7 +141,7 @@ object ProjectConfigReader {
           .flatMap { argz =>
             Process("nix", argz)
               .toFoldMonoid(fs2.text.utf8Decode[F])
-              .fromStream(fs2.io.file.readAll[F](Paths.get("./wms.nix"), blocker, 4096), flushChunks = false)
+              .fromStream(Files[F].readAll(Paths.get("./wms.nix"), 4096), flushChunks = false)
               .run()
           }
           .pipe(checkExitCode)
@@ -173,18 +150,18 @@ object ProjectConfigReader {
           .flatMap(io.circe.parser.decode[Result](_).liftTo[F])
           .map(convert)
 
-      val ensureCommandExists =
-        Process("bash", "-c" :: s"command -v nix" :: Nil)
-          .drainOutput(_.drain)
-          .run()
-          .pipe(checkExitCode)
-          .adaptError { case e =>
-            new Throwable(s"Command nix not found", e)
-          }
-
-      ensureCommandExists.as(instance)
     }
 
+    val ensureCommandExists =
+      Process("bash", "-c" :: s"command -v nix" :: Nil)
+        .drainOutput(_.drain)
+        .run()
+        .pipe(checkExitCode)
+        .adaptError { case e =>
+          new Throwable(s"Command nix not found", e)
+        }
+
+    ensureCommandExists.as(instance)
   }
 
 }

@@ -1,28 +1,25 @@
 package io.pg
 
-import cats.effect.ExitCode
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
-
-import cats.Parallel
-import cats.effect.Effect
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.Resource
 import cats.effect.Sync
 import cats.effect.implicits._
 import cats.effect.kernel.Async
-import cats.effect.std.Dispatcher
 import cats.syntax.all._
 import cats.~>
 import io.chrisdavenport.cats.time.instances.all._
 import io.odin.Level
 import io.odin.Logger
 import io.odin.formatter.Formatter
+import io.pg.config.ProjectConfigReader
 import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
-import io.pg.config.ProjectConfigReader
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import io.github.vigoo.prox.ProxFS2
 
 object Main extends IOApp.Simple {
 
@@ -92,29 +89,30 @@ object Main extends IOApp.Simple {
 
   def run: IO[Unit] =
     runDemo
+
   // AppConfig
   //   .appConfig
   //   .resource[IO]
   //   .flatMap(serve[IO])
   //   .use(_ => IO.never)
 
+  private implicit val proxfs2 = ProxFS2[IO]
+
   private def runDemo: IO[Unit] =
-    Blocker[IO].use { blocker =>
-      ProjectConfigReader
-        .nixJsonConfig[IO](blocker)
-        .flatMap(
-          _.readConfig(null)(
-            MergeRequestState(
-              42L,
-              42L,
-              "scala_chad",
-              Some("test labels: test, semver-patch test\nfoobar"),
-              MergeRequestState.Status.Success,
-              MergeRequestState.Mergeability.CanMerge
-            )
+    ProjectConfigReader
+      .nixJsonConfig[IO]
+      .flatMap(
+        _.readConfig(null)(
+          MergeRequestState(
+            42L,
+            42L,
+            "scala_chad",
+            Some("test labels: test, semver-patch test\nfoobar"),
+            MergeRequestState.Status.Success,
+            MergeRequestState.Mergeability.CanMerge
           )
         )
-        .flatMap(a => IO(println(a)))
-    }
+      )
+      .flatMap(a => IO(println(a)))
 
 }

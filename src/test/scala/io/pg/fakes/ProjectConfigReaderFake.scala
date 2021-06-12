@@ -4,14 +4,12 @@ import cats.MonadThrow
 import cats.effect.Ref
 import cats.implicits._
 import cats.mtl.Stateful
+import io.pg.MergeRequestState
+import io.pg.ProjectActions
+import io.pg.config.Matcher
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.Project
 import monocle.macros.Lenses
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
-import io.pg.MergeRequestState
-import io.pg.config.Matcher
-import io.pg.ProjectActions
 
 trait FakeState
 

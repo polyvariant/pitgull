@@ -3,8 +3,6 @@ package io.pg.fakes
 import cats.Monad
 import cats.data.Chain
 import cats.effect.Ref
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.implicits._
 import cats.mtl.Stateful
 import io.odin.Logger
@@ -15,7 +13,6 @@ import io.pg.ProjectAction.Merge
 import io.pg.ProjectAction.Rebase
 import io.pg.ProjectActions
 import io.pg.StateResolver
-import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.gitlab.webhook.Project
 import io.scalaland.chimney.dsl._
 import monocle.macros.Lenses
