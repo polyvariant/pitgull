@@ -93,6 +93,6 @@ object Main extends IOApp {
       .appConfig
       .resource[IO]
       .flatMap(serve[IO](FunctionK.id))
-      .use(_ => IO.never)
+      .useForever
 
 }
