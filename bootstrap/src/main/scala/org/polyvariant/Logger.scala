@@ -16,8 +16,8 @@ object Logger {
   def apply[F[_]](using ev: Logger[F]): Logger[F] = ev
 
   def wrappedPrint[F[_]: Sync] = new Logger[F] {
-    private def colorPrinter(color: String)(msg: String): F[Unit] = 
-      Sync[F].delay(println(s"${color}${msg}${RESET}"))
+    private def colorPrinter(color: String)(msg: String): F[Unit] =
+      Sync[F].delay(println(s"$color$msg$RESET"))
 
     override def debug(msg: String): F[Unit] = colorPrinter(CYAN)(msg)
     override def success(msg: String): F[Unit] = colorPrinter(GREEN)(msg)
@@ -25,4 +25,5 @@ object Logger {
     override def warn(msg: String): F[Unit] = colorPrinter(YELLOW)(msg)
     override def error(msg: String): F[Unit] = colorPrinter(RED)(msg)
   }
+
 }
