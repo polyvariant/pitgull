@@ -136,6 +136,24 @@
     ]
   },
   {
+    "name": "org.polyvariant.Gitlab$$anon$2",
+    "fields": [
+      {
+        "name": "0bitmap$1",
+        "allowUnsafeAccess": true
+      }
+    ]
+  },
+  {
+    "name": "org.polyvariant.Gitlab$Webhook$",
+    "fields": [
+      {
+        "name": "0bitmap$2",
+        "allowUnsafeAccess": true
+      }
+    ]
+  },
+  {
     "name": "sttp.model.Header$",
     "fields": [
       {

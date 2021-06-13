@@ -2,10 +2,11 @@ package org.polyvariant
 
 import cats.implicits.*
 
-import scala.util.chaining._
+import scala.util.chaining.*
 import io.pg.gitlab.graphql.*
 import sttp.model.Uri
 import sttp.client3.*
+import sttp.client3.circe.*
 import caliban.client.SelectionBuilder
 import caliban.client.CalibanClientError.DecodingError
 import io.pg.gitlab.graphql.MergeRequest
@@ -20,14 +21,18 @@ import io.pg.gitlab.graphql.UserCore
 import caliban.client.Operations.IsOperation
 import sttp.model.Method
 import cats.MonadThrow
+import io.circe.*
 
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[Gitlab.MergeRequestInfo]]
   def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit]
   def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit]
+  def listWebhooks(projectId: Long): F[List[Gitlab.Webhook]]
 }
 
 object Gitlab {
+
+  def apply[F[_]](using ev: Gitlab[F]): Gitlab[F] = ev
 
   def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
@@ -36,7 +41,11 @@ object Gitlab {
     using backend: SttpBackend[Identity, Any] // FIXME: https://github.com/polyvariant/pitgull/issues/265
   ): Gitlab[F] = {
     def runRequest[O](request: Request[O, Any]): F[O] =
-      request.header("Private-Token", accessToken).send(backend).pure[F].map(_.body) // FIXME - change in https://github.com/polyvariant/pitgull/issues/265
+      request
+        .header("Private-Token", accessToken)
+        .send(backend)
+        .pure[F]
+        .map(_.body) // FIXME - change in https://github.com/polyvariant/pitgull/issues/265
 
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
@@ -52,46 +61,73 @@ object Gitlab {
             }
 
       def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit] = for {
-        _ <- Logger[F].debug(s"Request to remove $mergeRequestId")
+        _      <- Logger[F].debug(s"Request to remove $mergeRequestId")
         result <- runRequest(
-          basicRequest.delete(
-            baseUri
-              .addPath(
-                Seq(
-                  "api",
-                  "v4",
-                  "projects",
-                  projectId.toString,
-                  "merge_requests",
-                  mergeRequestId.toString
-                )
-              )
-          )
-        )
+                    basicRequest.delete(
+                      baseUri
+                        .addPath(
+                          Seq(
+                            "api",
+                            "v4",
+                            "projects",
+                            projectId.toString,
+                            "merge_requests",
+                            mergeRequestId.toString
+                          )
+                        )
+                    )
+                  )
       } yield ()
-      
+
       def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit] = for {
-        _ <- Logger[F].debug(s"Creating webhook to $pitgullUrl")
+        _      <- Logger[F].debug(s"Creating webhook to $pitgullUrl")
         result <- runRequest(
-          basicRequest.post(
-            baseUri
-              .addPath(
-                Seq(
-                  "api",
-                  "v4",
-                  "projects",
-                  projectId.toString,
-                  "hooks"
-                )
-              )
-          )
-          .body(s"""{"merge_requests_events": true, "pipeline_events": true, "note_events": true, "url": "$pitgullUrl"}""")
-          .contentType("application/json")
-        )
+                    basicRequest
+                      .post(
+                        baseUri
+                          .addPath(
+                            Seq(
+                              "api",
+                              "v4",
+                              "projects",
+                              projectId.toString,
+                              "hooks"
+                            )
+                          )
+                      )
+                      .body(s"""{"merge_requests_events": true, "pipeline_events": true, "note_events": true, "url": "$pitgullUrl"}""")
+                      .contentType("application/json")
+                  )
       } yield ()
+
+      def listWebhooks(projectId: Long): F[List[Webhook]] = for {
+        _        <- Logger[F].debug(s"Listing webhooks for $projectId")
+        response <- runRequest(
+                      basicRequest
+                        .get(
+                          baseUri
+                            .addPath(
+                              Seq(
+                                "api",
+                                "v4",
+                                "projects",
+                                projectId.toString,
+                                "hooks"
+                              )
+                            )
+                        )
+                        .response(asJson[List[Webhook]])
+                    ).flatMap(_.liftTo[F])
+        _        <- Logger[F].debug(response.toString)
+      } yield response
     }
 
   }
+
+  final case class Webhook(
+    id: Long,
+    url: String
+  ) derives Codec.AsObject
 
   final case class MergeRequestInfo(
     projectId: Long,
