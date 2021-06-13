@@ -117,7 +117,6 @@ lazy val bootstrap = project
       "com.softwaremill.sttp.client3" %% "core" % "3.3.6",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.6",
       "io.circe" %% "circe-core" % "0.14.1",
-      "io.circe" %% "circe-generic" % "0.14.1",
       crossPlugin("com.kubukoz" % "better-tostring" % "0.3.3")
     ),
     publish / skip := true,
