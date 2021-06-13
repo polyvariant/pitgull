@@ -32,7 +32,7 @@ Additionally, if you have some legacy merge requests for single library, this pr
 
 ### Related projects
 
-We're using https://github.com/kubukoz/caliban-gitlab/ for some communication with Gitlab,
+We're using https://github.com/polyvariant/caliban-gitlab for some communication with Gitlab,
 as well as https://github.com/softwaremill/tapir + https://github.com/softwaremill/sttp for the actions not available via the GraphQL API.
 
 ### Docker
