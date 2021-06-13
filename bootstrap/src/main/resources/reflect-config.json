@@ -3,6 +3,15 @@
     "name": "byte[]"
   },
   {
+    "name": "cats.Later",
+    "fields": [
+      {
+        "name": "0bitmap$1",
+        "allowUnsafeAccess": true
+      }
+    ]
+  },
+  {
     "name": "cats.effect.unsafe.IORuntimeCompanionPlatform",
     "fields": [
       {
