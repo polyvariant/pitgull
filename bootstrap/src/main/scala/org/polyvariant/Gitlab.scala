@@ -42,7 +42,11 @@ object Gitlab {
     using backend: SttpBackend[Identity, Any] // FIXME: https://github.com/polyvariant/pitgull/issues/265
   ): Gitlab[F] = {
     def runRequest[O](request: Request[O, Any]): F[O] =
-      request.header("Private-Token", accessToken).send(backend).pure[F].map(_.body) // FIXME - change in https://github.com/polyvariant/pitgull/issues/265
+      request
+        .header("Private-Token", accessToken)
+        .send(backend)
+        .pure[F]
+        .map(_.body) // FIXME - change in https://github.com/polyvariant/pitgull/issues/265
 
     def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
@@ -58,64 +62,66 @@ object Gitlab {
             }
 
       def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit] = for {
-        _ <- Logger[F].debug(s"Request to remove $mergeRequestId")
+        _      <- Logger[F].debug(s"Request to remove $mergeRequestId")
         result <- runRequest(
-          basicRequest.delete(
-            baseUri
-              .addPath(
-                Seq(
-                  "api",
-                  "v4",
-                  "projects",
-                  projectId.toString,
-                  "merge_requests",
-                  mergeRequestId.toString
-                )
-              )
-          )
-        )
+                    basicRequest.delete(
+                      baseUri
+                        .addPath(
+                          Seq(
+                            "api",
+                            "v4",
+                            "projects",
+                            projectId.toString,
+                            "merge_requests",
+                            mergeRequestId.toString
+                          )
+                        )
+                    )
+                  )
       } yield ()
-      
+
       def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit] = for {
-        _ <- Logger[F].debug(s"Creating webhook to $pitgullUrl")
+        _      <- Logger[F].debug(s"Creating webhook to $pitgullUrl")
         result <- runRequest(
-          basicRequest.post(
-            baseUri
-              .addPath(
-                Seq(
-                  "api",
-                  "v4",
-                  "projects",
-                  projectId.toString,
-                  "hooks"
-                )
-              )
-          )
-          .body(s"""{"merge_requests_events": true, "pipeline_events": true, "note_events": true, "url": "$pitgullUrl"}""")
-          .contentType("application/json")
-        )
+                    basicRequest
+                      .post(
+                        baseUri
+                          .addPath(
+                            Seq(
+                              "api",
+                              "v4",
+                              "projects",
+                              projectId.toString,
+                              "hooks"
+                            )
+                          )
+                      )
+                      .body(s"""{"merge_requests_events": true, "pipeline_events": true, "note_events": true, "url": "$pitgullUrl"}""")
+                      .contentType("application/json")
+                  )
       } yield ()
 
       def listWebhooks(projectId: Long): F[List[Webhook]] = for {
-        _ <- Logger[F].debug(s"Listing webhooks for $projectId")
+        _        <- Logger[F].debug(s"Listing webhooks for $projectId")
         response <- runRequest(
-          basicRequest.get(
-            baseUri
-              .addPath(
-                Seq(
-                  "api",
-                  "v4",
-                  "projects",
-                  projectId.toString,
-                  "hooks"
-                )
-              )
-          )
-          .response(asJson[List[Webhook]])
-          .contentType("application/json")
-        )
-        result <- MonadThrow[F].fromEither(response)
-        _ <- Logger[F].debug(result.toString)
+                      basicRequest
+                        .get(
+                          baseUri
+                            .addPath(
+                              Seq(
+                                "api",
+                                "v4",
+                                "projects",
+                                projectId.toString,
+                                "hooks"
+                              )
+                            )
+                        )
+                        .response(asJson[List[Webhook]])
+                        .contentType("application/json")
+                    )
+        result   <- MonadThrow[F].fromEither(response)
+        _        <- Logger[F].debug(result.toString)
       } yield result
     }
 
