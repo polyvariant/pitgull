@@ -48,7 +48,7 @@ object Main extends IOApp {
                )
   } yield ()
 
-  private def program[F[_]: Logger: Console: Async: MonadThrow](args: List[String]): F[Unit] = {
+  private def program[F[_]: Logger: Console: Async](args: List[String]): F[Unit] = {
     given SttpBackend[Identity, Any] = HttpURLConnectionBackend()
     val parsedArgs = Args.parse(args)
     for {
