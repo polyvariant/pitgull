@@ -22,7 +22,6 @@ import caliban.client.Operations.IsOperation
 import sttp.model.Method
 import cats.MonadThrow
 import io.circe.*
-import io.circe.generic.semiauto.*
 
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[Gitlab.MergeRequestInfo]]
@@ -118,11 +117,9 @@ object Gitlab {
                             )
                         )
                         .response(asJson[List[Webhook]])
-                        .contentType("application/json")
-                    )
-        result   <- MonadThrow[F].fromEither(response)
-        _        <- Logger[F].debug(result.toString)
-      } yield result
+                    ).flatMap(_.liftTo[F])
+        _        <- Logger[F].debug(response.toString)
+      } yield response
     }
 
   }
@@ -130,11 +127,7 @@ object Gitlab {
   final case class Webhook(
     id: Long,
     url: String
-  )
-
-  object Webhook {
-    given Codec[Webhook] = deriveCodec
-  }
+  ) derives Codec.AsObject
 
   final case class MergeRequestInfo(
     projectId: Long,
