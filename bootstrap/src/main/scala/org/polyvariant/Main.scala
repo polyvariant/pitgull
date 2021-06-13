@@ -12,6 +12,7 @@ import sttp.monad.MonadError
 import cats.MonadThrow
 import org.polyvariant.Config.ArgumentsParsingException
 import cats.effect.std.Console
+import cats.Monad
 
 object Main extends IOApp {
 
@@ -20,11 +21,32 @@ object Main extends IOApp {
       Logger[F].info(s"ID: ${mr.mergeRequestIid} by: ${mr.authorUsername}")
     }.void
 
-  private def readConsent[F[_]: Console: Applicative]: F[Boolean] =
-    Console[F].readLine.map(_.toLowerCase == "y")
+  private def readConsent[F[_]: Console: MonadThrow]: F[Unit] =
+    MonadThrow[F]
+      .ifM(Console[F].readLine.map(_.toLowerCase == "y"))(
+        ifTrue = MonadThrow[F].pure(()),
+        ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion"))
+      )
 
   private def qualifyMergeRequestsForDeletion(botUserName: String, mergeRequests: List[MergeRequestInfo]): List[MergeRequestInfo] =
     mergeRequests.filter(_.authorUsername == botUserName)
+
+  private def deleteMergeRequests[F[_]: Gitlab: Logger: Applicative](project: Long, mergeRequests: List[MergeRequestInfo]): F[Unit] =
+    mergeRequests.traverse(mr => Gitlab[F].deleteMergeRequest(project, mr.mergeRequestIid)).void
+
+  private def createWebhook[F[_]: Gitlab: Logger: Applicative](project: Long, webhook: Uri): F[Unit] =
+    Logger[F].info("Creating webhook") *>
+      Gitlab[F].createWebhook(project, webhook) *>
+      Logger[F].info("Webhook created")
+
+  private def configureWebhooks[F[_]: Gitlab: Logger: Monad](project: Long, webhook: Uri): F[Unit] = for {
+    hooks <- Gitlab[F].listWebhooks(project).map(_.filter(_.url == webhook.toString))
+    _     <- Monad[F]
+               .ifM(hooks.nonEmpty.pure[F])(
+                 ifTrue = Logger[F].success("Webhook already exists"),
+                 ifFalse = createWebhook(project, webhook)
+               )
+  } yield ()
 
   private def program[F[_]: Logger: Console: Async: MonadThrow](args: List[String]): F[Unit] = {
     given SttpBackend[Identity, Any] = HttpURLConnectionBackend()
@@ -32,23 +54,18 @@ object Main extends IOApp {
     for {
       config <- Config.fromArgs(parsedArgs)
       _      <- Logger[F].info("Starting pitgull bootstrap!")
-      gitlab = Gitlab.sttpInstance[F](config.gitlabUri, config.token)
-      mrs    <- gitlab.mergeRequests(config.project)
+      given Gitlab[F] = Gitlab.sttpInstance[F](config.gitlabUri, config.token)
+      mrs    <- Gitlab[F].mergeRequests(config.project)
       _      <- Logger[F].info(s"Merge requests found: ${mrs.length}")
       _      <- printMergeRequests(mrs)
       botMrs = qualifyMergeRequestsForDeletion(config.botUser, mrs)
       _      <- Logger[F].info(s"Will delete merge requests: ${botMrs.map(_.mergeRequestIid).mkString(", ")}")
       _      <- Logger[F].info("Do you want to proceed? y/Y")
-      _      <- MonadThrow[F]
-                  .ifM(readConsent)(
-                    ifTrue = MonadThrow[F].pure(()),
-                    ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion"))
-                  )
-      _      <- botMrs.traverse(mr => gitlab.deleteMergeRequest(config.project, mr.mergeRequestIid))
+      _      <- readConsent
+      _      <- deleteMergeRequests(config.project, botMrs)
       _      <- Logger[F].info("Done processing merge requests")
-      _      <- Logger[F].info("Creating webhook")
-      _      <- gitlab.createWebhook(config.project, config.pitgullWebhookUrl)
-      _      <- Logger[F].info("Webhook created")
+      _      <- Logger[F].info("Configuring webhook")
+      _      <- configureWebhooks(config.project, config.pitgullWebhookUrl)
       _      <- Logger[F].success("Bootstrap finished")
     } yield ()
   }

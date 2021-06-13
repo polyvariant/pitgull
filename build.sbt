@@ -115,6 +115,9 @@ lazy val bootstrap = project
       "org.typelevel" %% "cats-effect" % "3.1.1",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.6",
+      "com.softwaremill.sttp.client3" %% "circe" % "3.3.6",
+      "io.circe" %% "circe-core" % "0.14.1",
+      "io.circe" %% "circe-generic" % "0.14.1",
       crossPlugin("com.kubukoz" % "better-tostring" % "0.3.3")
     ),
     publish / skip := true,

@@ -2,10 +2,11 @@ package org.polyvariant
 
 import cats.implicits.*
 
-import scala.util.chaining._
+import scala.util.chaining.*
 import io.pg.gitlab.graphql.*
 import sttp.model.Uri
 import sttp.client3.*
+import sttp.client3.circe.*
 import caliban.client.SelectionBuilder
 import caliban.client.CalibanClientError.DecodingError
 import io.pg.gitlab.graphql.MergeRequest
@@ -20,14 +21,19 @@ import io.pg.gitlab.graphql.UserCore
 import caliban.client.Operations.IsOperation
 import sttp.model.Method
 import cats.MonadThrow
+import io.circe.*
+import io.circe.generic.semiauto.*
 
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[Gitlab.MergeRequestInfo]]
   def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit]
   def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit]
+  def listWebhooks(projectId: Long): F[List[Gitlab.Webhook]]
 }
 
 object Gitlab {
+
+  def apply[F[_]](using ev: Gitlab[F]): Gitlab[F] = ev
 
   def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
@@ -89,8 +95,39 @@ object Gitlab {
           .contentType("application/json")
         )
       } yield ()
+
+      def listWebhooks(projectId: Long): F[List[Webhook]] = for {
+        _ <- Logger[F].debug(s"Listing webhooks for $projectId")
+        response <- runRequest(
+          basicRequest.get(
+            baseUri
+              .addPath(
+                Seq(
+                  "api",
+                  "v4",
+                  "projects",
+                  projectId.toString,
+                  "hooks"
+                )
+              )
+          )
+          .response(asJson[List[Webhook]])
+          .contentType("application/json")
+        )
+        result <- MonadThrow[F].fromEither(response)
+        _ <- Logger[F].debug(result.toString)
+      } yield result
     }
 
+  }
+
+  final case class Webhook(
+    id: Long,
+    url: String
+  )
+
+  object Webhook {
+    given Codec[Webhook] = deriveCodec
   }
 
   final case class MergeRequestInfo(
