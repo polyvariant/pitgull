@@ -23,7 +23,7 @@ object Main extends IOApp {
 
   private def readConsent[F[_]: Console: MonadThrow]: F[Unit] =
     MonadThrow[F]
-      .ifM(Console[F].readLine.map(_.toLowerCase == "y"))(
+      .ifM(Console[F].readLine.map(_.trim.toLowerCase == "y"))(
         ifTrue = MonadThrow[F].pure(()),
         ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion"))
       )
