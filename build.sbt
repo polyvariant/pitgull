@@ -197,7 +197,6 @@ lazy val pitgull =
         "org.http4s" %% "http4s-blaze-client" % "0.23.0-RC1",
         "is.cir" %% "ciris" % "2.0.1",
         "io.circe" %% "circe-generic-extras" % "0.14.0",
-        "io.estatico" %% "newtype" % "0.4.4",
         "io.scalaland" %% "chimney" % "0.6.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
         "com.github.valskalla" %% "odin-core" % "0.12.0",
