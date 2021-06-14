@@ -22,11 +22,10 @@ object Main extends IOApp {
     }.void
 
   private def readConsent[F[_]: Console: MonadThrow]: F[Unit] =
-    MonadThrow[F]
-      .ifM(Console[F].readLine.map(_.trim.toLowerCase == "y"))(
-        ifTrue = MonadThrow[F].pure(()),
-        ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion"))
-      )
+    Console[F]
+      .readLine
+      .ensure(new Exception("User rejected deletion"))(_.trim.toLowerCase == "y")
+      .void
 
   private def qualifyMergeRequestsForDeletion(botUserName: String, mergeRequests: List[MergeRequestInfo]): List[MergeRequestInfo] =
     mergeRequests.filter(_.authorUsername == botUserName)
