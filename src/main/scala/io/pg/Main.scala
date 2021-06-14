@@ -7,7 +7,6 @@ import cats.effect.Resource
 import cats.effect.Sync
 import cats.effect.implicits._
 import cats.effect.kernel.Async
-import cats.effect.std.Dispatcher
 import cats.syntax.all._
 import cats.~>
 import io.chrisdavenport.cats.time.instances.all._
