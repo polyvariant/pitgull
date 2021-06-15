@@ -1,9 +1,18 @@
-# pitgull
+# Pitgull
 
-[![License](http://img.shields.io/:license-Apache%202-green.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+[![License](https://img.shields.io/:license-Apache%202-green.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 ![Continuous Integration](https://github.com/pitgull/pitgull/workflows/Continuous%20Integration/badge.svg)
 [![Powered by cats](https://img.shields.io/badge/powered%20by-cats-blue.svg)](https://github.com/typelevel/cats)
 ![Gluten free](https://img.shields.io/badge/gluten-free-orange.svg)
+
+## How it works
+
+The core idea behind the project is very simple - create a tool for automatically applying merge requests created by [Scala Steward](https://github.com/scala-steward-org/scala-steward) on any [Gitlab](https://gitlab.com/) instance.
+
+Pitgull works as a web service, listening for webhook events from Gitlab instance. Upon receiving a webhook, it reads related project's merge requests, finds one best candidate and tries to merge it. Once it's merged, Gitlab would trigger another webhook, creating a loop until Pitgull finds no qualifying merge request.
+
+![Flow diagram](https://www.plantuml.com/plantuml/svg/VOz1JuGm48Nl_8hnxeRx7ZPhOc9CH0qNpuK-O7HeiHsMyE-jYCHaYTVs-zvxSuvgWewzPCege5VMTXIXHloKtMY77XG7KqDCbJcl87z1e0VMz71C-01XXxn0Q441doEYvi_V82vmIkne2FuTjMO_qk6qTXpf3LNd_SUVtEthqIQPctcJTvWInbAVYjcr54P1fCQ7pLYvm-btx1D7NVXjw2RixokksN_cl0IBG4KPgPgN6bEniCwt5279eOP3r0JioVUesOAcpYYf9-jfOkrM4pPPr_UKg4n4VbVN69RSCvmTU_a2)
+
 
 ## Integrating with Pitgull
 
