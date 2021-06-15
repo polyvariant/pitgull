@@ -12,7 +12,7 @@ The core idea behind the project is very simple - create a tool for automaticall
 Pitgull works as a web service, listening for webhook events from Gitlab instance. Upon receiving a webhook, it reads related project's merge requests, finds one best candidate and tries to merge it. If all qualifying merge requests need to be updated, an attempt to rebase them onto the target branch will be made.
 Once an MR is merged, Gitlab will trigger another webhook, creating a loop until Pitgull finds no qualifying merge request.
 
-![Flow diagram](https://www.plantuml.com/plantuml/svg/VOz1IyD048Nl-HNZtT9x3wM288Ar9HVFkzcNPEncDyxEjkJV6siDXGIlm_UzzsQNr8ZcpXSFsg83MP_HY1cA41KKpn1wOVN6RkZ8FJm7hFUG1YJuoaYwVly1SKPGua2zn4zKMlnAg-sHjSdUR-W3jetnLDmEg-rVxE5qrpNXhmv1kHwcm0McX77KGHeE3KdsI5H7cOnPqnidfUv-_2GiRzxFsN_c7CH1Q5yciiErnbZshCCZ9VZHePebwGWioS-es84khL7II2xIXRMzcN2ZDV-dX3K9wwUgGd_DtI6utFbl)
+![Flow diagram](https://www.plantuml.com/plantuml/svg/VOz1IyD048Nl-HNZtT9x3wM288Ar9HVFkzcNPEncDyxEjkJV6sqDXGIlm_UzzsQNr8ZcpXSFsg83MP_HY1cA41KKpn1wOVN6RkZ8FJm7hFUG1YJuoaYwVly1SKPGua2zn4zKMbobrVR8scJlD_G1syPuAcw7rVOlzd2wwvhmLuUWN0zJu09JmZZg80s7XYHx9AgZJCQiwOsJKdS_VXAMD-zdx7zp3k8Wj2yJsU5QOonxrk6H4lmeKSsIT2IMx6TKx42NrYXf91VfmjhUJBZHcZzKmfg4zLDLeV_DtI6utFbl)
 
 
 ## Integrating with Pitgull
