@@ -1,0 +1,13 @@
+@startuml
+!theme bluegray
+note over Gitlab: Pipeline/Merge request/Note event in project
+Gitlab->Pitgull: Webhook
+Pitgull->Gitlab: Ok
+note over Pitgull: Identify project
+note over Pitgull: Read merging rules for project
+Pitgull->Gitlab: List merge requests for project
+Gitlab->Pitgull: Merge requests for project
+note over Pitgull: Order MRs by mergability, select first MR
+note over Pitgull: Decide what to do with selected MR
+Pitgull->Gitlab: Rebase/Accept MR
+@enduml
