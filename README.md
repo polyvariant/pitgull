@@ -7,7 +7,7 @@
 
 ## How it works
 
-The core idea behind the project is very simple - create a tool for automatically applying merge requests created by [Scala Steward](https://github.com/scala-steward-org/scala-steward) on any [Gitlab](https://gitlab.com/) instance.
+The core idea behind the project is very simple - create a tool for automatically applying merge requests created by [Scala Steward](https://github.com/scala-steward-org/scala-steward) on any [Gitlab](https://gitlab.com/) instance. Currently Pitgull is ortogonal from the bots, the merge requests are qualified by generic rules.
 
 Pitgull works as a web service, listening for webhook events from Gitlab instance. Upon receiving a webhook, it reads related project's merge requests, finds one best candidate and tries to merge it. Once it's merged, Gitlab would trigger another webhook, creating a loop until Pitgull finds no qualifying merge request.
 
