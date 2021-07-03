@@ -107,6 +107,7 @@ lazy val gitlab = project
   )
   .dependsOn(core)
 
+/*
 lazy val bootstrap = project
   .settings(
     scalaVersion := "3.0.0",
@@ -131,7 +132,7 @@ lazy val bootstrap = project
     )
   )
   .enablePlugins(NativeImagePlugin)
-
+ */
 ThisBuild / githubWorkflowBuild ++= Seq(
   WorkflowStep.Run(
     List("sbt bootstrap/nativeImage"),
@@ -205,4 +206,4 @@ lazy val pitgull =
       )
     )
     .dependsOn(core, gitlab)
-    .aggregate(core, gitlab, bootstrap)
+    .aggregate(core, gitlab /* , bootstrap */ )
