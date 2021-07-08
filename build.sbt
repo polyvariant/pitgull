@@ -83,7 +83,7 @@ val commonSettings = List(
     "co.fs2" %% "fs2-core" % "3.0.6",
     "com.github.valskalla" %% "odin-core" % "0.12.0",
     "io.circe" %% "circe-core" % "0.14.1",
-    "dev.optics" %% "monocle-macro" % "3.0.0-RC2",
+    "dev.optics" %% "monocle-macro" % "3.0.0",
     "com.disneystreaming" %% "weaver-cats" % "0.7.4" % Test,
     "com.disneystreaming" %% "weaver-scalacheck" % "0.7.4" % Test
   ) ++ compilerPlugins,
