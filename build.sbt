@@ -80,7 +80,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-core" % "2.6.1",
     "org.typelevel" %% "cats-effect" % "3.1.1",
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
-    "co.fs2" %% "fs2-core" % "3.0.6",
+    "co.fs2" %% "fs2-core" % "3.1.0",
     "com.github.valskalla" %% "odin-core" % "0.12.0",
     "io.circe" %% "circe-core" % "0.14.1",
     "dev.optics" %% "monocle-macro" % "3.0.0",
