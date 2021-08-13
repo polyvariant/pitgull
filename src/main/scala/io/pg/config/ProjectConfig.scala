@@ -7,7 +7,6 @@ import cats.syntax.all._
 import cats.tagless.finalAlg
 import io.github.vigoo.prox.ProxFS2
 import io.pg.gitlab.webhook.Project
-
 import java.nio.file.Paths
 import scala.util.chaining._
 

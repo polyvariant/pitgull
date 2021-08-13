@@ -1,7 +1,6 @@
 package io.pg.gitlab
 
 import scala.util.chaining._
-
 import caliban.client.CalibanClientError.DecodingError
 import caliban.client.Operations.IsOperation
 import caliban.client.SelectionBuilder

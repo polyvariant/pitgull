@@ -9,6 +9,8 @@ import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import io.circe.DecodingFailure
+import circe.circeConfig
+import circe.regexCodec
 
 object circe {
   implicit val circeConfig: Configuration =
@@ -27,9 +29,6 @@ object circe {
 
   implicit val regexCodec: Codec[Regex] = Codec.from(decodeRegex, encodeRegex)
 }
-
-import circe.circeConfig
-import circe.regexCodec
 
 sealed trait TextMatcher extends Product with Serializable
 
