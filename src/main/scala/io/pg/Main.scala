@@ -16,7 +16,6 @@ import io.odin.formatter.Formatter
 import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import cats.arrow.FunctionK
