@@ -84,8 +84,8 @@ val commonSettings = List(
     "com.github.valskalla" %% "odin-core" % "0.12.0",
     "io.circe" %% "circe-core" % "0.14.1",
     "dev.optics" %% "monocle-macro" % "3.0.0",
-    "com.disneystreaming" %% "weaver-cats" % "0.7.4" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.4" % Test
+    "com.disneystreaming" %% "weaver-cats" % "0.7.5" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.5" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
   publish / skip := true
