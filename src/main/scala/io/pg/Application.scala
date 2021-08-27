@@ -19,7 +19,6 @@ import org.http4s.implicits._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.SttpBackend
 import sttp.client3.http4s.Http4sBackend
-
 import scala.concurrent.ExecutionContext
 
 sealed trait Event extends Product with Serializable

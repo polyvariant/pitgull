@@ -6,7 +6,6 @@ import cats.effect.std.Dispatcher
 import cats.effect.unsafe.implicits._
 import io.odin.Logger
 import io.odin.slf4j.OdinLoggerBinder
-
 import java.util.concurrent.atomic.AtomicReference
 
 class OdinInterop extends OdinLoggerBinder[IO] {

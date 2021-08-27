@@ -2,9 +2,7 @@ package org.polyvariant
 
 import cats.implicits.*
 import cats.effect.*
-
 import sttp.model.Uri
-
 import sttp.client3.*
 import org.polyvariant.Gitlab.MergeRequestInfo
 import cats.Applicative

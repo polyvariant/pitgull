@@ -4,12 +4,11 @@ import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.deriveEnumerationCodec
 import io.circe.Codec
+import CirceConfiguration._
 
 private object CirceConfiguration {
   implicit val circeConfig: Configuration = Configuration.default.withDiscriminator("@type")
 }
-
-import CirceConfiguration._
 
 @ConfiguredJsonCodec
 final case class MergeRequestState(

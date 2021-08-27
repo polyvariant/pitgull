@@ -1,7 +1,6 @@
 package org.polyvariant
 
 import cats.implicits.*
-
 import scala.util.chaining.*
 import io.pg.gitlab.graphql.*
 import sttp.model.Uri

@@ -1,6 +1,7 @@
 package io.pg.gitlab.webhook
 
 import io.circe.generic.extras._
+import CirceConfiguration._
 
 private object CirceConfiguration {
 
@@ -12,8 +13,6 @@ private object CirceConfiguration {
       .withDiscriminator("object_kind")
 
 }
-
-import CirceConfiguration._
 
 @ConfiguredJsonCodec
 final case class WebhookEvent(project: Project, objectKind: String /* for logs */ )
