@@ -75,7 +75,7 @@ object ProjectConfigReader {
         Process(dhallCommand)
           .`with`("TOKEN" -> "demo-token")
           .fromFile(Paths.get(filePath))
-          .toFoldMonoid(fs2.text.utf8Decode[F])
+          .toFoldMonoid(fs2.text.utf8.decode[F])
           .run()
           .pipe(checkExitCode)
           .map(_.output)
