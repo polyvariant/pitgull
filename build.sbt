@@ -201,7 +201,7 @@ lazy val pitgull =
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
         "com.github.valskalla" %% "odin-core" % "0.12.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.12.0",
-        "io.github.vigoo" %% "prox-fs2-3" % "0.7.1"
+        "io.github.vigoo" %% "prox-fs2-3" % "0.7.3"
       )
     )
     .dependsOn(core, gitlab)
