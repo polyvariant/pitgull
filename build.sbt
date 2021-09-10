@@ -1,4 +1,5 @@
 import com.typesafe.sbt.packager.docker.Cmd
+
 import com.typesafe.sbt.packager.docker.ExecCmd
 
 inThisBuild(
