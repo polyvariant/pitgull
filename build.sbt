@@ -70,7 +70,7 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
 val compilerPlugins = List(
   crossPlugin("org.typelevel" % "kind-projector" % "0.13.2"),
   crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.9"),
-  crossPlugin("com.kubukoz" % "better-tostring" % "0.3.7"),
+  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.8"),
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
@@ -118,7 +118,7 @@ lazy val bootstrap = project
       "com.softwaremill.sttp.client3" %% "core" % "3.3.14",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.14",
       "io.circe" %% "circe-core" % "0.14.1",
-      crossPlugin("com.kubukoz" % "better-tostring" % "0.3.7")
+      crossPlugin("org.polyvariant" % "better-tostring" % "0.3.8")
     ),
     publish / skip := true,
     // Compile / mainClass := Some("org.polyvariant.Main"),
