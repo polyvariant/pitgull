@@ -199,7 +199,7 @@ lazy val pitgull =
         "is.cir" %% "ciris" % "2.1.1",
         "io.circe" %% "circe-generic-extras" % "0.14.0",
         "io.scalaland" %% "chimney" % "0.6.1",
-        "io.chrisdavenport" %% "cats-time" % "0.3.4",
+        "io.chrisdavenport" %% "cats-time" % "0.4.0",
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
         "io.github.vigoo" %% "prox-fs2-3" % "0.7.3"
