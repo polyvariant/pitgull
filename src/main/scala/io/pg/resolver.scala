@@ -36,7 +36,7 @@ object StateResolver {
       ): MergeRequestState =
         mr
           .into[MergeRequestState]
-          .withFieldComputed(_.status, _.status.getOrElse(MergeRequestInfo.Status.Success)) //for now - no pipeline means success
+          .withFieldComputed(_.status, _.status.getOrElse(MergeRequestInfo.Status.Success)) // for now - no pipeline means success
           .withFieldComputed(
             _.mergeability,
             info =>

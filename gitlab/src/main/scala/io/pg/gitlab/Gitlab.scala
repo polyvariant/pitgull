@@ -84,7 +84,7 @@ object Gitlab {
   ): Gitlab[F] = {
 
     def runRequest[O](request: Request[O, Any]): F[O] =
-      //todo multiple possible header names...
+      // todo multiple possible header names...
       request.header("Private-Token", accessToken.value).send(backend).map(_.body)
 
     import sttp.tapir.client.sttp._
@@ -229,7 +229,7 @@ object GitlabEndpoints {
 
   val acceptMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Any] =
     baseEndpoint
-      //hehe putin
+      // hehe putin
       .put
       .in("projects" / path[Long]("projectId"))
       .in("merge_requests" / path[Long]("merge_request_iid"))
