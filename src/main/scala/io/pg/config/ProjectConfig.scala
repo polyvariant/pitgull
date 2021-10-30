@@ -23,7 +23,7 @@ object ProjectConfigReader {
 
       def semver(level: String) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*".r))
 
-      //todo: dhall needs to be updated
+      // todo: dhall needs to be updated
       def steward(extra: Matcher) = Rule(
         "scala-steward",
         Matcher.Many(
@@ -59,7 +59,7 @@ object ProjectConfigReader {
     import prox._
 
     val dhallCommand = "dhall-to-json"
-    //todo: not reading a local file
+    // todo: not reading a local file
     val filePath = "./example.dhall"
 
     def checkExitCode[O, E]: F[ProcessResult[O, E]] => F[ProcessResult[O, E]] =

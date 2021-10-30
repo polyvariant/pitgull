@@ -72,9 +72,9 @@ object ProjectActions {
       }
 
       val perform = action match {
-        //todo: perform check is the MR still open?
-        //or fall back in case it's not
-        //https://www.youtube.com/watch?v=vxKBHX9Datw
+        // todo: perform check is the MR still open?
+        // or fall back in case it's not
+        // https://www.youtube.com/watch?v=vxKBHX9Datw
         case Merge(projectId, mergeRequestIid) =>
           Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
 
@@ -87,7 +87,7 @@ object ProjectActions {
           .error(
             "Couldn't perform action",
             Map(
-              //todo: consier granular fields
+              // todo: consier granular fields
               "action" -> action.toString
             ),
             error
