@@ -77,7 +77,7 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
-    "org.typelevel" %% "cats-core" % "2.6.1",
+    "org.typelevel" %% "cats-core" % "2.7.0",
     "org.typelevel" %% "cats-effect" % "3.2.9",
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
     "co.fs2" %% "fs2-core" % "3.1.6",
@@ -111,7 +111,7 @@ lazy val bootstrap = project
   .settings(
     scalaVersion := "3.0.0",
     libraryDependencies ++= List(
-      "org.typelevel" %% "cats-core" % "2.6.1",
+      "org.typelevel" %% "cats-core" % "2.7.0",
       "org.typelevel" %% "cats-effect" % "3.2.9",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.15",
