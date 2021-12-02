@@ -95,7 +95,7 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "2.1.1",
+      "is.cir" %% "ciris" % "2.3.0",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "io.circe" %% "circe-generic-extras" % "0.14.1",
       "io.circe" %% "circe-parser" % "0.14.1" % Test,
@@ -195,7 +195,7 @@ lazy val pitgull =
         "org.http4s" %% "http4s-circe" % "0.23.6",
         "org.http4s" %% "http4s-blaze-server" % "0.23.6",
         "org.http4s" %% "http4s-blaze-client" % "0.23.6",
-        "is.cir" %% "ciris" % "2.1.1",
+        "is.cir" %% "ciris" % "2.3.0",
         "io.circe" %% "circe-generic-extras" % "0.14.0",
         "io.scalaland" %% "chimney" % "0.6.1",
         "io.chrisdavenport" %% "cats-time" % "0.3.4",
