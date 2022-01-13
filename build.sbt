@@ -22,7 +22,7 @@ inThisBuild(
 
 val GraalVM11 = "graalvm-ce-java11@20.1.0"
 
-val Scala213 = "2.13.6"
+val Scala213 = "2.13.8"
 ThisBuild / scalaVersion := Scala213
 ThisBuild / crossScalaVersions := Seq(Scala213)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
