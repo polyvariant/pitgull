@@ -72,7 +72,7 @@ object Gitlab {
     }
 
     implicit val showTrimmed: Show[MergeRequestInfo] =
-      MergeRequestInfo.description.modify(_.map(TextUtils.trim(maxChars = 80))).apply(_).toString
+      MergeRequestInfo.description.modify(_.map(TextUtils.inline).map(TextUtils.trim(maxChars = 30))).apply(_).toString
   }
 
   def sttpInstance[F[_]: Logger: MonadError[*[_], Throwable]](
