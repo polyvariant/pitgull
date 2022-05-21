@@ -105,7 +105,7 @@ lazy val gitlab = project
 
 lazy val bootstrap = project
   .settings(
-    scalaVersion := "3.1.1",
+    scalaVersion := Scala3,
     libraryDependencies ++= List(
       "org.typelevel" %% "cats-core" % "2.7.0",
       "org.typelevel" %% "cats-effect" % "3.3.12",
@@ -193,7 +193,8 @@ lazy val pitgull =
         "io.chrisdavenport" %% "cats-time" % "0.4.0",
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
-        "io.github.vigoo" %% "prox-fs2-3" % "0.7.7"
+        "io.github.vigoo" %% "prox-fs2-3" % "0.7.7",
+        "io.circe" %% "circe-literal" % "0.14.2" % Test
       )
     )
     .dependsOn(core, gitlab)

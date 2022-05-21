@@ -52,7 +52,7 @@ object AppConfig {
       default(Git.Host.Gitlab),
       env("GIT_API_URL").as[Uri],
       env("GIT_API_TOKEN").secret
-    ).mapN(Git.apply)
+    ).parMapN(Git.apply)
 
   private val queuesConfig: ConfigValue[ciris.Effect, Queues] = default(100).map(Queues.apply)
 

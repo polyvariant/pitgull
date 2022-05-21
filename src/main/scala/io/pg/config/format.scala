@@ -10,13 +10,11 @@ import io.circe.Json
 
 object circe {
 
-  private val decodeRegex: Decoder[Regex] = Decoder.instance {
-    _.value
-      .asString
-      .toRight(DecodingFailure("Failed to decode as String", Nil))
-      .flatMap { s =>
-        Either.catchNonFatal(s.r).leftMap(DecodingFailure.fromThrowable(_, Nil))
-      }
+  private val decodeRegex: Decoder[Regex] = Decoder[String].flatMap { s =>
+    Either
+      .catchNonFatal(s.r)
+      .leftMap(DecodingFailure.fromThrowable(_, Nil))
+      .liftTo[Decoder]
   }
 
   private val encodeRegex: Encoder[Regex] = Encoder.encodeString.contramap[Regex](_.toString)
@@ -29,6 +27,15 @@ import circe.regexCodec
 enum TextMatcher {
   case Equals(value: String)
   case Matches(regex: Regex)
+
+  override def equals(another: Any) = (this, another) match {
+    // Regex uses reference equality by default.
+    // By using `.regex` we convert it back to a pattern string for better comparison.
+    case (Matches(p1), Matches(p2)) => p1.regex == p2.regex
+    case (Equals(e1), Equals(e2))   => e1 == e2
+    case _                          => false
+  }
+
 }
 
 object TextMatcher {
