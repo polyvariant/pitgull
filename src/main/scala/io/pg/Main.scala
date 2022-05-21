@@ -17,7 +17,6 @@ import org.http4s.HttpApp
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import cats.arrow.FunctionK
 
@@ -61,10 +60,10 @@ object Main extends IOApp {
       .httpApp(
         logHeaders = true,
         logBody = true,
-        logAction = (Logger[F].debug(_: String)).some
+        logAction = ((msg: String) => Logger[F].debug(msg)).some
       )(routes)
 
-    BlazeServerBuilder[F](ExecutionContext.global)
+    BlazeServerBuilder[F]
       .withHttpApp(app)
       .bindHttp(port = config.http.port, host = "0.0.0.0")
       .withBanner(config.meta.banner.linesIterator.toList)

@@ -20,8 +20,6 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.SttpBackend
 import sttp.client3.http4s.Http4sBackend
 
-import scala.concurrent.ExecutionContext
-
 sealed trait Event extends Product with Serializable
 
 object Event {
@@ -48,7 +46,7 @@ object Application {
         implicit val webhookChannel: Channel[F, WebhookEvent] =
           eventChannel.only[Event.Webhook].imap(_.value)(Event.Webhook)
 
-        BlazeClientBuilder[F](ExecutionContext.global)
+        BlazeClientBuilder[F]
           .resource
           .map(
             org
