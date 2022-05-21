@@ -8,7 +8,7 @@ object TextUtils {
     else s
   }
 
-  def inline(s: String): String = 
+  def inline(s: String): String =
     s.replaceAll("\n", " ")
 
 }

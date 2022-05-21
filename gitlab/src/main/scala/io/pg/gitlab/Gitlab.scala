@@ -144,7 +144,7 @@ object Gitlab {
           MergeRequest.description ~
           MergeRequest.shouldBeRebased ~
           MergeRequest.conflicts
-      ).mapN((buildMergeRequest(projectId) _))
+      ).mapN(buildMergeRequest(projectId) _)
 
       private def buildMergeRequest(
         projectId: Long

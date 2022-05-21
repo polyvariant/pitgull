@@ -39,7 +39,7 @@ object TextMatcher {
   implicit val codec: Codec[TextMatcher] = deriveConfiguredCodec
 }
 
-@ConfiguredJsonCodec()
+@ConfiguredJsonCodec
 sealed trait Matcher extends Product with Serializable {
   def and(another: Matcher): Matcher = Matcher.Many(List(this, another))
 }
@@ -62,14 +62,14 @@ object Action {
   implicit val codec: Codec[Action] = deriveEnumerationCodec
 }
 
-@ConfiguredJsonCodec()
+@ConfiguredJsonCodec
 final case class Rule(name: String, matcher: Matcher, action: Action)
 
 object Rule {
   val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
 }
 
-@ConfiguredJsonCodec()
+@ConfiguredJsonCodec
 final case class ProjectConfig(rules: List[Rule])
 
 object ProjectConfig {
