@@ -69,10 +69,7 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
   compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
-  // crossPlugin("org.typelevel" % "kind-projector" % "0.13.2"),
-  // crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.11"),
   crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
-  // compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
 val commonSettings = List(
@@ -80,7 +77,6 @@ val commonSettings = List(
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.7.0",
     "org.typelevel" %% "cats-effect" % "3.3.12",
-    // "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
     "co.fs2" %% "fs2-core" % "3.2.7",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
     "io.circe" %% "circe-core" % "0.14.2",
@@ -98,7 +94,6 @@ lazy val gitlab = project
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "2.3.2",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      // "io.circe" %% "circe-generic-extras" % "0.14.2",
       "io.circe" %% "circe-parser" % "0.14.2" % Test,
       "io.circe" %% "circe-literal" % "0.14.2" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.18.0-M17",
@@ -121,7 +116,6 @@ lazy val bootstrap = project
       crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
     publish / skip := true,
-    // Compile / mainClass := Some("org.polyvariant.Main"),
     githubWorkflowArtifactUpload := false,
     nativeImageVersion := "22.1.0",
     nativeImageOptions ++= Seq(
@@ -196,7 +190,6 @@ lazy val pitgull =
         "org.http4s" %% "http4s-blaze-server" % "0.23.11",
         "org.http4s" %% "http4s-blaze-client" % "0.23.11",
         "is.cir" %% "ciris" % "2.3.2",
-        // "io.circe" %% "circe-generic-extras" % "0.14.0",
         "io.chrisdavenport" %% "cats-time" % "0.4.0",
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
