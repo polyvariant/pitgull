@@ -4,26 +4,25 @@ import cats.Applicative
 import cats.MonadThrow
 import cats.effect.ExitCode
 import cats.syntax.all._
-import cats.tagless.finalAlg
 import io.github.vigoo.prox.ProxFS2
 import io.pg.gitlab.webhook.Project
 
 import java.nio.file.Paths
 import scala.util.chaining._
 
-@finalAlg
 trait ProjectConfigReader[F[_]] {
   def readConfig(project: Project): F[ProjectConfig]
 }
 
 object ProjectConfigReader {
+  def apply[F[_]](using F: ProjectConfigReader[F]): ProjectConfigReader[F] = F
 
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {
 
       def semver(level: String) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*".r))
 
-      //todo: dhall needs to be updated
+      // todo: dhall needs to be updated
       def steward(extra: Matcher) = Rule(
         "scala-steward",
         Matcher.Many(
@@ -59,7 +58,7 @@ object ProjectConfigReader {
     import prox._
 
     val dhallCommand = "dhall-to-json"
-    //todo: not reading a local file
+    // todo: not reading a local file
     val filePath = "./example.dhall"
 
     def checkExitCode[O, E]: F[ProcessResult[O, E]] => F[ProcessResult[O, E]] =
@@ -75,7 +74,7 @@ object ProjectConfigReader {
         Process(dhallCommand)
           .`with`("TOKEN" -> "demo-token")
           .fromFile(Paths.get(filePath))
-          .toFoldMonoid(fs2.text.utf8Decode[F])
+          .toFoldMonoid(fs2.text.utf8.decode[F])
           .run()
           .pipe(checkExitCode)
           .map(_.output)

@@ -1,5 +1,8 @@
 import com.typesafe.sbt.packager.docker.Cmd
+
 import com.typesafe.sbt.packager.docker.ExecCmd
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild(
   List(
@@ -21,11 +24,10 @@ inThisBuild(
 
 val GraalVM11 = "graalvm-ce-java11@20.1.0"
 
-val Scala213 = "2.13.6"
-ThisBuild / scalaVersion := Scala213
-ThisBuild / crossScalaVersions := Seq(Scala213)
+val Scala3 = "3.1.1"
+ThisBuild / scalaVersion := Scala3
+ThisBuild / crossScalaVersions := Seq(Scala3)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
-ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.StartsWith(Ref.Branch("main")),
@@ -67,25 +69,20 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
   compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
-  crossPlugin("org.typelevel" % "kind-projector" % "0.13.0"),
-  crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.9"),
-  crossPlugin("com.kubukoz" % "better-tostring" % "0.3.5"),
-  compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
+  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
 )
 
 val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
-  scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
-    "org.typelevel" %% "cats-core" % "2.6.1",
-    "org.typelevel" %% "cats-effect" % "3.1.1",
-    "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
-    "co.fs2" %% "fs2-core" % "3.0.6",
-    "com.github.valskalla" %% "odin-core" % "0.12.0",
-    "io.circe" %% "circe-core" % "0.14.1",
-    "dev.optics" %% "monocle-macro" % "3.0.0",
-    "com.disneystreaming" %% "weaver-cats" % "0.7.4" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.4" % Test
+    "org.typelevel" %% "cats-core" % "2.7.0",
+    "org.typelevel" %% "cats-effect" % "3.3.12",
+    "co.fs2" %% "fs2-core" % "3.2.7",
+    "com.github.valskalla" %% "odin-core" % "0.13.0",
+    "io.circe" %% "circe-core" % "0.14.2",
+    "dev.optics" %% "monocle-core" % "3.1.0",
+    "com.disneystreaming" %% "weaver-cats" % "0.7.11" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.11" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
   publish / skip := true
@@ -95,11 +92,10 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "2.0.1",
+      "is.cir" %% "ciris" % "2.3.2",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      "io.circe" %% "circe-generic-extras" % "0.14.1",
-      "io.circe" %% "circe-parser" % "0.14.1" % Test,
-      "io.circe" %% "circe-literal" % "0.14.1" % Test,
+      "io.circe" %% "circe-parser" % "0.14.2" % Test,
+      "io.circe" %% "circe-literal" % "0.14.2" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.18.0-M17",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.18.0-M17",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.18.0-M17"
@@ -109,20 +105,19 @@ lazy val gitlab = project
 
 lazy val bootstrap = project
   .settings(
-    scalaVersion := "3.0.0",
+    scalaVersion := Scala3,
     libraryDependencies ++= List(
-      "org.typelevel" %% "cats-core" % "2.6.1",
-      "org.typelevel" %% "cats-effect" % "3.1.1",
+      "org.typelevel" %% "cats-core" % "2.7.0",
+      "org.typelevel" %% "cats-effect" % "3.3.12",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      "com.softwaremill.sttp.client3" %% "core" % "3.3.12",
-      "com.softwaremill.sttp.client3" %% "circe" % "3.3.12",
-      "io.circe" %% "circe-core" % "0.14.1",
-      crossPlugin("com.kubukoz" % "better-tostring" % "0.3.5")
+      "com.softwaremill.sttp.client3" %% "core" % "3.3.15",
+      "com.softwaremill.sttp.client3" %% "circe" % "3.3.15",
+      "io.circe" %% "circe-core" % "0.14.2",
+      crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
     publish / skip := true,
-    // Compile / mainClass := Some("org.polyvariant.Main"),
     githubWorkflowArtifactUpload := false,
-    nativeImageVersion := "21.1.0",
+    nativeImageVersion := "22.1.0",
     nativeImageOptions ++= Seq(
       s"-H:ReflectionConfigurationFiles=${(Compile / resourceDirectory).value / "reflect-config.json"}",
       "--enable-url-protocols=https",
@@ -182,26 +177,24 @@ lazy val pitgull =
       //     "apk update && apk add curl bash"
       //   ) :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
-      Docker / mappings += (
-        file("./example.dhall") -> "/opt/docker/example.dhall"
-      ),
+      Docker / mappings +=
+        file("./example.dhall") -> "/opt/docker/example.dhall",
       mainClass := Some("io.pg.ProjectConfigReader"),
       buildInfoOptions += BuildInfoOption.ConstantValue,
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.12",
-        "org.http4s" %% "http4s-dsl" % "0.23.0-RC1",
-        "org.http4s" %% "http4s-circe" % "0.23.0-RC1",
-        "org.http4s" %% "http4s-blaze-server" % "0.23.0-RC1",
-        "org.http4s" %% "http4s-blaze-client" % "0.23.0-RC1",
-        "is.cir" %% "ciris" % "2.0.1",
-        "io.circe" %% "circe-generic-extras" % "0.14.0",
-        "io.scalaland" %% "chimney" % "0.6.1",
-        "io.chrisdavenport" %% "cats-time" % "0.3.4",
-        "com.github.valskalla" %% "odin-core" % "0.12.0",
-        "com.github.valskalla" %% "odin-slf4j" % "0.12.0",
-        "io.github.vigoo" %% "prox-fs2-3" % "0.7.1"
+        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.15",
+        "org.http4s" %% "http4s-dsl" % "0.23.11",
+        "org.http4s" %% "http4s-circe" % "0.23.11",
+        "org.http4s" %% "http4s-blaze-server" % "0.23.11",
+        "org.http4s" %% "http4s-blaze-client" % "0.23.11",
+        "is.cir" %% "ciris" % "2.3.2",
+        "io.chrisdavenport" %% "cats-time" % "0.4.0",
+        "com.github.valskalla" %% "odin-core" % "0.13.0",
+        "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
+        "io.github.vigoo" %% "prox-fs2-3" % "0.7.7",
+        "io.circe" %% "circe-literal" % "0.14.2" % Test
       )
     )
     .dependsOn(core, gitlab)

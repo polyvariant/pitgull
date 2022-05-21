@@ -2,7 +2,6 @@ package io.pg
 
 import cats.data.EitherNel
 import cats.implicits._
-import cats.tagless.autoContravariant
 import io.pg.ProjectAction.Merge
 import io.pg.config.Matcher
 import io.pg.config.ProjectConfig
@@ -20,6 +19,7 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import scala.util.matching.Regex
 import cats.MonadThrow
+import cats.Contravariant
 
 trait ProjectActions[F[_]] {
   type Action
@@ -72,9 +72,9 @@ object ProjectActions {
       }
 
       val perform = action match {
-        //todo: perform check is the MR still open?
-        //or fall back in case it's not
-        //https://www.youtube.com/watch?v=vxKBHX9Datw
+        // todo: perform check is the MR still open?
+        // or fall back in case it's not
+        // https://www.youtube.com/watch?v=vxKBHX9Datw
         case Merge(projectId, mergeRequestIid) =>
           Gitlab[F].acceptMergeRequest(projectId, mergeRequestIid)
 
@@ -87,7 +87,7 @@ object ProjectActions {
           .error(
             "Couldn't perform action",
             Map(
-              //todo: consier granular fields
+              // todo: consier granular fields
               "action" -> action.toString
             ),
             error
@@ -97,7 +97,6 @@ object ProjectActions {
 
   }
 
-  @autoContravariant
   trait MatcherFunction[-In] {
     def matches(in: In): Matched[Unit]
     def atPath(path: String): MatcherFunction[In] = mapFailures(_.map(_.atPath(path)))
@@ -107,6 +106,10 @@ object ProjectActions {
   }
 
   object MatcherFunction {
+
+    implicit val contravariantMatcherFunction: Contravariant[MatcherFunction] = new Contravariant[MatcherFunction] {
+      def contramap[A, B](fa: MatcherFunction[A])(f: B => A): MatcherFunction[B] = b => fa.matches(f(b))
+    }
 
     implicit val monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
       override def combineK[A](x: MatcherFunction[A], y: MatcherFunction[A]): MatcherFunction[A] =
@@ -169,17 +172,15 @@ object ProjectActions {
   def exists[A](base: MatcherFunction[A]): MatcherFunction[Option[A]] =
     _.fold[Matched[Unit]](Mismatch.ValueEmpty.leftNel)(base.matches)
 
-  def oneOf[A](matchers: List[MatcherFunction[A]]): MatcherFunction[A] = input => {
+  def oneOf[A](matchers: List[MatcherFunction[A]]): MatcherFunction[A] = input =>
     matchers
       .traverse(_.matches(input).swap)
       .swap
-      .leftMap(Mismatch.ManyFailed)
+      .leftMap(Mismatch.ManyFailed.apply)
       .toEitherNel
-  }
 
-  def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input => {
+  def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input =>
     matcher.matches(input).swap.leftMap(_ => Mismatch.NegationFailed).void.toEitherNel
-  }
 
   def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
     matchTextMatcher(matcher)
@@ -210,9 +211,7 @@ object ProjectActions {
 
 }
 
-sealed trait ProjectAction extends Product with Serializable
-
-object ProjectAction {
-  final case class Merge(projectId: Long, mergeRequestIid: Long) extends ProjectAction
-  final case class Rebase(projectId: Long, mergeRequestIid: Long) extends ProjectAction
+enum ProjectAction {
+  case Merge(projectId: Long, mergeRequestIid: Long)
+  case Rebase(projectId: Long, mergeRequestIid: Long)
 }

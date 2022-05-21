@@ -8,7 +8,6 @@ import caliban.client.SelectionBuilder
 import cats.MonadError
 import cats.kernel.Eq
 import cats.syntax.all._
-import cats.tagless.finalAlg
 import ciris.Secret
 import io.odin.Logger
 import io.pg.gitlab.Gitlab.MergeRequestInfo
@@ -30,14 +29,12 @@ import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import fs2.Stream
 import io.circe.{Codec => CirceCodec}
-import io.circe.generic.extras.semiauto._
-import io.circe.generic.extras.Configuration
 import io.pg.gitlab.GitlabEndpoints.transport.MergeRequestApprovals
-import monocle.macros.Lenses
+import monocle.syntax.all._
 import cats.Show
 import io.pg.TextUtils
+import cats.MonadThrow
 
-@finalAlg
 trait Gitlab[F[_]] {
   def mergeRequests(projectId: Long): F[List[MergeRequestInfo]]
   def acceptMergeRequest(projectId: Long, mergeRequestIid: Long): F[Unit]
@@ -47,10 +44,11 @@ trait Gitlab[F[_]] {
 
 object Gitlab {
 
+  def apply[F[_]](using F: Gitlab[F]): Gitlab[F] = F
+
   // VCS-specific MR information
   // Not specific to the method of fetching (no graphql model references etc.)
   // Fields only required according to reason (e.g. must have a numeric ID - we might loosen this later)
-  @Lenses
   final case class MergeRequestInfo(
     projectId: Long,
     mergeRequestIid: Long,
@@ -62,20 +60,19 @@ object Gitlab {
   )
 
   object MergeRequestInfo {
-    sealed trait Status extends Product with Serializable
 
-    object Status {
-      case object Success extends Status
-      final case class Other(value: String) extends Status
+    enum Status {
+      case Success
+      case Other(value: String)
 
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
 
     implicit val showTrimmed: Show[MergeRequestInfo] =
-      MergeRequestInfo.description.modify(_.map(TextUtils.trim(maxChars = 80))).apply(_).toString
+      _.focus(_.description).modify(_.map(TextUtils.inline).map(TextUtils.trim(maxChars = 30))).toString
   }
 
-  def sttpInstance[F[_]: Logger: MonadError[*[_], Throwable]](
+  def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
     accessToken: Secret[String]
   )(
@@ -84,7 +81,7 @@ object Gitlab {
   ): Gitlab[F] = {
 
     def runRequest[O](request: Request[O, Any]): F[O] =
-      //todo multiple possible header names...
+      // todo multiple possible header names...
       request.header("Private-Token", accessToken.value).send(backend).map(_.body)
 
     import sttp.tapir.client.sttp._
@@ -144,7 +141,7 @@ object Gitlab {
           MergeRequest.description ~
           MergeRequest.shouldBeRebased ~
           MergeRequest.conflicts
-      ).mapN((buildMergeRequest(projectId) _))
+      ).mapN(buildMergeRequest(projectId) _)
 
       private def buildMergeRequest(
         projectId: Long
@@ -229,7 +226,7 @@ object GitlabEndpoints {
 
   val acceptMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Any] =
     baseEndpoint
-      //hehe putin
+      // hehe putin
       .put
       .in("projects" / path[Long]("projectId"))
       .in("merge_requests" / path[Long]("merge_request_iid"))
@@ -278,20 +275,21 @@ object GitlabEndpoints {
       .in(query[Int]("approvals_required"))
 
   object transport {
-    implicit val config: Configuration = Configuration.default.withSnakeCaseMemberNames
 
     final case class ApprovalRule(id: Long, name: String, ruleType: String) {
       val isMutable: Boolean = ruleType != "code_owner"
     }
 
     object ApprovalRule {
-      implicit val codec: CirceCodec[ApprovalRule] = deriveConfiguredCodec
+      // todo: use configured codec when https://github.com/circe/circe/pull/1800 is available
+      given CirceCodec[ApprovalRule] = CirceCodec.forProduct3("id", "name", "rule_type")(apply)(r => (r.id, r.name, r.ruleType))
     }
 
     final case class MergeRequestApprovals(approvalsRequired: Int)
 
     object MergeRequestApprovals {
-      implicit val codec: CirceCodec[MergeRequestApprovals] = deriveConfiguredCodec
+      // todo: use configured codec when https://github.com/circe/circe/pull/1800 is available
+      given CirceCodec[MergeRequestApprovals] = CirceCodec.forProduct1("approvals_required")(apply)(_.approvalsRequired)
     }
 
   }

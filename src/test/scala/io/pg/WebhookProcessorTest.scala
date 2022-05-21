@@ -17,6 +17,7 @@ import io.pg.config.Matcher
 import io.pg.config.Action
 import io.pg.config.TextMatcher
 import io.pg.MergeRequestState.Mergeability
+import io.odin.Logger
 
 object WebhookProcessorTest extends SimpleIOSuite {
 
@@ -33,7 +34,7 @@ object WebhookProcessorTest extends SimpleIOSuite {
     ProjectConfigReaderFake
       .refInstance[IO]
       .flatMap { implicit configReader =>
-        implicit val logger = io.odin.consoleLogger[IO]()
+        given Logger[IO] = io.odin.consoleLogger[IO]()
 
         ProjectActionsStateFake.refInstance[IO].map { implicit projects =>
           implicit val mergeRequests: MergeRequests[IO] = MergeRequests.instance[IO]
@@ -110,10 +111,14 @@ object WebhookProcessorTest extends SimpleIOSuite {
       _   <- projectModifiers.finishPipeline(projectId, mr2)
       _   <- projectModifiers.setMergeability(projectId, mr2, Mergeability.NeedsRebase)
 
-      (mergeRequestsAfterProcess1, logAfterProcess1) <- perform
-      (mergeRequestsAfterProcess2, logAfterProcess2) <- perform
-      (mergeRequestsAfterProcess3, logAfterProcess3) <- perform
+      result1 <- perform
+      result2 <- perform
+      result3 <- perform
     } yield {
+      val (mergeRequestsAfterProcess1, logAfterProcess1) = result1
+      val (mergeRequestsAfterProcess2, logAfterProcess2) = result2
+      val (mergeRequestsAfterProcess3, logAfterProcess3) = result3
+
       val merge1 = ProjectAction.Merge(projectId, mr1)
       val rebase2 = ProjectAction.Rebase(projectId, mr2)
       val merge2 = ProjectAction.Merge(projectId, mr2)
