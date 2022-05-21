@@ -6,7 +6,6 @@ import cats.Show
 import cats.data.EitherNel
 import cats.data.NonEmptyList
 import cats.implicits._
-import cats.tagless.finalAlg
 import fs2.Pipe
 import io.odin.Logger
 import io.pg.MergeRequestState
@@ -16,12 +15,13 @@ import io.pg.StateResolver
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.Project
 
-@finalAlg
 trait MergeRequests[F[_]] {
   def build(project: Project): F[List[MergeRequestState]]
 }
 
 object MergeRequests {
+  def apply[F[_]](using F: MergeRequests[F]): MergeRequests[F] = F
+
   import scala.util.chaining._
 
   def instance[F[_]: ProjectConfigReader: StateResolver: Monad: Logger](
