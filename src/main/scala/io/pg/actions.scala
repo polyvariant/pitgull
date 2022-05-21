@@ -176,7 +176,7 @@ object ProjectActions {
     matchers
       .traverse(_.matches(input).swap)
       .swap
-      .leftMap(Mismatch.ManyFailed)
+      .leftMap(Mismatch.ManyFailed.apply)
       .toEitherNel
 
   def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input =>
@@ -211,9 +211,7 @@ object ProjectActions {
 
 }
 
-sealed trait ProjectAction extends Product with Serializable
-
-object ProjectAction {
-  final case class Merge(projectId: Long, mergeRequestIid: Long) extends ProjectAction
-  final case class Rebase(projectId: Long, mergeRequestIid: Long) extends ProjectAction
+enum ProjectAction {
+  case Merge(projectId: Long, mergeRequestIid: Long)
+  case Rebase(projectId: Long, mergeRequestIid: Long)
 }
