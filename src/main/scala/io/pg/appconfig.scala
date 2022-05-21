@@ -38,7 +38,7 @@ object AppConfig {
       default(bannerString),
       default(BuildInfo.version),
       default(BuildInfo.scalaVersion)
-    ).parMapN(MetaConfig)
+    ).parMapN(MetaConfig.apply)
 
   implicit val decodeUri: ConfigDecoder[String, Uri] =
     ConfigDecoder[String, String].mapEither { (key, value) =>
@@ -54,10 +54,10 @@ object AppConfig {
       env("GIT_API_TOKEN").secret
     ).mapN(Git.apply)
 
-  private val queuesConfig: ConfigValue[ciris.Effect, Queues] = default(100).map(Queues)
+  private val queuesConfig: ConfigValue[ciris.Effect, Queues] = default(100).map(Queues.apply)
 
   private val middlewareConfig: ConfigValue[ciris.Effect, MiddlewareConfig] =
-    default(Headers.SensitiveHeaders + CIString("Private-Token")).map(MiddlewareConfig)
+    default(Headers.SensitiveHeaders + CIString("Private-Token")).map(MiddlewareConfig.apply)
 
   val appConfig: ConfigValue[ciris.Effect, AppConfig] =
     (httpConfig, metaConfig, gitConfig, queuesConfig, middlewareConfig).parMapN(apply)

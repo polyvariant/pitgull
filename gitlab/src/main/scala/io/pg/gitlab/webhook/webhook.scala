@@ -1,27 +1,16 @@
 package io.pg.gitlab.webhook
 
-import io.circe.generic.extras._
+import io.circe.Codec
 
-private object CirceConfiguration {
-
-  implicit val config: Configuration =
-    Configuration
-      .default
-      .withSnakeCaseMemberNames
-      .withSnakeCaseConstructorNames
-      .withDiscriminator("object_kind")
-
-}
-
-import CirceConfiguration._
-
-@ConfiguredJsonCodec
 final case class WebhookEvent(project: Project, objectKind: String /* for logs */ )
 
-@ConfiguredJsonCodec
+object WebhookEvent {
+  given Codec[WebhookEvent] = Codec.forProduct2("project", "object_kind")(apply)(we => (we.project, we.objectKind))
+}
+
 final case class Project(
   id: Long
-)
+) derives Codec.AsObject
 
 object Project {
   val demo = Project(20190338)

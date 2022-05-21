@@ -10,11 +10,13 @@ import io.pg.gitlab.webhook.Project
 import io.pg.gitlab.webhook.WebhookEvent
 import io.pg.messaging.Publisher
 import io.pg.transport
-import io.scalaland.chimney.dsl._
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import cats.MonadThrow
+import io.pg.gitlab.Gitlab.MergeRequestInfo
+import io.pg.MergeRequestState.Mergeability
 
 object WebhookRouter {
 
@@ -31,7 +33,28 @@ object WebhookRouter {
       case GET -> Root / "preview" / LongVar(projectId) =>
         val proj = Project(projectId)
 
-        MergeRequests[F].build(proj).nested.map(_.transformInto[transport.MergeRequestState]).value.flatMap(Ok(_))
+        MergeRequests[F]
+          .build(proj)
+          .nested
+          .map { s =>
+            transport.MergeRequestState(
+              projectId = s.projectId,
+              mergeRequestIid = s.mergeRequestIid,
+              description = s.description,
+              status = s.status match {
+                case MergeRequestInfo.Status.Success  => transport.MergeRequestState.Status.Success
+                case MergeRequestInfo.Status.Other(s) => transport.MergeRequestState.Status.Other(s)
+              },
+              mergeability = s.mergeability match {
+                case Mergeability.CanMerge     => transport.MergeRequestState.Mergeability.CanMerge
+                case Mergeability.HasConflicts => transport.MergeRequestState.Mergeability.HasConflicts
+                case Mergeability.NeedsRebase  => transport.MergeRequestState.Mergeability.NeedsRebase
+              },
+              authorUsername = s.authorUsername
+            )
+          }
+          .value
+          .flatMap(Ok(_))
     }
 
   }
@@ -43,9 +66,7 @@ object WebhookProcessor {
   def instance[
     F[
       _
-    ]: MergeRequests: ProjectActions: Logger: MonadError[*[
-      _
-    ], Throwable]
+    ]: MergeRequests: ProjectActions: Logger: MonadThrow
   ]: WebhookEvent => F[Unit] = { ev =>
     for {
       _      <- Logger[F].info("Received event", Map("event" -> ev.toString()))

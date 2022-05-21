@@ -7,13 +7,12 @@ import cats.mtl.Stateful
 import io.pg.config.ProjectConfig
 import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.Project
-import monocle.macros.Lenses
+import monocle.syntax.all._
 
 trait FakeState
 
 object ProjectConfigReaderFake {
 
-  @Lenses
   sealed case class State(
     configs: Map[Long, ProjectConfig]
   )
@@ -44,7 +43,7 @@ object ProjectConfigReaderFake {
           .flatMap(_.configs.get(project.id).liftTo[F](new Throwable(s"Unknown project: $project")))
 
       def register(projectId: Long, config: ProjectConfig): F[Unit] =
-        Data[F].modify(State.configs.modify(_ + (projectId -> config)))
+        Data[F].modify(_.focus(_.configs).modify(_ + (projectId -> config)))
 
     }
 
