@@ -82,7 +82,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
     "co.fs2" %% "fs2-core" % "3.2.7",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
-    "io.circe" %% "circe-core" % "0.14.1",
+    "io.circe" %% "circe-core" % "0.14.2",
     "dev.optics" %% "monocle-macro" % "3.1.0",
     "com.disneystreaming" %% "weaver-cats" % "0.7.11" % Test,
     "com.disneystreaming" %% "weaver-scalacheck" % "0.7.11" % Test
@@ -98,8 +98,8 @@ lazy val gitlab = project
       "is.cir" %% "ciris" % "2.3.2",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "io.circe" %% "circe-generic-extras" % "0.14.1",
-      "io.circe" %% "circe-parser" % "0.14.1" % Test,
-      "io.circe" %% "circe-literal" % "0.14.1" % Test,
+      "io.circe" %% "circe-parser" % "0.14.2" % Test,
+      "io.circe" %% "circe-literal" % "0.14.2" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.18.0-M17",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.18.0-M17",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.18.0-M17"
@@ -116,7 +116,7 @@ lazy val bootstrap = project
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.15",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.15",
-      "io.circe" %% "circe-core" % "0.14.1",
+      "io.circe" %% "circe-core" % "0.14.2",
       crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
     publish / skip := true,
