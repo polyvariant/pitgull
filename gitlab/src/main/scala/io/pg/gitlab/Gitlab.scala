@@ -281,12 +281,14 @@ object GitlabEndpoints {
     }
 
     object ApprovalRule {
+      // todo: use configured codec when https://github.com/circe/circe/pull/1800 is available
       given CirceCodec[ApprovalRule] = CirceCodec.forProduct3("id", "name", "rule_type")(apply)(r => (r.id, r.name, r.ruleType))
     }
 
     final case class MergeRequestApprovals(approvalsRequired: Int)
 
     object MergeRequestApprovals {
+      // todo: use configured codec when https://github.com/circe/circe/pull/1800 is available
       given CirceCodec[MergeRequestApprovals] = CirceCodec.forProduct1("approvals_required")(apply)(_.approvalsRequired)
     }
 

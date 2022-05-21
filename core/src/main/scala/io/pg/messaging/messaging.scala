@@ -36,16 +36,19 @@ object Processor {
 
 }
 
-trait Channel[F[_], A] extends Publisher[F, A] { self =>
+trait Channel[F[_], A] extends Publisher[F, A] {
   def consume: fs2.Stream[F, A]
 }
 
 object Channel {
-  given[F[_]]: Invariant[Channel[F, *]] with {
+
+  given [F[_]]: Invariant[Channel[F, *]] with {
+
     def imap[A, B](chan: Channel[F, A])(f: A => B)(g: B => A): Channel[F, B] = new {
-      def consume: fs2.Stream[F,B] = chan.consume.map(f)
+      def consume: fs2.Stream[F, B] = chan.consume.map(f)
       def publish(b: B): F[Unit] = chan.publish(g(b))
     }
+
   }
 
   def fromQueue[F[_]: Functor, A](q: Queue[F, A]): Channel[F, A] =

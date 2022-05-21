@@ -17,6 +17,7 @@ import org.http4s.dsl.Http4sDsl
 import cats.MonadThrow
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.MergeRequestState.Mergeability
+import io.pg.MergeRequestState
 
 object WebhookRouter {
 
@@ -36,28 +37,28 @@ object WebhookRouter {
         MergeRequests[F]
           .build(proj)
           .nested
-          .map { s =>
-            transport.MergeRequestState(
-              projectId = s.projectId,
-              mergeRequestIid = s.mergeRequestIid,
-              description = s.description,
-              status = s.status match {
-                case MergeRequestInfo.Status.Success  => transport.MergeRequestState.Status.Success
-                case MergeRequestInfo.Status.Other(s) => transport.MergeRequestState.Status.Other(s)
-              },
-              mergeability = s.mergeability match {
-                case Mergeability.CanMerge     => transport.MergeRequestState.Mergeability.CanMerge
-                case Mergeability.HasConflicts => transport.MergeRequestState.Mergeability.HasConflicts
-                case Mergeability.NeedsRebase  => transport.MergeRequestState.Mergeability.NeedsRebase
-              },
-              authorUsername = s.authorUsername
-            )
-          }
+          .map(mergeRequestToTransport)
           .value
           .flatMap(Ok(_))
     }
 
   }
+
+  private def mergeRequestToTransport(mr: MergeRequestState): io.pg.transport.MergeRequestState = transport.MergeRequestState(
+    projectId = mr.projectId,
+    mergeRequestIid = mr.mergeRequestIid,
+    description = mr.description,
+    status = mr.status match {
+      case MergeRequestInfo.Status.Success  => transport.MergeRequestState.Status.Success
+      case MergeRequestInfo.Status.Other(s) => transport.MergeRequestState.Status.Other(s)
+    },
+    mergeability = mr.mergeability match {
+      case Mergeability.CanMerge     => transport.MergeRequestState.Mergeability.CanMerge
+      case Mergeability.HasConflicts => transport.MergeRequestState.Mergeability.HasConflicts
+      case Mergeability.NeedsRebase  => transport.MergeRequestState.Mergeability.NeedsRebase
+    },
+    authorUsername = mr.authorUsername
+  )
 
 }
 
