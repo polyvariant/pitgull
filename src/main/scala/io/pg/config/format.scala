@@ -22,12 +22,9 @@ object circe {
   private val encodeRegex: Encoder[Regex] = Encoder.encodeString.contramap[Regex](_.toString)
 
   implicit val regexCodec: Codec[Regex] = Codec.from(decodeRegex, encodeRegex)
-
-  def writeWithKind[A: Encoder](a: A, kind: String) = Encoder[A].apply(a).mapObject(_.add("kind", Json.fromString(kind)))
 }
 
 import circe.regexCodec
-import circe.writeWithKind
 
 enum TextMatcher {
   case Equals(value: String)
@@ -35,24 +32,7 @@ enum TextMatcher {
 }
 
 object TextMatcher {
-
-  given Codec[TextMatcher] = {
-    given Codec[Equals] = Codec.AsObject.derived
-    given Codec[Matches] = Codec.AsObject.derived
-
-    val decoder: Decoder[TextMatcher] = Decoder[String].at("kind").flatMap {
-      case "Qquals"  => Decoder[Equals].widen
-      case "Matches" => Decoder[Matches].widen
-    }
-
-    val encoder: Encoder[TextMatcher] = {
-      case a: Equals  => writeWithKind(a, "Equals")
-      case a: Matches => writeWithKind(a, "Matches")
-    }
-
-    Codec.from(decoder, encoder)
-  }
-
+  given Codec[TextMatcher] = DiscriminatedCodec.derived("kind")
 }
 
 enum Matcher {
@@ -64,40 +44,10 @@ enum Matcher {
   case Many(values: List[Matcher])
   case OneOf(values: List[Matcher])
   case Not(underlying: Matcher)
-
 }
 
 object Matcher {
-
-  given Codec[Matcher] = {
-    given Codec[Author] = Codec.AsObject.derived
-    given Codec[Description] = Codec.AsObject.derived
-    given Codec[PipelineStatus] = Codec.AsObject.derived
-    given Codec[Many] = Codec.AsObject.derived
-    given Codec[OneOf] = Codec.AsObject.derived
-    given Codec[Not] = Codec.AsObject.derived
-
-    val decoder: Decoder[Matcher] = Decoder[String].at("kind").flatMap {
-      case "Author"         => Decoder[Author].widen
-      case "Description"    => Decoder[Description].widen
-      case "PipelineStatus" => Decoder[PipelineStatus].widen
-      case "Nany"           => Decoder[Many].widen
-      case "OneOf"          => Decoder[OneOf].widen
-      case "Not"            => Decoder[Not].widen
-    }
-
-    val encoder: Encoder[Matcher] = {
-      case a: Author         => writeWithKind(a, "Author")
-      case a: Description    => writeWithKind(a, "Description")
-      case a: PipelineStatus => writeWithKind(a, "PipelineStatus")
-      case a: Many           => writeWithKind(a, "Many")
-      case a: OneOf          => writeWithKind(a, "OneOf")
-      case a: Not            => writeWithKind(a, "Not")
-    }
-
-    Codec.from(decoder, encoder)
-  }
-
+  given Codec[Matcher] = DiscriminatedCodec.derived("kind")
 }
 
 //todo: remove this type altogether and assume Merge for now?
