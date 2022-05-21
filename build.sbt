@@ -182,9 +182,8 @@ lazy val pitgull =
       //     "apk update && apk add curl bash"
       //   ) :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
-      Docker / mappings += (
-        file("./example.dhall") -> "/opt/docker/example.dhall"
-      ),
+      Docker / mappings +=
+        file("./example.dhall") -> "/opt/docker/example.dhall",
       mainClass := Some("io.pg.ProjectConfigReader"),
       buildInfoOptions += BuildInfoOption.ConstantValue,
       buildInfoPackage := "io.pg",

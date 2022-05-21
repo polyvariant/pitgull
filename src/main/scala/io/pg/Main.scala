@@ -61,7 +61,7 @@ object Main extends IOApp {
       .httpApp(
         logHeaders = true,
         logBody = true,
-        logAction = (Logger[F].debug(_: String)).some
+        logAction = Logger[F].debug(_: String).some
       )(routes)
 
     BlazeServerBuilder[F](ExecutionContext.global)
