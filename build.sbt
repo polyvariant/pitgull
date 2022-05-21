@@ -68,8 +68,8 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
 
 val compilerPlugins = List(
   crossPlugin("org.typelevel" % "kind-projector" % "0.13.2"),
-  crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.9"),
-  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.10"),
+  crossPlugin("com.github.cb372" % "scala-typed-holes" % "0.1.11"),
+  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15"),
   compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 )
 
@@ -77,15 +77,15 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   scalacOptions += "-Ymacro-annotations",
   libraryDependencies ++= List(
-    "org.typelevel" %% "cats-core" % "2.6.1",
-    "org.typelevel" %% "cats-effect" % "3.2.9",
+    "org.typelevel" %% "cats-core" % "2.7.0",
+    "org.typelevel" %% "cats-effect" % "3.3.12",
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0",
-    "co.fs2" %% "fs2-core" % "3.1.6",
+    "co.fs2" %% "fs2-core" % "3.2.7",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
     "io.circe" %% "circe-core" % "0.14.1",
     "dev.optics" %% "monocle-macro" % "3.1.0",
-    "com.disneystreaming" %% "weaver-cats" % "0.7.7" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.7" % Test
+    "com.disneystreaming" %% "weaver-cats" % "0.7.11" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.11" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
   publish / skip := true
@@ -95,7 +95,7 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "2.1.1",
+      "is.cir" %% "ciris" % "2.3.2",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "io.circe" %% "circe-generic-extras" % "0.14.1",
       "io.circe" %% "circe-parser" % "0.14.1" % Test,
@@ -111,18 +111,18 @@ lazy val bootstrap = project
   .settings(
     scalaVersion := "3.0.0",
     libraryDependencies ++= List(
-      "org.typelevel" %% "cats-core" % "2.6.1",
-      "org.typelevel" %% "cats-effect" % "3.2.9",
+      "org.typelevel" %% "cats-core" % "2.7.0",
+      "org.typelevel" %% "cats-effect" % "3.3.12",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.15",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.15",
       "io.circe" %% "circe-core" % "0.14.1",
-      crossPlugin("org.polyvariant" % "better-tostring" % "0.3.10")
+      crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
     publish / skip := true,
     // Compile / mainClass := Some("org.polyvariant.Main"),
     githubWorkflowArtifactUpload := false,
-    nativeImageVersion := "21.1.0",
+    nativeImageVersion := "22.1.0",
     nativeImageOptions ++= Seq(
       s"-H:ReflectionConfigurationFiles=${(Compile / resourceDirectory).value / "reflect-config.json"}",
       "--enable-url-protocols=https",
@@ -182,26 +182,25 @@ lazy val pitgull =
       //     "apk update && apk add curl bash"
       //   ) :: installDhallJson :: Nil,
       Docker / packageName := "kubukoz/pitgull",
-      Docker / mappings += (
-        file("./example.dhall") -> "/opt/docker/example.dhall"
-      ),
+      Docker / mappings +=
+        file("./example.dhall") -> "/opt/docker/example.dhall",
       mainClass := Some("io.pg.ProjectConfigReader"),
       buildInfoOptions += BuildInfoOption.ConstantValue,
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
         "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.15",
-        "org.http4s" %% "http4s-dsl" % "0.23.6",
-        "org.http4s" %% "http4s-circe" % "0.23.6",
-        "org.http4s" %% "http4s-blaze-server" % "0.23.6",
-        "org.http4s" %% "http4s-blaze-client" % "0.23.6",
-        "is.cir" %% "ciris" % "2.1.1",
+        "org.http4s" %% "http4s-dsl" % "0.23.11",
+        "org.http4s" %% "http4s-circe" % "0.23.11",
+        "org.http4s" %% "http4s-blaze-server" % "0.23.11",
+        "org.http4s" %% "http4s-blaze-client" % "0.23.11",
+        "is.cir" %% "ciris" % "2.3.2",
         "io.circe" %% "circe-generic-extras" % "0.14.0",
         "io.scalaland" %% "chimney" % "0.6.1",
-        "io.chrisdavenport" %% "cats-time" % "0.3.4",
+        "io.chrisdavenport" %% "cats-time" % "0.4.0",
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
-        "io.github.vigoo" %% "prox-fs2-3" % "0.7.3"
+        "io.github.vigoo" %% "prox-fs2-3" % "0.7.7"
       )
     )
     .dependsOn(core, gitlab)
