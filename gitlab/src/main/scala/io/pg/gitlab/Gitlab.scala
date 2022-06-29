@@ -116,9 +116,11 @@ object Gitlab {
                   )(
                     MergeRequestConnection
                       .nodes(mergeRequestInfoSelection(projectId))
+                      .map(_.toList.flatten)
                   )
+                  .map(_.toList.flatten.flatten)
               )
-              .map(flattenTheEarth)
+              .map(_.toList.flatten.flatten.flatten)
           )
           .mapEither(_.toRight(DecodingError("Project not found")))
           .pipe(runGraphQLQuery(_))
