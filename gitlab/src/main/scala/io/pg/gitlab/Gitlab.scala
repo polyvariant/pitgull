@@ -131,9 +131,6 @@ object Gitlab {
             )
           }
 
-      private def flattenTheEarth[A]: Option[List[Option[Option[Option[List[Option[A]]]]]]] => List[A] =
-        _.toList.flatten.flatten.flatten.flatten.flatten.flatten
-
       private def mergeRequestInfoSelection(projectId: Long): SelectionBuilder[MergeRequest, MergeRequestInfo] = (
         MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
           MergeRequest.headPipeline(Pipeline.status.map(convertPipelineStatus)) ~
