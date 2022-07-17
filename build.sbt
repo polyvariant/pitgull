@@ -24,7 +24,7 @@ inThisBuild(
 
 val GraalVM11 = "graalvm-ce-java11@20.1.0"
 
-val Scala3 = "3.1.1"
+val Scala3 = "3.1.2"
 ThisBuild / scalaVersion := Scala3
 ThisBuild / crossScalaVersions := Seq(Scala3)
 ThisBuild / githubWorkflowJavaVersions := Seq(GraalVM11)
@@ -76,13 +76,13 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.7.0",
-    "org.typelevel" %% "cats-effect" % "3.3.12",
-    "co.fs2" %% "fs2-core" % "3.2.7",
+    "org.typelevel" %% "cats-effect" % "3.3.14",
+    "co.fs2" %% "fs2-core" % "3.2.10",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
     "io.circe" %% "circe-core" % "0.14.2",
     "dev.optics" %% "monocle-core" % "3.1.0",
-    "com.disneystreaming" %% "weaver-cats" % "0.7.11" % Test,
-    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.11" % Test
+    "com.disneystreaming" %% "weaver-cats" % "0.7.13" % Test,
+    "com.disneystreaming" %% "weaver-scalacheck" % "0.7.13" % Test
   ) ++ compilerPlugins,
   testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
   publish / skip := true
@@ -92,7 +92,7 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "2.3.2",
+      "is.cir" %% "ciris" % "2.3.3",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "io.circe" %% "circe-parser" % "0.14.2" % Test,
       "io.circe" %% "circe-literal" % "0.14.2" % Test,
@@ -108,10 +108,10 @@ lazy val bootstrap = project
     scalaVersion := Scala3,
     libraryDependencies ++= List(
       "org.typelevel" %% "cats-core" % "2.7.0",
-      "org.typelevel" %% "cats-effect" % "3.3.12",
+      "org.typelevel" %% "cats-effect" % "3.3.14",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      "com.softwaremill.sttp.client3" %% "core" % "3.3.15",
-      "com.softwaremill.sttp.client3" %% "circe" % "3.3.15",
+      "com.softwaremill.sttp.client3" %% "core" % "3.3.18",
+      "com.softwaremill.sttp.client3" %% "circe" % "3.3.18",
       "io.circe" %% "circe-core" % "0.14.2",
       crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
@@ -184,12 +184,12 @@ lazy val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.15",
+        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.18",
         "org.http4s" %% "http4s-dsl" % "0.23.11",
         "org.http4s" %% "http4s-circe" % "0.23.11",
         "org.http4s" %% "http4s-blaze-server" % "0.23.11",
         "org.http4s" %% "http4s-blaze-client" % "0.23.11",
-        "is.cir" %% "ciris" % "2.3.2",
+        "is.cir" %% "ciris" % "2.3.3",
         "io.chrisdavenport" %% "cats-time" % "0.4.0",
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
