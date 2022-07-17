@@ -76,7 +76,7 @@ val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.7.0",
-    "org.typelevel" %% "cats-effect" % "3.3.12",
+    "org.typelevel" %% "cats-effect" % "3.3.14",
     "co.fs2" %% "fs2-core" % "3.2.10",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
     "io.circe" %% "circe-core" % "0.14.2",
@@ -92,7 +92,7 @@ lazy val gitlab = project
   .settings(
     commonSettings,
     libraryDependencies ++= List(
-      "is.cir" %% "ciris" % "2.3.2",
+      "is.cir" %% "ciris" % "2.3.3",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "io.circe" %% "circe-parser" % "0.14.2" % Test,
       "io.circe" %% "circe-literal" % "0.14.2" % Test,
@@ -108,7 +108,7 @@ lazy val bootstrap = project
     scalaVersion := Scala3,
     libraryDependencies ++= List(
       "org.typelevel" %% "cats-core" % "2.7.0",
-      "org.typelevel" %% "cats-effect" % "3.3.12",
+      "org.typelevel" %% "cats-effect" % "3.3.14",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.18",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.18",
@@ -189,7 +189,7 @@ lazy val pitgull =
         "org.http4s" %% "http4s-circe" % "0.23.11",
         "org.http4s" %% "http4s-blaze-server" % "0.23.11",
         "org.http4s" %% "http4s-blaze-client" % "0.23.11",
-        "is.cir" %% "ciris" % "2.3.2",
+        "is.cir" %% "ciris" % "2.3.3",
         "io.chrisdavenport" %% "cats-time" % "0.4.0",
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
