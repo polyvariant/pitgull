@@ -15,17 +15,16 @@ import io.pg.ProjectActions
 import io.pg.StateResolver
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.gitlab.webhook.Project
-import io.scalaland.chimney.dsl._
-import monocle.macros.Lenses
+import monocle.syntax.all._
 
 object ProjectActionsStateFake {
   sealed case class MergeRequestDescription(projectId: Long, mergeRequestIid: Long)
 
   object MergeRequestDescription {
-    val fromMergeAction: ProjectAction.Merge => MergeRequestDescription = _.transformInto[MergeRequestDescription]
+    val fromMergeAction: ProjectAction.Merge => MergeRequestDescription = merge =>
+      MergeRequestDescription(merge.projectId, merge.mergeRequestIid)
   }
 
-  @Lenses
   sealed case class State(
     mergeRequests: Map[MergeRequestDescription, MergeRequestState],
     actionLog: Chain[ProjectAction]
@@ -47,26 +46,26 @@ object ProjectActionsStateFake {
     private[ProjectActionsStateFake] object modifications {
 
       def logAction(action: ProjectAction): State => State =
-        State.actionLog.modify(_.append(action))
+        _.focus(_.actionLog).modify(_.append(action))
 
       def merge(action: ProjectAction.Merge): State => State =
-        State.mergeRequests.modify(_ - MergeRequestDescription.fromMergeAction(action))
+        _.focus(_.mergeRequests).modify(_ - MergeRequestDescription.fromMergeAction(action))
 
       def rebase(action: ProjectAction.Rebase): State => State =
         // Note: this doesn't check for conflicts
         setMergeabilityInternal(action.projectId, action.mergeRequestIid, Mergeability.CanMerge)
 
       def setMergeabilityInternal(projectId: Long, mergeRequestIid: Long, mergeability: Mergeability): State => State =
-        State.mergeRequests.modify { mrs =>
+        _.focus(_.mergeRequests).modify { mrs =>
           val key = MergeRequestDescription(projectId, mergeRequestIid)
           mrs ++ mrs.get(key).map(_.copy(mergeability = mergeability)).tupleLeft(key)
         }
 
-      def save(key: MergeRequestDescription, state: MergeRequestState) = State.mergeRequests.modify {
+      def save(key: MergeRequestDescription, state: MergeRequestState) = (_: State).focus(_.mergeRequests).modify {
         _ + (key -> state)
       }
 
-      def finishPipeline(key: MergeRequestDescription) = State.mergeRequests.modify {
+      def finishPipeline(key: MergeRequestDescription) = (_: State).focus(_.mergeRequests).modify {
         _.updatedWith(key) {
           _.map { state =>
             state.copy(status = MergeRequestInfo.Status.Success)

@@ -3,23 +3,22 @@ package io.pg
 import cats.MonadError
 import cats.implicits._
 import cats.kernel.Order
-import cats.tagless.finalAlg
 import io.odin.Logger
 import io.pg.gitlab.Gitlab
 import io.pg.gitlab.Gitlab.MergeRequestInfo
 import io.pg.gitlab.webhook.Project
-import io.scalaland.chimney.dsl._
 import cats.Show
-import monocle.macros.Lenses
+import cats.MonadThrow
+import monocle.syntax.all._
 
-@finalAlg
 trait StateResolver[F[_]] {
   def resolve(project: Project): F[List[MergeRequestState]]
 }
 
 object StateResolver {
+  def apply[F[_]](using F: StateResolver[F]): StateResolver[F] = F
 
-  def instance[F[_]: Gitlab: Logger: MonadError[*[_], Throwable]](
+  def instance[F[_]: Gitlab: Logger: MonadThrow](
     implicit SC: fs2.Compiler[F, F]
   ): StateResolver[F] =
     new StateResolver[F] {
@@ -34,20 +33,19 @@ object StateResolver {
       private def buildState(
         mr: MergeRequestInfo
       ): MergeRequestState =
-        mr
-          .into[MergeRequestState]
-          .withFieldComputed(_.status, _.status.getOrElse(MergeRequestInfo.Status.Success)) // for now - no pipeline means success
-          .withFieldComputed(
-            _.mergeability,
-            info =>
-              MergeRequestState
-                .Mergeability
-                .fromFlags(
-                  hasConflicts = info.hasConflicts,
-                  needsRebase = info.needsRebase
-                )
-          )
-          .transform
+        MergeRequestState(
+          projectId = mr.projectId,
+          mergeRequestIid = mr.mergeRequestIid,
+          authorUsername = mr.authorUsername,
+          description = mr.description,
+          status = mr.status.getOrElse(MergeRequestInfo.Status.Success),
+          mergeability = MergeRequestState
+            .Mergeability
+            .fromFlags(
+              hasConflicts = mr.hasConflicts,
+              needsRebase = mr.needsRebase
+            )
+        )
 
       def resolve(project: Project): F[List[MergeRequestState]] =
         findMergeRequests(project)
@@ -61,7 +59,6 @@ object StateResolver {
 
 //current MR state - rebuilt on every event.
 //Checked against rules to come up with a decision.
-@Lenses
 final case class MergeRequestState(
   projectId: Long,
   mergeRequestIid: Long,
@@ -88,5 +85,5 @@ object MergeRequestState {
   }
 
   implicit val showTrimmed: Show[MergeRequestState] =
-    MergeRequestState.description.modify(_.map(TextUtils.trim(maxChars = 80))).apply(_).toString
+    _.focus(_.description).modify(_.map(TextUtils.trim(maxChars = 80))).toString
 }

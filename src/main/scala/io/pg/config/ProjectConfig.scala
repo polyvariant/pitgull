@@ -4,19 +4,18 @@ import cats.Applicative
 import cats.MonadThrow
 import cats.effect.ExitCode
 import cats.syntax.all._
-import cats.tagless.finalAlg
 import io.github.vigoo.prox.ProxFS2
 import io.pg.gitlab.webhook.Project
 
 import java.nio.file.Paths
 import scala.util.chaining._
 
-@finalAlg
 trait ProjectConfigReader[F[_]] {
   def readConfig(project: Project): F[ProjectConfig]
 }
 
 object ProjectConfigReader {
+  def apply[F[_]](using F: ProjectConfigReader[F]): ProjectConfigReader[F] = F
 
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {

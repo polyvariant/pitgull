@@ -78,12 +78,12 @@ object Main extends IOApp {
 
   def serve[F[_]: Async](fToIO: F ~> IO)(config: AppConfig) =
     for {
-      implicit0(logger: Logger[F]) <- mkLogger[F](fToIO)
-      _                            <- logStarting(config.meta).toResource
-      resources                    <- Application.resource[F](config)
-      _                            <- mkServer[F](config, resources.routes)
-      _                            <- resources.background.parTraverse_(_.run).background
-      _                            <- logStarted(config.meta).toResource
+      given Logger[F] <- mkLogger[F](fToIO)
+      _               <- logStarting(config.meta).toResource
+      resources       <- Application.resource[F](config)
+      _               <- mkServer[F](config, resources.routes)
+      _               <- resources.background.parTraverse_(_.run).background
+      _               <- logStarted(config.meta).toResource
     } yield ()
 
   def run(args: List[String]): IO[ExitCode] =
