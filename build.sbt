@@ -110,8 +110,8 @@ lazy val bootstrap = project
       "org.typelevel" %% "cats-core" % "2.7.0",
       "org.typelevel" %% "cats-effect" % "3.3.14",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      "com.softwaremill.sttp.client3" %% "core" % "3.3.18",
-      "com.softwaremill.sttp.client3" %% "circe" % "3.3.18",
+      "com.softwaremill.sttp.client3" %% "core" % "3.7.4",
+      "com.softwaremill.sttp.client3" %% "circe" % "3.7.4",
       "io.circe" %% "circe-core" % "0.14.2",
       crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
@@ -184,7 +184,7 @@ lazy val pitgull =
       buildInfoPackage := "io.pg",
       buildInfoKeys := List(version, scalaVersion),
       libraryDependencies ++= List(
-        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.18",
+        "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.7.4",
         "org.http4s" %% "http4s-dsl" % "0.23.11",
         "org.http4s" %% "http4s-circe" % "0.23.11",
         "org.http4s" %% "http4s-blaze-server" % "0.23.11",
