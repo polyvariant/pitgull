@@ -69,7 +69,7 @@ def crossPlugin(x: sbt.librarymanagement.ModuleID) =
   compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(
-  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
+  crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
 )
 
 val commonSettings = List(
@@ -113,7 +113,7 @@ lazy val bootstrap = project
       "com.softwaremill.sttp.client3" %% "core" % "3.3.18",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.18",
       "io.circe" %% "circe-core" % "0.14.2",
-      crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
+      crossPlugin("org.polyvariant" % "better-tostring" % "0.3.17")
     ),
     publish / skip := true,
     githubWorkflowArtifactUpload := false,
