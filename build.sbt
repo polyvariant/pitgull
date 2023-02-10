@@ -77,7 +77,7 @@ val commonSettings = List(
   libraryDependencies ++= List(
     "org.typelevel" %% "cats-core" % "2.7.0",
     "org.typelevel" %% "cats-effect" % "3.3.14",
-    "co.fs2" %% "fs2-core" % "3.2.14",
+    "co.fs2" %% "fs2-core" % "3.6.1",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
     "io.circe" %% "circe-core" % "0.14.2",
     "dev.optics" %% "monocle-core" % "3.1.0",
