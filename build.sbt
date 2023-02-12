@@ -79,7 +79,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-effect" % "3.3.14",
     "co.fs2" %% "fs2-core" % "3.2.14",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
-    "io.circe" %% "circe-core" % "0.14.2",
+    "io.circe" %% "circe-core" % "0.14.4",
     "dev.optics" %% "monocle-core" % "3.1.0",
     "com.disneystreaming" %% "weaver-cats" % "0.7.13" % Test,
     "com.disneystreaming" %% "weaver-scalacheck" % "0.7.13" % Test
@@ -94,8 +94,8 @@ lazy val gitlab = project
     libraryDependencies ++= List(
       "is.cir" %% "ciris" % "2.3.3",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
-      "io.circe" %% "circe-parser" % "0.14.2" % Test,
-      "io.circe" %% "circe-literal" % "0.14.2" % Test,
+      "io.circe" %% "circe-parser" % "0.14.4" % Test,
+      "io.circe" %% "circe-literal" % "0.14.4" % Test,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.18.0-M17",
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.18.0-M17",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % "0.18.0-M17"
@@ -112,7 +112,7 @@ lazy val bootstrap = project
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.18",
       "com.softwaremill.sttp.client3" %% "circe" % "3.3.18",
-      "io.circe" %% "circe-core" % "0.14.2",
+      "io.circe" %% "circe-core" % "0.14.4",
       crossPlugin("org.polyvariant" % "better-tostring" % "0.3.15")
     ),
     publish / skip := true,
@@ -194,7 +194,7 @@ lazy val pitgull =
         "com.github.valskalla" %% "odin-core" % "0.13.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
         "io.github.vigoo" %% "prox-fs2-3" % "0.7.7",
-        "io.circe" %% "circe-literal" % "0.14.2" % Test
+        "io.circe" %% "circe-literal" % "0.14.4" % Test
       )
     )
     .dependsOn(core, gitlab)
