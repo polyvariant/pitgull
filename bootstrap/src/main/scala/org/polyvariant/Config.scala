@@ -15,7 +15,9 @@ final case class Config(
 
 object Config {
 
-  def fromArgs[F[_]: MonadThrow](args: Map[String, String]): F[Config] =
+  def fromArgs[F[_]: MonadThrow](
+    args: Map[String, String]
+  ): F[Config] =
     MonadThrow[F]
       .catchNonFatal {
         Config(

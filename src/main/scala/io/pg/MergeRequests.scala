@@ -16,11 +16,18 @@ import io.pg.config.ProjectConfigReader
 import io.pg.gitlab.webhook.Project
 
 trait MergeRequests[F[_]] {
-  def build(project: Project): F[List[MergeRequestState]]
+
+  def build(
+    project: Project
+  ): F[List[MergeRequestState]]
+
 }
 
 object MergeRequests {
-  def apply[F[_]](using F: MergeRequests[F]): MergeRequests[F] = F
+
+  def apply[F[_]](
+    using F: MergeRequests[F]
+  ): MergeRequests[F] = F
 
   import scala.util.chaining._
 
@@ -41,7 +48,9 @@ object MergeRequests {
   )(
     implicit SC: fs2.Compiler[F, F]
   ): F[List[B]] = {
-    def tapLeftAndDrop[L, R](log: L => F[Unit]): Pipe[F, Either[L, R], R] =
+    def tapLeftAndDrop[L, R](
+      log: L => F[Unit]
+    ): Pipe[F, Either[L, R], R] =
       _.evalTap(_.leftTraverse(log)).map(_.toOption).unNone
 
     val logMismatches: NonEmptyList[E] => F[Unit] = e =>

@@ -51,8 +51,13 @@ object WebhookProcessorTest extends SimpleIOSuite {
       }
       .toResource
 
-  def testWithResources(name: String)(use: Resources[IO] => IO[Expectations]) =
+  def testWithResources(
+    name: String
+  )(
+    use: Resources[IO] => IO[Expectations]
+  ) =
     test(name)(mkResources.use(use))
+
   /*
   testWithResources("unknown project") { resources =>
     import resources._

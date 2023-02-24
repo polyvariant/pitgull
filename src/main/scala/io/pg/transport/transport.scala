@@ -15,7 +15,11 @@ object MergeRequestState {
 
   enum Status derives Codec.AsObject {
     case Success
-    case Other(value: String)
+
+    case Other(
+      value: String
+    )
+
   }
 
   enum Mergeability derives Codec.AsObject {

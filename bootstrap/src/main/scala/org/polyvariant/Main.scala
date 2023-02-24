@@ -16,7 +16,9 @@ import cats.Monad
 
 object Main extends IOApp {
 
-  private def printMergeRequests[F[_]: Logger: Applicative](mergeRequests: List[MergeRequestInfo]): F[Unit] =
+  private def printMergeRequests[F[_]: Logger: Applicative](
+    mergeRequests: List[MergeRequestInfo]
+  ): F[Unit] =
     mergeRequests.traverse { mr =>
       Logger[F].info(s"ID: ${mr.mergeRequestIid} by: ${mr.authorUsername}")
     }.void
@@ -28,18 +30,30 @@ object Main extends IOApp {
         ifFalse = MonadThrow[F].raiseError(new Exception("User rejected deletion"))
       )
 
-  private def qualifyMergeRequestsForDeletion(botUserName: String, mergeRequests: List[MergeRequestInfo]): List[MergeRequestInfo] =
+  private def qualifyMergeRequestsForDeletion(
+    botUserName: String,
+    mergeRequests: List[MergeRequestInfo]
+  ): List[MergeRequestInfo] =
     mergeRequests.filter(_.authorUsername == botUserName)
 
-  private def deleteMergeRequests[F[_]: Gitlab: Logger: Applicative](project: Long, mergeRequests: List[MergeRequestInfo]): F[Unit] =
+  private def deleteMergeRequests[F[_]: Gitlab: Logger: Applicative](
+    project: Long,
+    mergeRequests: List[MergeRequestInfo]
+  ): F[Unit] =
     mergeRequests.traverse(mr => Gitlab[F].deleteMergeRequest(project, mr.mergeRequestIid)).void
 
-  private def createWebhook[F[_]: Gitlab: Logger: Applicative](project: Long, webhook: Uri): F[Unit] =
+  private def createWebhook[F[_]: Gitlab: Logger: Applicative](
+    project: Long,
+    webhook: Uri
+  ): F[Unit] =
     Logger[F].info("Creating webhook") *>
       Gitlab[F].createWebhook(project, webhook) *>
       Logger[F].info("Webhook created")
 
-  private def configureWebhooks[F[_]: Gitlab: Logger: Monad](project: Long, webhook: Uri): F[Unit] = for {
+  private def configureWebhooks[F[_]: Gitlab: Logger: Monad](
+    project: Long,
+    webhook: Uri
+  ): F[Unit] = for {
     hooks <- Gitlab[F].listWebhooks(project).map(_.filter(_.url == webhook.toString))
     _     <- Monad[F]
                .ifM(hooks.nonEmpty.pure[F])(
@@ -48,7 +62,9 @@ object Main extends IOApp {
                )
   } yield ()
 
-  private def program[F[_]: Logger: Console: Async](args: List[String]): F[Unit] = {
+  private def program[F[_]: Logger: Console: Async](
+    args: List[String]
+  ): F[Unit] = {
     given SttpBackend[Identity, Any] = HttpURLConnectionBackend()
     val parsedArgs = Args.parse(args)
     for {
@@ -70,7 +86,9 @@ object Main extends IOApp {
     } yield ()
   }
 
-  override def run(args: List[String]): IO[ExitCode] = {
+  override def run(
+    args: List[String]
+  ): IO[ExitCode] = {
     given Logger[IO] = Logger.wrappedPrint[IO]
     program[IO](args).recoverWith {
       case Config.ArgumentsParsingException =>

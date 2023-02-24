@@ -25,10 +25,18 @@ object circe {
 import circe.regexCodec
 
 enum TextMatcher {
-  case Equals(value: String)
-  case Matches(regex: Regex)
 
-  override def equals(another: Any) = (this, another) match {
+  case Equals(
+    value: String
+  )
+
+  case Matches(
+    regex: Regex
+  )
+
+  override def equals(
+    another: Any
+  ) = (this, another) match {
     // Regex uses reference equality by default.
     // By using `.regex` we convert it back to a pattern string for better comparison.
     case (Matches(p1), Matches(p2)) => p1.regex == p2.regex
@@ -43,14 +51,35 @@ object TextMatcher {
 }
 
 enum Matcher {
-  def and(another: Matcher): Matcher = Matcher.Many(List(this, another))
 
-  case Author(email: TextMatcher)
-  case Description(text: TextMatcher)
-  case PipelineStatus(status: String)
-  case Many(values: List[Matcher])
-  case OneOf(values: List[Matcher])
-  case Not(underlying: Matcher)
+  def and(
+    another: Matcher
+  ): Matcher = Matcher.Many(List(this, another))
+
+  case Author(
+    email: TextMatcher
+  )
+
+  case Description(
+    text: TextMatcher
+  )
+
+  case PipelineStatus(
+    status: String
+  )
+
+  case Many(
+    values: List[Matcher]
+  )
+
+  case OneOf(
+    values: List[Matcher]
+  )
+
+  case Not(
+    underlying: Matcher
+  )
+
 }
 
 object Matcher {
@@ -73,13 +102,19 @@ object Action {
 
 }
 
-final case class Rule(name: String, matcher: Matcher, action: Action) derives Codec.AsObject
+final case class Rule(
+  name: String,
+  matcher: Matcher,
+  action: Action
+) derives Codec.AsObject
 
 object Rule {
   val mergeAnything = Rule("anything", Matcher.Many(Nil), Action.Merge)
 }
 
-final case class ProjectConfig(rules: List[Rule]) derives Codec.AsObject
+final case class ProjectConfig(
+  rules: List[Rule]
+) derives Codec.AsObject
 
 object ProjectConfig {
   val empty = ProjectConfig(Nil)

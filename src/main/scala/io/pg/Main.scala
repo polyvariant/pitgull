@@ -22,7 +22,9 @@ import cats.arrow.FunctionK
 
 object Main extends IOApp {
 
-  def mkLogger[F[_]: Async](fToIO: F ~> IO): Resource[F, Logger[F]] = {
+  def mkLogger[F[_]: Async](
+    fToIO: F ~> IO
+  ): Resource[F, Logger[F]] = {
 
     val console = io.odin.consoleLogger[F](formatter = Formatter.colorful).withMinimalLevel(Level.Info).pure[Resource[F, *]]
 
@@ -60,7 +62,9 @@ object Main extends IOApp {
       .httpApp(
         logHeaders = true,
         logBody = true,
-        logAction = ((msg: String) => Logger[F].debug(msg)).some
+        logAction = (
+          (msg: String) => Logger[F].debug(msg)
+        ).some
       )(routes)
 
     BlazeServerBuilder[F]
@@ -70,13 +74,21 @@ object Main extends IOApp {
       .resource
   }
 
-  def logStarting[F[_]: Logger](meta: MetaConfig) =
+  def logStarting[F[_]: Logger](
+    meta: MetaConfig
+  ) =
     Logger[F].info("Starting application", Map("version" -> meta.version, "scalaVersion" -> meta.scalaVersion))
 
-  def logStarted[F[_]: Logger](meta: MetaConfig) =
+  def logStarted[F[_]: Logger](
+    meta: MetaConfig
+  ) =
     Logger[F].info("Started application", Map("version" -> meta.version, "scalaVersion" -> meta.scalaVersion))
 
-  def serve[F[_]: Async](fToIO: F ~> IO)(config: AppConfig) =
+  def serve[F[_]: Async](
+    fToIO: F ~> IO
+  )(
+    config: AppConfig
+  ) =
     for {
       given Logger[F] <- mkLogger[F](fToIO)
       _               <- logStarting(config.meta).toResource
@@ -86,7 +98,9 @@ object Main extends IOApp {
       _               <- logStarted(config.meta).toResource
     } yield ()
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run(
+    args: List[String]
+  ): IO[ExitCode] =
     AppConfig
       .appConfig
       .resource[IO]

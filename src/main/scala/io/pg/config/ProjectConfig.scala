@@ -11,19 +11,30 @@ import java.nio.file.Paths
 import scala.util.chaining._
 
 trait ProjectConfigReader[F[_]] {
-  def readConfig(project: Project): F[ProjectConfig]
+
+  def readConfig(
+    project: Project
+  ): F[ProjectConfig]
+
 }
 
 object ProjectConfigReader {
-  def apply[F[_]](using F: ProjectConfigReader[F]): ProjectConfigReader[F] = F
+
+  def apply[F[_]](
+    using F: ProjectConfigReader[F]
+  ): ProjectConfigReader[F] = F
 
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {
 
-      def semver(level: String) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*".r))
+      def semver(
+        level: String
+      ) = Matcher.Description(TextMatcher.Matches(s"(?s).*labels:.*semver-$level.*".r))
 
       // todo: dhall needs to be updated
-      def steward(extra: Matcher) = Rule(
+      def steward(
+        extra: Matcher
+      ) = Rule(
         "scala-steward",
         Matcher.Many(
           List(
@@ -50,7 +61,10 @@ object ProjectConfigReader {
         )
       )
 
-      def readConfig(project: Project): F[ProjectConfig] = config.pure[F]
+      def readConfig(
+        project: Project
+      ): F[ProjectConfig] = config.pure[F]
+
     }
 
   def dhallJsonStringConfig[F[_]: ProxFS2: MonadThrow]: F[ProjectConfigReader[F]] = {
@@ -70,7 +84,9 @@ object ProjectConfigReader {
 
     val instance: ProjectConfigReader[F] = new ProjectConfigReader[F] {
 
-      def readConfig(project: Project): F[ProjectConfig] =
+      def readConfig(
+        project: Project
+      ): F[ProjectConfig] =
         Process(dhallCommand)
           .`with`("TOKEN" -> "demo-token")
           .fromFile(Paths.get(filePath))

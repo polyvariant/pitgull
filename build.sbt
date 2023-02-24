@@ -65,7 +65,9 @@ ThisBuild / libraryDependencySchemes ++= Seq(
   "io.circe" %% "circe-parser" % "early-semver"
 )
 
-def crossPlugin(x: sbt.librarymanagement.ModuleID) =
+def crossPlugin(
+  x: sbt.librarymanagement.ModuleID
+) =
   compilerPlugin(x.cross(CrossVersion.full))
 
 val compilerPlugins = List(

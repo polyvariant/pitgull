@@ -23,7 +23,11 @@ import sttp.client3.http4s.Http4sBackend
 sealed trait Event extends Product with Serializable
 
 object Event {
-  final case class Webhook(value: WebhookEvent) extends Event
+
+  final case class Webhook(
+    value: WebhookEvent
+  ) extends Event
+
 }
 
 final class Application[F[_]](

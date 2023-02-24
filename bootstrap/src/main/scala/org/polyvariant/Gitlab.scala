@@ -24,15 +24,32 @@ import cats.MonadThrow
 import io.circe.*
 
 trait Gitlab[F[_]] {
-  def mergeRequests(projectId: Long): F[List[Gitlab.MergeRequestInfo]]
-  def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit]
-  def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit]
-  def listWebhooks(projectId: Long): F[List[Gitlab.Webhook]]
+
+  def mergeRequests(
+    projectId: Long
+  ): F[List[Gitlab.MergeRequestInfo]]
+
+  def deleteMergeRequest(
+    projectId: Long,
+    mergeRequestId: Long
+  ): F[Unit]
+
+  def createWebhook(
+    projectId: Long,
+    pitgullUrl: Uri
+  ): F[Unit]
+
+  def listWebhooks(
+    projectId: Long
+  ): F[List[Gitlab.Webhook]]
+
 }
 
 object Gitlab {
 
-  def apply[F[_]](using ev: Gitlab[F]): Gitlab[F] = ev
+  def apply[F[_]](
+    using ev: Gitlab[F]
+  ): Gitlab[F] = ev
 
   def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
@@ -40,18 +57,24 @@ object Gitlab {
   )(
     using backend: SttpBackend[Identity, Any] // FIXME: https://github.com/polyvariant/pitgull/issues/265
   ): Gitlab[F] = {
-    def runRequest[O](request: Request[O, Any]): F[O] =
+    def runRequest[O](
+      request: Request[O, Any]
+    ): F[O] =
       request
         .header("Private-Token", accessToken)
         .send(backend)
         .pure[F]
         .map(_.body) // FIXME - change in https://github.com/polyvariant/pitgull/issues/265
 
-    def runGraphQLQuery[A: IsOperation, B](a: SelectionBuilder[A, B]): F[B] =
+    def runGraphQLQuery[A: IsOperation, B](
+      a: SelectionBuilder[A, B]
+    ): F[B] =
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
 
     new Gitlab[F] {
-      def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
+      def mergeRequests(
+        projectId: Long
+      ): F[List[MergeRequestInfo]] =
         Logger[F].info(s"Looking up merge requests for project: $projectId") *>
           mergeRequestsQuery(projectId)
             .mapEither(_.toRight(DecodingError("Project not found")))
@@ -60,7 +83,10 @@ object Gitlab {
               Logger[F].info(s"Found merge requests. Size: ${result.size}")
             }
 
-      def deleteMergeRequest(projectId: Long, mergeRequestId: Long): F[Unit] = for {
+      def deleteMergeRequest(
+        projectId: Long,
+        mergeRequestId: Long
+      ): F[Unit] = for {
         _      <- Logger[F].debug(s"Request to remove $mergeRequestId")
         result <- runRequest(
                     basicRequest.delete(
@@ -79,7 +105,10 @@ object Gitlab {
                   )
       } yield ()
 
-      def createWebhook(projectId: Long, pitgullUrl: Uri): F[Unit] = for {
+      def createWebhook(
+        projectId: Long,
+        pitgullUrl: Uri
+      ): F[Unit] = for {
         _      <- Logger[F].debug(s"Creating webhook to $pitgullUrl")
         result <- runRequest(
                     basicRequest
@@ -100,7 +129,9 @@ object Gitlab {
                   )
       } yield ()
 
-      def listWebhooks(projectId: Long): F[List[Webhook]] = for {
+      def listWebhooks(
+        projectId: Long
+      ): F[List[Webhook]] = for {
         _        <- Logger[F].debug(s"Listing webhooks for $projectId")
         response <- runRequest(
                       basicRequest
@@ -141,7 +172,9 @@ object Gitlab {
   private def flattenTheEarth[A]: Option[List[Option[Option[Option[List[Option[A]]]]]]] => List[A] =
     _.toList.flatten.flatten.flatten.flatten.flatten.flatten
 
-  private def mergeRequestInfoSelection(projectId: Long): SelectionBuilder[MergeRequest, MergeRequestInfo] = (
+  private def mergeRequestInfoSelection(
+    projectId: Long
+  ): SelectionBuilder[MergeRequest, MergeRequestInfo] = (
     MergeRequest.iid.mapEither(_.toLongOption.toRight(DecodingError("MR IID wasn't a Long"))) ~
       MergeRequest
         .author(UserCore.username)
@@ -168,7 +201,9 @@ object Gitlab {
     hasConflicts = hasConflicts
   )
 
-  private def mergeRequestsQuery(projectId: Long) =
+  private def mergeRequestsQuery(
+    projectId: Long
+  ) =
     Query
       .projects(ids = List(show"gid://gitlab/Project/$projectId").some)(
         ProjectConnection

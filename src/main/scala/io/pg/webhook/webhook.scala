@@ -44,7 +44,9 @@ object WebhookRouter {
 
   }
 
-  private def mergeRequestToTransport(mr: MergeRequestState): io.pg.transport.MergeRequestState = transport.MergeRequestState(
+  private def mergeRequestToTransport(
+    mr: MergeRequestState
+  ): io.pg.transport.MergeRequestState = transport.MergeRequestState(
     projectId = mr.projectId,
     mergeRequestIid = mr.mergeRequestIid,
     description = mr.description,
@@ -64,11 +66,7 @@ object WebhookRouter {
 
 object WebhookProcessor {
 
-  def instance[
-    F[
-      _
-    ]: MergeRequests: ProjectActions: Logger: MonadThrow
-  ]: WebhookEvent => F[Unit] = { ev =>
+  def instance[F[_]: MergeRequests: ProjectActions: Logger: MonadThrow]: WebhookEvent => F[Unit] = { ev =>
     for {
       _      <- Logger[F].info("Received event", Map("event" -> ev.toString()))
       states <- MergeRequests[F].build(ev.project)

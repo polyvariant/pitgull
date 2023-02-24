@@ -41,10 +41,14 @@ object AppConfig {
     ).parMapN(MetaConfig.apply)
 
   implicit val decodeUri: ConfigDecoder[String, Uri] =
-    ConfigDecoder[String, String].mapEither { (key, value) =>
-      Uri
-        .parse(value)
-        .leftMap(e => ConfigError(s"Invalid URI ($value at $key), error: $e"))
+    ConfigDecoder[String, String].mapEither {
+      (
+        key,
+        value
+      ) =>
+        Uri
+          .parse(value)
+          .leftMap(e => ConfigError(s"Invalid URI ($value at $key), error: $e"))
     }
 
   val gitConfig: ConfigValue[ciris.Effect, Git] =
@@ -64,7 +68,9 @@ object AppConfig {
 
 }
 
-final case class HttpConfig(port: Int)
+final case class HttpConfig(
+  port: Int
+)
 
 final case class MetaConfig(
   banner: String,
@@ -72,7 +78,11 @@ final case class MetaConfig(
   scalaVersion: String
 )
 
-final case class Git(host: Git.Host, apiUrl: Uri, apiToken: Secret[String])
+final case class Git(
+  host: Git.Host,
+  apiUrl: Uri,
+  apiToken: Secret[String]
+)
 
 object Git {
   sealed trait Host extends Product with Serializable
@@ -83,6 +93,10 @@ object Git {
 
 }
 
-final case class Queues(maxSize: Int)
+final case class Queues(
+  maxSize: Int
+)
 
-final case class MiddlewareConfig(sensitiveHeaders: Set[CIString])
+final case class MiddlewareConfig(
+  sensitiveHeaders: Set[CIString]
+)

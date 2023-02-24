@@ -23,14 +23,26 @@ import cats.Contravariant
 
 trait ProjectActions[F[_]] {
   type Action
-  def resolve(mr: MergeRequestState): F[Option[Action]]
-  def execute(action: Action): F[Unit]
+
+  def resolve(
+    mr: MergeRequestState
+  ): F[Option[Action]]
+
+  def execute(
+    action: Action
+  ): F[Unit]
+
 }
 
 object ProjectActions {
-  def apply[F[_]](implicit F: ProjectActions[F]): F.type = F
 
-  def defaultResolve[F[_]: Applicative: Logger](mr: MergeRequestState): F[Option[ProjectAction]] = mr.mergeability match {
+  def apply[F[_]](
+    implicit F: ProjectActions[F]
+  ): F.type = F
+
+  def defaultResolve[F[_]: Applicative: Logger](
+    mr: MergeRequestState
+  ): F[Option[ProjectAction]] = mr.mergeability match {
     case CanMerge =>
       ProjectAction
         .Merge(projectId = mr.projectId, mergeRequestIid = mr.mergeRequestIid)
@@ -58,9 +70,13 @@ object ProjectActions {
 
     type Action = ProjectAction
 
-    def resolve(mr: MergeRequestState): F[Option[ProjectAction]] = defaultResolve[F](mr)
+    def resolve(
+      mr: MergeRequestState
+    ): F[Option[ProjectAction]] = defaultResolve[F](mr)
 
-    def execute(action: ProjectAction): F[Unit] = {
+    def execute(
+      action: ProjectAction
+    ): F[Unit] = {
       val logBefore = Logger[F].info("About to execute action", Map("action" -> action.toString))
 
       val approve = action match {
@@ -98,22 +114,45 @@ object ProjectActions {
   }
 
   trait MatcherFunction[-In] {
-    def matches(in: In): Matched[Unit]
-    def atPath(path: String): MatcherFunction[In] = mapFailures(_.map(_.atPath(path)))
 
-    def mapResult(f: Matched[Unit] => Matched[Unit]): MatcherFunction[In] = f.compose(matches).apply(_)
-    def mapFailures(f: NonEmptyList[Mismatch] => NonEmptyList[Mismatch]): MatcherFunction[In] = mapResult(_.leftMap(f))
+    def matches(
+      in: In
+    ): Matched[Unit]
+
+    def atPath(
+      path: String
+    ): MatcherFunction[In] = mapFailures(_.map(_.atPath(path)))
+
+    def mapResult(
+      f: Matched[Unit] => Matched[Unit]
+    ): MatcherFunction[In] = f.compose(matches).apply(_)
+
+    def mapFailures(
+      f: NonEmptyList[Mismatch] => NonEmptyList[Mismatch]
+    ): MatcherFunction[In] = mapResult(_.leftMap(f))
+
   }
 
   object MatcherFunction {
 
     implicit val contravariantMatcherFunction: Contravariant[MatcherFunction] = new Contravariant[MatcherFunction] {
-      def contramap[A, B](fa: MatcherFunction[A])(f: B => A): MatcherFunction[B] = b => fa.matches(f(b))
+
+      def contramap[A, B](
+        fa: MatcherFunction[A]
+      )(
+        f: B => A
+      ): MatcherFunction[B] = b => fa.matches(f(b))
+
     }
 
     implicit val monoidK: MonoidK[MatcherFunction] = new MonoidK[MatcherFunction] {
-      override def combineK[A](x: MatcherFunction[A], y: MatcherFunction[A]): MatcherFunction[A] =
+
+      override def combineK[A](
+        x: MatcherFunction[A],
+        y: MatcherFunction[A]
+      ): MatcherFunction[A] =
         in => (x.matches(in).toValidated |+| y.matches(in).toValidated).toEither
+
       override def empty[A]: MatcherFunction[A] = success
     }
 
@@ -128,14 +167,34 @@ object ProjectActions {
   }
 
   sealed trait Mismatch extends Product with Serializable {
-    def atPath(path: String): Mismatch = Mismatch.AtPath(path, this)
+
+    def atPath(
+      path: String
+    ): Mismatch = Mismatch.AtPath(path, this)
+
   }
 
   object Mismatch {
-    final case class AtPath(path: String, mismatch: Mismatch) extends Mismatch
-    final case class ValueMismatch(expected: String, actual: String) extends Mismatch
-    final case class RegexMismatch(pattern: Regex, actual: String) extends Mismatch
-    final case class ManyFailed(incompleteMatches: List[NonEmptyList[Mismatch]]) extends Mismatch
+
+    final case class AtPath(
+      path: String,
+      mismatch: Mismatch
+    ) extends Mismatch
+
+    final case class ValueMismatch(
+      expected: String,
+      actual: String
+    ) extends Mismatch
+
+    final case class RegexMismatch(
+      pattern: Regex,
+      actual: String
+    ) extends Mismatch
+
+    final case class ManyFailed(
+      incompleteMatches: List[NonEmptyList[Mismatch]]
+    ) extends Mismatch
+
     case object ValueEmpty extends Mismatch
     case object NegationFailed extends Mismatch
 
@@ -144,7 +203,9 @@ object ProjectActions {
 
   type Matched[A] = EitherNel[Mismatch, A]
 
-  def statusMatches(expectedStatus: String): MatcherFunction[MergeRequestState] =
+  def statusMatches(
+    expectedStatus: String
+  ): MatcherFunction[MergeRequestState] =
     MatcherFunction
       .fromPredicate[MergeRequestInfo.Status](
         {
@@ -169,25 +230,34 @@ object ProjectActions {
       )
   }
 
-  def exists[A](base: MatcherFunction[A]): MatcherFunction[Option[A]] =
+  def exists[A](
+    base: MatcherFunction[A]
+  ): MatcherFunction[Option[A]] =
     _.fold[Matched[Unit]](Mismatch.ValueEmpty.leftNel)(base.matches)
 
-  def oneOf[A](matchers: List[MatcherFunction[A]]): MatcherFunction[A] = input =>
+  def oneOf[A](
+    matchers: List[MatcherFunction[A]]
+  ): MatcherFunction[A] = input =>
     matchers
       .traverse(_.matches(input).swap)
       .swap
       .leftMap(Mismatch.ManyFailed.apply)
       .toEitherNel
 
-  def not[A](matcher: MatcherFunction[A]): MatcherFunction[A] = input =>
-    matcher.matches(input).swap.leftMap(_ => Mismatch.NegationFailed).void.toEitherNel
+  def not[A](
+    matcher: MatcherFunction[A]
+  ): MatcherFunction[A] = input => matcher.matches(input).swap.leftMap(_ => Mismatch.NegationFailed).void.toEitherNel
 
-  def autorMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
+  def autorMatches(
+    matcher: TextMatcher
+  ): MatcherFunction[MergeRequestState] =
     matchTextMatcher(matcher)
       .atPath(".author")
       .contramap(_.authorUsername)
 
-  def descriptionMatches(matcher: TextMatcher): MatcherFunction[MergeRequestState] =
+  def descriptionMatches(
+    matcher: TextMatcher
+  ): MatcherFunction[MergeRequestState] =
     exists(matchTextMatcher(matcher))
       .atPath(".description")
       .contramap(_.description)
@@ -212,6 +282,15 @@ object ProjectActions {
 }
 
 enum ProjectAction {
-  case Merge(projectId: Long, mergeRequestIid: Long)
-  case Rebase(projectId: Long, mergeRequestIid: Long)
+
+  case Merge(
+    projectId: Long,
+    mergeRequestIid: Long
+  )
+
+  case Rebase(
+    projectId: Long,
+    mergeRequestIid: Long
+  )
+
 }

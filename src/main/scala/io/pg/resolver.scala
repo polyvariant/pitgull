@@ -12,18 +12,27 @@ import cats.MonadThrow
 import monocle.syntax.all._
 
 trait StateResolver[F[_]] {
-  def resolve(project: Project): F[List[MergeRequestState]]
+
+  def resolve(
+    project: Project
+  ): F[List[MergeRequestState]]
+
 }
 
 object StateResolver {
-  def apply[F[_]](using F: StateResolver[F]): StateResolver[F] = F
+
+  def apply[F[_]](
+    using F: StateResolver[F]
+  ): StateResolver[F] = F
 
   def instance[F[_]: Gitlab: Logger: MonadThrow](
     implicit SC: fs2.Compiler[F, F]
   ): StateResolver[F] =
     new StateResolver[F] {
 
-      private def findMergeRequests(project: Project): F[List[MergeRequestState]] =
+      private def findMergeRequests(
+        project: Project
+      ): F[List[MergeRequestState]] =
         Gitlab[F]
           .mergeRequests(projectId = project.id)
           .nested
@@ -47,7 +56,9 @@ object StateResolver {
             )
         )
 
-      def resolve(project: Project): F[List[MergeRequestState]] =
+      def resolve(
+        project: Project
+      ): F[List[MergeRequestState]] =
         findMergeRequests(project)
           .flatTap { state =>
             Logger[F].info("Resolved MR state", Map("state" -> state.show))
@@ -76,7 +87,10 @@ object MergeRequestState {
     case object NeedsRebase extends Mergeability
     case object HasConflicts extends Mergeability
 
-    def fromFlags(hasConflicts: Boolean, needsRebase: Boolean): Mergeability =
+    def fromFlags(
+      hasConflicts: Boolean,
+      needsRebase: Boolean
+    ): Mergeability =
       if (hasConflicts) HasConflicts
       else if (needsRebase) NeedsRebase
       else CanMerge

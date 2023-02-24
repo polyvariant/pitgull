@@ -23,7 +23,12 @@ object ProjectConfigReaderFake {
     /** A collection of modifiers on the state, which will be provided together with the instance using it.
       */
     trait Modifiers[F[_]] {
-      def register(projectId: Long, config: ProjectConfig): F[Unit]
+
+      def register(
+        projectId: Long,
+        config: ProjectConfig
+      ): F[Unit]
+
     }
 
   }
@@ -37,12 +42,17 @@ object ProjectConfigReaderFake {
   def instance[F[_]: Data: MonadThrow]: ProjectConfigReader[F] with State.Modifiers[F] =
     new ProjectConfigReader[F] with State.Modifiers[F] {
 
-      def readConfig(project: Project): F[ProjectConfig] =
+      def readConfig(
+        project: Project
+      ): F[ProjectConfig] =
         Data[F]
           .get
           .flatMap(_.configs.get(project.id).liftTo[F](new Throwable(s"Unknown project: $project")))
 
-      def register(projectId: Long, config: ProjectConfig): F[Unit] =
+      def register(
+        projectId: Long,
+        config: ProjectConfig
+      ): F[Unit] =
         Data[F].modify(_.focus(_.configs).modify(_ + (projectId -> config)))
 
     }
