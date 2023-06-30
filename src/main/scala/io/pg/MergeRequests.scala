@@ -20,7 +20,10 @@ trait MergeRequests[F[_]] {
 }
 
 object MergeRequests {
-  def apply[F[_]](using F: MergeRequests[F]): MergeRequests[F] = F
+
+  def apply[F[_]](
+    using F: MergeRequests[F]
+  ): MergeRequests[F] = F
 
   import scala.util.chaining._
 
