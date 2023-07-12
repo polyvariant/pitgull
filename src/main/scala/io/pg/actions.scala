@@ -28,7 +28,10 @@ trait ProjectActions[F[_]] {
 }
 
 object ProjectActions {
-  def apply[F[_]](implicit F: ProjectActions[F]): F.type = F
+
+  def apply[F[_]](
+    implicit F: ProjectActions[F]
+  ): F.type = F
 
   def defaultResolve[F[_]: Applicative: Logger](mr: MergeRequestState): F[Option[ProjectAction]] = mr.mergeability match {
     case CanMerge =>
