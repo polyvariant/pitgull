@@ -15,7 +15,10 @@ trait ProjectConfigReader[F[_]] {
 }
 
 object ProjectConfigReader {
-  def apply[F[_]](using F: ProjectConfigReader[F]): ProjectConfigReader[F] = F
+
+  def apply[F[_]](
+    using F: ProjectConfigReader[F]
+  ): ProjectConfigReader[F] = F
 
   def test[F[_]: Applicative]: ProjectConfigReader[F] =
     new ProjectConfigReader[F] {
