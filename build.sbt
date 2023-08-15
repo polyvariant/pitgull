@@ -75,7 +75,7 @@ val compilerPlugins = List(
 val commonSettings = List(
   scalacOptions --= List("-Xfatal-warnings"),
   libraryDependencies ++= List(
-    "org.typelevel" %% "cats-core" % "2.7.0",
+    "org.typelevel" %% "cats-core" % "2.10.0",
     "org.typelevel" %% "cats-effect" % "3.3.14",
     "co.fs2" %% "fs2-core" % "3.2.14",
     "com.github.valskalla" %% "odin-core" % "0.13.0",
@@ -107,7 +107,7 @@ lazy val bootstrap = project
   .settings(
     scalaVersion := Scala3,
     libraryDependencies ++= List(
-      "org.typelevel" %% "cats-core" % "2.7.0",
+      "org.typelevel" %% "cats-core" % "2.10.0",
       "org.typelevel" %% "cats-effect" % "3.3.14",
       "com.kubukoz" %% "caliban-gitlab" % "0.1.0",
       "com.softwaremill.sttp.client3" %% "core" % "3.3.18",
