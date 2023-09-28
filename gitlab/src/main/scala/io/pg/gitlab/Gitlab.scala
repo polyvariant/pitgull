@@ -226,7 +226,6 @@ object GitlabEndpoints {
 
   val acceptMergeRequest: Endpoint[(Long, Long), Nothing, Unit, Any] =
     baseEndpoint
-      // hehe putin
       .put
       .in("projects" / path[Long]("projectId"))
       .in("merge_requests" / path[Long]("merge_request_iid"))
