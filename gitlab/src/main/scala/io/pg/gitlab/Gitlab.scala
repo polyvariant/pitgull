@@ -44,7 +44,9 @@ trait Gitlab[F[_]] {
 
 object Gitlab {
 
-  def apply[F[_]](using F: Gitlab[F]): Gitlab[F] = F
+  def apply[F[_]](
+    using F: Gitlab[F]
+  ): Gitlab[F] = F
 
   // VCS-specific MR information
   // Not specific to the method of fetching (no graphql model references etc.)
@@ -100,6 +102,7 @@ object Gitlab {
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
 
     new Gitlab[F] {
+
       def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
         Logger[F].info(
           "Finding merge requests",
@@ -213,6 +216,7 @@ object Gitlab {
       }
         .compile
         .drain
+
     }
   }
 

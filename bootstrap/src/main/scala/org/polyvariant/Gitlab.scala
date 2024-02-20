@@ -32,7 +32,9 @@ trait Gitlab[F[_]] {
 
 object Gitlab {
 
-  def apply[F[_]](using ev: Gitlab[F]): Gitlab[F] = ev
+  def apply[F[_]](
+    using ev: Gitlab[F]
+  ): Gitlab[F] = ev
 
   def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
@@ -51,6 +53,7 @@ object Gitlab {
       runRequest(a.toRequest(baseUri.addPath("api", "graphql"))).rethrow
 
     new Gitlab[F] {
+
       def mergeRequests(projectId: Long): F[List[MergeRequestInfo]] =
         Logger[F].info(s"Looking up merge requests for project: $projectId") *>
           mergeRequestsQuery(projectId)
@@ -120,6 +123,7 @@ object Gitlab {
                     ).flatMap(_.liftTo[F])
         _        <- Logger[F].debug(response.toString)
       } yield response
+
     }
 
   }
