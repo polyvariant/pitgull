@@ -86,9 +86,9 @@ object ProjectActionsStateFake {
   /** This instance has both the capabilities of ProjectActions and StateResolver, because they operate on the same state, and the state is
     * sealed by convention.
     */
-  def instance[
-    F[_]: Data: Monad: Logger
-  ]: ProjectActions[F] with StateResolver[F] with State.Modifiers[F] = new ProjectActions[F] with StateResolver[F] with State.Modifiers[F] {
+  def instance[F[_]: Data: Monad: Logger]: ProjectActions[F] with StateResolver[F] with State.Modifiers[F] = new ProjectActions[F]
+    with StateResolver[F]
+    with State.Modifiers[F] {
 
     type Action = ProjectAction
     def resolve(mr: MergeRequestState): F[Option[ProjectAction]] = ProjectActions.defaultResolve[F](mr)

@@ -64,11 +64,7 @@ object WebhookRouter {
 
 object WebhookProcessor {
 
-  def instance[
-    F[
-      _
-    ]: MergeRequests: ProjectActions: Logger: MonadThrow
-  ]: WebhookEvent => F[Unit] = { ev =>
+  def instance[F[_]: MergeRequests: ProjectActions: Logger: MonadThrow]: WebhookEvent => F[Unit] = { ev =>
     for {
       _      <- Logger[F].info("Received event", Map("event" -> ev.toString()))
       states <- MergeRequests[F].build(ev.project)

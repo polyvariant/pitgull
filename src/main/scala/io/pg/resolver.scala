@@ -16,7 +16,10 @@ trait StateResolver[F[_]] {
 }
 
 object StateResolver {
-  def apply[F[_]](using F: StateResolver[F]): StateResolver[F] = F
+
+  def apply[F[_]](
+    using F: StateResolver[F]
+  ): StateResolver[F] = F
 
   def instance[F[_]: Gitlab: Logger: MonadThrow](
     implicit SC: fs2.Compiler[F, F]
