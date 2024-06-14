@@ -32,7 +32,9 @@ trait Gitlab[F[_]] {
 
 object Gitlab {
 
-  def apply[F[_]](using ev: Gitlab[F]): Gitlab[F] = ev
+  def apply[F[_]](
+    using ev: Gitlab[F]
+  ): Gitlab[F] = ev
 
   def sttpInstance[F[_]: Logger: MonadThrow](
     baseUri: Uri,
