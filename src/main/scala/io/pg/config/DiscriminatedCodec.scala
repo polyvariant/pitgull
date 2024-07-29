@@ -23,7 +23,11 @@ object DiscriminatedCodec {
         ) :: deriveAll[t]
   }
 
-  inline def derived[A](discriminator: String)(using inline m: Mirror.SumOf[A]): Codec.AsObject[A] = {
+  inline def derived[A](
+    discriminator: String
+  )(
+    using inline m: Mirror.SumOf[A]
+  ): Codec.AsObject[A] = {
 
     val codecs: List[Codec.AsObject[A]] = deriveAll[m.MirroredElemTypes].map(_.asInstanceOf[Codec.AsObject[A]])
 

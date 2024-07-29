@@ -13,7 +13,10 @@ trait Logger[F[_]] {
 }
 
 object Logger {
-  def apply[F[_]](using ev: Logger[F]): Logger[F] = ev
+
+  def apply[F[_]](
+    using ev: Logger[F]
+  ): Logger[F] = ev
 
   def wrappedPrint[F[_]: Sync] = new Logger[F] {
     private def colorPrinter(color: String)(msg: String): F[Unit] =
