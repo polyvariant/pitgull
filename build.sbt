@@ -78,7 +78,7 @@ val commonSettings = List(
     "org.typelevel" %% "cats-core" % "2.7.0",
     "org.typelevel" %% "cats-effect" % "3.3.14",
     "co.fs2" %% "fs2-core" % "3.2.14",
-    "com.github.valskalla" %% "odin-core" % "0.13.0",
+    "dev.scalafreaks" %% "odin-core" % "0.14.0",
     "io.circe" %% "circe-core" % "0.14.2",
     "dev.optics" %% "monocle-core" % "3.1.0",
     "com.disneystreaming" %% "weaver-cats" % "0.7.13" % Test,
@@ -191,8 +191,8 @@ lazy val pitgull =
         "org.http4s" %% "http4s-blaze-client" % "0.23.11",
         "is.cir" %% "ciris" % "2.3.3",
         "io.chrisdavenport" %% "cats-time" % "0.4.0",
-        "com.github.valskalla" %% "odin-core" % "0.13.0",
-        "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
+        "dev.scalafreaks" %% "odin-core" % "0.14.0",
+        "dev.scalafreaks" %% "odin-slf4j" % "0.14.0",
         "io.github.vigoo" %% "prox-fs2-3" % "0.7.7",
         "io.circe" %% "circe-literal" % "0.14.2" % Test
       )
